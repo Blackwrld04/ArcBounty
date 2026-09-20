@@ -158,21 +158,61 @@ export default function App() {
     showToast(`Settlement confirmed on Arc Mainnet in 382ms! USDC disbursed.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
   };
 
+  // Validate existing session token against SQLite backend on startup
+  useEffect(() => {
+    const token = localStorage.getItem('arcbounty_session_token');
+    if (token) {
+      fetch('http://localhost:4050/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            setUser(data.user);
+            setWallet({
+              connected: true,
+              address: data.user.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
+              balance: data.user.balance || 1000,
+              type: data.user.provider || 'email'
+            });
+            localStorage.setItem('arcbounty_session_user', JSON.stringify(data.user));
+          } else {
+            // Session expired or invalid in database
+            localStorage.removeItem('arcbounty_session_token');
+            localStorage.removeItem('arcbounty_session_user');
+            setUser(null);
+            setWallet({
+              connected: false,
+              address: null,
+              balance: 0,
+              type: null
+            });
+          }
+        })
+        .catch(() => {
+          // If server is offline, keep cached user if any
+        });
+    }
+  }, []);
+
   const handleOpenAuth = (mode = 'login') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
   };
 
-  const handleLoginSuccess = (userData) => {
+  const handleLoginSuccess = (userData, token) => {
     setUser(userData);
     setWallet({
       connected: true,
       address: userData.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
-      balance: userData.balance || 10000,
-      type: userData.type || 'simulated'
+      balance: userData.balance || 1000,
+      type: userData.provider || userData.type || 'email'
     });
     try {
       localStorage.setItem('arcbounty_session_user', JSON.stringify(userData));
+      if (token) {
+        localStorage.setItem('arcbounty_session_token', token);
+      }
     } catch (e) {}
     showToast(`Welcome, ${userData.name}!`);
   };
@@ -187,6 +227,7 @@ export default function App() {
     });
     try {
       localStorage.removeItem('arcbounty_session_user');
+      localStorage.removeItem('arcbounty_session_token');
     } catch (e) {}
     setActiveView('explore');
     showToast('Logged out successfully.');
@@ -295,6 +336,7 @@ export default function App() {
       {/* Split Login & Sign Up Modal (Gibwork style) */}
       <AuthModal
         isOpen={authModalOpen}
+        initialMode={authModalMode}
         onClose={() => setAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
