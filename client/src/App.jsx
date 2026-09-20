@@ -341,23 +341,11 @@ export default function App() {
           flexWrap: 'wrap',
           gap: '20px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '30px',
-              height: '30px',
-              borderRadius: '8px',
-              background: 'var(--arc-protocol-navy)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff'
-            }}>
-              <Zap size={16} fill="#ffcc6f" color="#ffcc6f" />
-            </div>
-            <span className="font-space" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--arc-protocol-navy)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--arc-protocol-navy)' }}>
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '8px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '6px' }}>
               Built for Circle Arc L1 (Chain ID 5042)
             </span>
           </div>

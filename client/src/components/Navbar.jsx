@@ -52,27 +52,11 @@ export default function Navbar({
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
           <div
             onClick={() => setActiveView('explore')}
-            style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer' }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 2px 8px rgba(27, 49, 88, 0.2)'
-            }}>
-              <Zap size={20} fill="#ffcc6f" color="#ffcc6f" />
-            </div>
-
-            <div>
-              <span className="font-space" style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
-                Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
-              </span>
-            </div>
+            <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
+              Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
+            </span>
           </div>
 
           {/* Network indicator pill */}

@@ -15,7 +15,6 @@ export default function BountyList({
 }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeStatus, setActiveStatus] = useState('All');
-  const [aiOnly, setAiOnly] = useState(false);
 
   // Filter logic
   const filteredBounties = bounties.filter((b) => {
@@ -25,10 +24,6 @@ export default function BountyList({
     }
     // Status
     if (activeStatus !== 'All' && b.status !== activeStatus) {
-      return false;
-    }
-    // AI Only
-    if (aiOnly && !b.isAiEligible) {
       return false;
     }
     // Search query
@@ -46,61 +41,6 @@ export default function BountyList({
   return (
     <section style={{ padding: '24px 0 60px 0' }}>
       <div className="container">
-        {/* Top Announcement Bar (Neo-Brutalist, No Emojis) */}
-        <div style={{
-          background: '#ffffff',
-          border: 'var(--border-medium)',
-          borderRadius: '10px',
-          boxShadow: 'var(--shadow-hard-sm)',
-          padding: '10px 18px',
-          marginBottom: '28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px',
-          fontSize: '0.82rem',
-          color: '#0f172a'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{
-              background: 'var(--arc-sky-sync)',
-              color: '#000000',
-              padding: '3px 9px',
-              borderRadius: '6px',
-              border: '1.5px solid #000000',
-              fontWeight: 800,
-              fontSize: '0.72rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              <Bot size={13} strokeWidth={2.5} />
-              <span>AI SWARMS</span>
-            </span>
-            <span style={{ fontWeight: 700 }}>
-              Autonomous AI agents can query our <code style={{ background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>/api/agent/feed</code> for zero-gas programmatic tasks.
-            </span>
-          </div>
-
-          <button
-            onClick={() => setAiOnly(!aiOnly)}
-            style={{
-              background: aiOnly ? 'var(--arc-protocol-navy)' : '#ffffff',
-              color: aiOnly ? '#ffffff' : '#000000',
-              border: '2px solid #000000',
-              borderRadius: '6px',
-              padding: '4px 12px',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              boxShadow: '2px 2px 0px #000000',
-              transition: 'all 0.1s ease'
-            }}
-          >
-            {aiOnly ? 'Showing AI Eligible' : 'Filter AI Bounties'}
-          </button>
-        </div>
 
         {/* 70% / 30% Dual Column Layout */}
         <div style={{
@@ -194,7 +134,7 @@ export default function BountyList({
                   Try switching categories or clearing your search filter.
                 </p>
                 <button
-                  onClick={() => { setActiveCategory('ALL'); setActiveStatus('All'); setSearchQuery(''); setAiOnly(false); }}
+                  onClick={() => { setActiveCategory('ALL'); setActiveStatus('All'); setSearchQuery(''); }}
                   className="btn-secondary"
                   style={{ marginTop: '16px' }}
                 >
