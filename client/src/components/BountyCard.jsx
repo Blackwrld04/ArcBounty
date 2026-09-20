@@ -1,175 +1,180 @@
 import React from 'react';
-import { ArrowUpRight, Bot, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, Clock, MessageSquare, Star, Bot, Zap } from 'lucide-react';
 
 export default function BountyCard({ bounty, onSelect }) {
-  const getCategoryColor = (cat) => {
+  // Category color configuration (Arc-themed)
+  const getCategoryTheme = (cat) => {
     switch (cat) {
-      case 'DESIGN': return 'var(--arc-quantum-plum)';
-      case 'VIDEO': return 'var(--arc-blockstream-gold)';
-      case 'WRITING': return 'var(--arc-sky-sync)';
-      case 'MEMES': return 'var(--arc-token-sand)';
-      case 'DEV': return 'var(--arc-validator-blue)';
-      case 'TRANSLATION': return 'var(--arc-miner-clay)';
-      default: return 'var(--arc-sky-sync)';
+      case 'DESIGN':
+        return { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', label: '🎨 Design & 3D' };
+      case 'VIDEO':
+        return { bg: '#fef3c7', text: '#92400e', border: '#fde68a', label: '🎬 Video & Motion' };
+      case 'WRITING':
+        return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd', label: '✍️ Writing & Threads' };
+      case 'MEMES':
+        return { bg: '#fef9c3', text: '#854d0e', border: '#fef08a', label: '🐸 Memes & Social' };
+      case 'DEV':
+        return { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', label: '💻 Code & Apps' };
+      case 'TRANSLATION':
+        return { bg: '#ffe4e6', text: '#9f1239', border: '#fecdd3', label: '🌐 Translation' };
+      default:
+        return { bg: '#f1f5f9', text: '#334155', border: '#e2e8f0', label: '⚡ Creative Task' };
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Open':
-        return (
-          <span className="brutal-badge" style={{ background: 'var(--arc-sky-sync)', color: '#000000' }}>
-            🟢 OPEN FOR SUBMISSIONS
-          </span>
-        );
-      case 'InReview':
-        return (
-          <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000000' }}>
-            ⏳ SUBMISSION IN REVIEW
-          </span>
-        );
-      case 'Settled':
-        return (
-          <span className="brutal-badge" style={{ background: 'var(--arc-sky-light)', color: '#000000' }}>
-            ✅ BOUNTY PAID &amp; SETTLED
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  const theme = getCategoryTheme(bounty.category);
 
   return (
     <div
-      className="brutal-card"
       onClick={() => onSelect(bounty)}
-      style={{
-        padding: '22px',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100%'
-      }}
+      className="bounty-row"
     >
-      <div>
-        {/* Top Header Row: Category sticker & Status */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              className="brutal-badge"
-              style={{
-                background: getCategoryColor(bounty.category),
-                color: bounty.category === 'DESIGN' || bounty.category === 'WRITING' ? '#ffffff' : '#000000'
-              }}
-            >
-              {bounty.categoryName || bounty.category || 'CREATOR'}
+      {/* Left: Sponsor Avatar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+        <div style={{
+          width: '46px',
+          height: '46px',
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+          border: '1px solid #e2e8f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.3rem',
+          flexShrink: 0
+        }}>
+          {bounty.category === 'DESIGN' && '🎨'}
+          {bounty.category === 'VIDEO' && '🎬'}
+          {bounty.category === 'WRITING' && '✍️'}
+          {bounty.category === 'MEMES' && '🐸'}
+          {bounty.category === 'DEV' && '💻'}
+          {bounty.category === 'TRANSLATION' && '🌐'}
+          {!['DESIGN','VIDEO','WRITING','MEMES','DEV','TRANSLATION'].includes(bounty.category) && '⚡'}
+        </div>
+
+        {/* Center: Title & Metadata */}
+        <div style={{ minWidth: 0, paddingRight: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+            <h3 style={{
+              fontSize: '0.98rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: 0,
+              lineHeight: 1.35
+            }}>
+              {bounty.title}
+            </h3>
+
+            {bounty.tags?.includes('Featured') || bounty.amount >= 1200 ? (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                color: '#7c3aed',
+                background: '#f3e8ff',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                textTransform: 'uppercase'
+              }}>
+                <Star size={10} fill="#7c3aed" />
+                FEATURED
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#64748b' }}>
+            {/* Sponsor */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#334155' }}>
+              <span>{bounty.maintainerName || 'Arc Sponsor'}</span>
+              <CheckCircle2 size={13} color="#2563eb" />
+            </div>
+
+            {/* Category Pill */}
+            <span style={{
+              background: theme.bg,
+              color: theme.text,
+              border: `1px solid ${theme.border}`,
+              padding: '1px 7px',
+              borderRadius: '9999px',
+              fontWeight: 600,
+              fontSize: '0.72rem'
+            }}>
+              {theme.label}
             </span>
+
+            {/* Deadline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Clock size={12} />
+              <span>Due in 10d</span>
+            </div>
+
+            {/* Submissions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }} className="desktop-only">
+              <MessageSquare size={12} />
+              <span>{bounty.status === 'Open' ? 'Open' : '1 review'}</span>
+            </div>
+
+            {/* AI Agent badge if eligible */}
             {bounty.isAiEligible && (
-              <span className="brutal-badge" style={{ background: '#ffffff', color: '#000' }} title="AI Creators & Agents Allowed">
-                <Bot size={13} />
-                AI-ELIGIBLE
+              <span className="desktop-only" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--arc-validator-blue)', fontWeight: 600 }}>
+                <Bot size={12} />
+                <span>AI Eligible</span>
               </span>
             )}
           </div>
-          <div>{getStatusBadge(bounty.status)}</div>
-        </div>
-
-        {/* Task Title */}
-        <h3 className="font-space" style={{
-          fontSize: '1.25rem',
-          fontWeight: 900,
-          color: '#000000',
-          lineHeight: 1.25,
-          marginBottom: '10px'
-        }}>
-          {bounty.title}
-        </h3>
-
-        {/* Deliverable info */}
-        <div style={{
-          background: '#f4f4f0',
-          border: '2px solid #000000',
-          borderRadius: '6px',
-          padding: '6px 10px',
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          color: '#1f2937',
-          marginBottom: '12px',
-          display: 'inline-block'
-        }}>
-          📦 Deliverable: {bounty.submissionType || 'Work URL or Pull Request'}
-        </div>
-
-        {/* Description snippet */}
-        <p style={{
-          fontSize: '0.88rem',
-          color: '#4b5563',
-          lineHeight: 1.5,
-          marginBottom: '16px',
-          fontWeight: 500,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden'
-        }}>
-          {bounty.description}
-        </p>
-
-        {/* Tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '18px' }}>
-          {bounty.tags.map((tag, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: '0.72rem',
-                color: '#000000',
-                background: '#ffffff',
-                border: '1.5px solid #000000',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontWeight: 700
-              }}
-            >
-              #{tag}
-            </span>
-          ))}
         </div>
       </div>
 
-      {/* Footer Row: Reward Amount & Action CTA */}
-      <div style={{
-        paddingTop: '16px',
-        borderTop: '2.5px solid #000000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '10px'
-      }}>
-        {/* Bounty Value */}
-        <div>
-          <span style={{ fontSize: '0.68rem', color: '#4b5563', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-            USDC REWARD
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-            <span className="font-space" style={{ fontSize: '1.65rem', fontWeight: 900, color: '#000000' }}>
+      {/* Right: Payout Amount & Action Icon */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0, paddingLeft: '12px' }}>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+            {/* Circle USDC Icon */}
+            <div style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              background: '#2775ca',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.65rem',
+              fontWeight: 900
+            }}>
+              $
+            </div>
+            <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
               ${bounty.amount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 800, background: 'var(--arc-token-sand)', padding: '1px 5px', border: '1px solid #000', borderRadius: '4px' }}>
-              USDC
-            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
           </div>
+
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            color: bounty.status === 'Settled' ? '#16a34a' : bounty.status === 'InReview' ? '#d97706' : '#64748b'
+          }}>
+            {bounty.status === 'Settled' ? '✓ Paid & Settled' : bounty.status === 'InReview' ? '⏳ Under Review' : '0 Gas Payout'}
+          </span>
         </div>
 
-        {/* Action Button */}
-        <button
-          className="brutal-btn brutal-btn-sand"
-          style={{ padding: '8px 14px', fontSize: '0.82rem' }}
-        >
-          <span>SUBMIT WORK</span>
-          <ArrowUpRight size={16} strokeWidth={3} />
-        </button>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#64748b',
+          transition: 'all 0.15s ease'
+        }}>
+          <ArrowUpRight size={16} />
+        </div>
       </div>
     </div>
   );

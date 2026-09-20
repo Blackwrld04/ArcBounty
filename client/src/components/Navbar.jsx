@@ -1,166 +1,424 @@
-import React from 'react';
-import { Zap, Wallet, Cpu, Plus, Sparkles, Layers } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Plus, Wallet, ChevronDown, User, Settings, Bell, Share2, LogOut, Zap, Shield, CheckCircle, ExternalLink } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 
 export default function Navbar({
-  network,
-  setNetwork,
+  user,
   wallet,
-  openWalletModal,
-  activeTab,
-  setActiveTab,
-  openCreateModal
+  network,
+  activeView,
+  setActiveView,
+  openAuthModal,
+  openWalletDrawer,
+  openCreateModal,
+  onLogout,
+  searchQuery,
+  setSearchQuery
 }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <header style={{
-      position: 'fixed',
+      position: 'sticky',
       top: 0,
-      left: 0,
-      right: 0,
       zIndex: 100,
-      background: '#ffffff',
-      borderBottom: '3px solid #000000',
-      boxShadow: '0 4px 0px #000000',
-      height: '74px',
+      background: 'rgba(255, 255, 255, 0.92)',
+      backdropFilter: 'blur(12px)',
+      borderBottom: '1px solid #e2e8f0',
+      height: '70px',
       display: 'flex',
       alignItems: 'center'
     }}>
       <div className="container" style={{
-        width: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        width: '100%',
+        gap: '20px'
       }}>
-        {/* Brand Logo with Arc.io Brand Colors */}
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-          onClick={() => setActiveTab('explore')}
-        >
-          <div style={{
-            width: '40px',
-            height: '40px',
-            background: 'var(--arc-validator-blue)',
-            border: '3px solid #000000',
-            boxShadow: '3px 3px 0px #000000',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'rotate(-2deg)'
-          }}>
-            <Zap size={24} color="#ffffff" strokeWidth={3} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
-                ARC<span style={{ background: 'var(--arc-token-sand)', color: '#000', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
+        {/* Left: Brand Logo & Network Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          <div
+            onClick={() => setActiveView('explore')}
+            style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer' }}
+          >
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 2px 8px rgba(27, 49, 88, 0.2)'
+            }}>
+              <Zap size={20} fill="#ffcc6f" color="#ffcc6f" />
+            </div>
+
+            <div>
+              <span className="font-space" style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
+                Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
               </span>
-              <span className="sticker-tape desktop-only">ARC.IO NATIVE</span>
             </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--arc-validator-blue)', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '-2px' }}>
-              Circle Arc Platform · Chain 5042 · Canonical USDC
-            </div>
+          </div>
+
+          {/* Network indicator pill */}
+          <div
+            className="desktop-only"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '9999px',
+              background: '#f1f5f9',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: '#334155'
+            }}
+          >
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+            <span>Circle Arc 5042</span>
+            <span style={{ color: '#64748b', fontSize: '0.7rem' }}>(&lt;400ms)</span>
           </div>
         </div>
 
-        {/* Desktop Navigation Links */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          fontWeight: 800,
-          fontSize: '0.9rem'
-        }} className="desktop-nav">
-          <button
-            id="nav-explore-btn"
-            onClick={() => setActiveTab('explore')}
-            className={`brutal-btn ${activeTab === 'explore' ? 'brutal-btn-sky' : 'brutal-btn-white'}`}
-            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-          >
-            ⚡ All Bounties
-          </button>
-          <button
-            id="nav-swarm-btn"
-            onClick={() => setActiveTab('swarm')}
-            className={`brutal-btn ${activeTab === 'swarm' ? 'brutal-btn-gold' : 'brutal-btn-white'}`}
-            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-          >
-            <Cpu size={16} strokeWidth={2.5} />
-            AI &amp; Agent Swarms
-          </button>
-          <button
-            id="nav-leaderboard-btn"
-            onClick={() => setActiveTab('leaderboard')}
-            className={`brutal-btn ${activeTab === 'leaderboard' ? 'brutal-btn-sand' : 'brutal-btn-white'}`}
-            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-          >
-            🏆 Leaderboard
-          </button>
-        </nav>
-
-        {/* Right Actions: Network badge + Post Bounty CTA + Wallet Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Arc Network Status Chip */}
-          <div
-            onClick={openWalletModal}
-            className="brutal-badge desktop-only"
+        {/* Center: Search Bar (Gibwork / Superteam style) */}
+        <div style={{ flex: 1, maxWidth: '460px', position: 'relative' }} className="desktop-only">
+          <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Search bounties, creators, tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              background: '#ffffff',
-              padding: '6px 12px',
-              cursor: 'pointer'
+              width: '100%',
+              padding: '8px 14px 8px 38px',
+              borderRadius: '9999px',
+              border: '1px solid #e2e8f0',
+              background: '#f8fafc',
+              fontSize: '0.88rem',
+              color: '#0f172a',
+              outline: 'none',
+              transition: 'all 0.15s ease'
             }}
-            title="Circle Arc L1 Network Status"
-          >
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#00e676',
-              border: '1.5px solid #000'
-            }} />
-            <span style={{ color: 'var(--arc-protocol-navy)', fontWeight: 900 }}>
-              {network.name}
-            </span>
-            <span style={{ color: '#000000', background: 'var(--arc-sky-sync)', padding: '1px 6px', borderRadius: '4px', border: '1px solid #000', fontSize: '0.7rem' }}>
-              &lt;400ms
-            </span>
-          </div>
+          />
+        </div>
 
-          {/* Post Bounty Button (Desktop) */}
-          <button
-            id="header-post-bounty-btn"
-            onClick={openCreateModal}
-            className="brutal-btn brutal-btn-gold desktop-only"
-            style={{ padding: '9px 18px', fontSize: '0.85rem' }}
-          >
-            <Plus size={16} strokeWidth={3.5} />
-            <span>Post Bounty</span>
-          </button>
+        {/* Right: Actions depending on Auth State */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {!user ? (
+            /* Logged Out Header */
+            <>
+              <button
+                onClick={() => openAuthModal('signup')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#475569',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '6px 12px'
+                }}
+                className="desktop-only"
+              >
+                Become a Sponsor
+              </button>
 
-          {/* Wallet Button */}
-          <button
-            id="header-wallet-btn"
-            onClick={openWalletModal}
-            className="brutal-btn brutal-btn-sky"
-            style={{ padding: '9px 16px', fontSize: '0.85rem' }}
-          >
-            <Wallet size={16} strokeWidth={2.5} />
-            <span>
-              {wallet.connected ? truncateAddress(wallet.address) : 'Connect Wallet'}
-            </span>
-            {wallet.connected && (
-              <span style={{
-                background: 'var(--arc-protocol-navy)',
-                color: '#ffffff',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '0.75rem',
-                fontFamily: 'Geist Mono, monospace'
-              }}>
-                ${wallet.balance.toLocaleString()}
-              </span>
-            )}
-          </button>
+              <button
+                onClick={() => openAuthModal('login')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#0f172a',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '6px 12px'
+                }}
+              >
+                Log In
+              </button>
+
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="btn-primary"
+                style={{ padding: '8px 18px', fontSize: '0.88rem' }}
+              >
+                Sign Up
+              </button>
+            </>
+          ) : (
+            /* Logged In Header (Gibwork & Superteam Earn style) */
+            <>
+              {/* Create Bounty Button */}
+              <button
+                id="navbar-create-bounty-btn"
+                onClick={openCreateModal}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  padding: '8px 16px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease'
+                }}
+              >
+                <Plus size={16} strokeWidth={2.5} />
+                <span>Create Bounty</span>
+              </button>
+
+              {/* Wallet Balance Pill */}
+              <button
+                onClick={openWalletDrawer}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '9999px',
+                  padding: '7px 14px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Open Arc Wallet Drawer"
+              >
+                <span style={{ color: '#16a34a', fontWeight: 800 }}>${wallet.balance.toLocaleString()}</span>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', background: '#f1f5f9', padding: '1px 5px', borderRadius: '4px' }}>USDC</span>
+              </button>
+
+              {/* Refer Friends Button */}
+              <button
+                onClick={() => setActiveView('account-referrals')}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '9999px',
+                  padding: '7px 14px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer'
+                }}
+                className="desktop-only"
+              >
+                Refer Friends
+              </button>
+
+              {/* User Avatar & Dropdown Menu */}
+              <div style={{ position: 'relative' }} ref={dropdownRef}>
+                <div
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '9999px',
+                    border: '1px solid transparent',
+                    transition: 'border-color 0.15s'
+                  }}
+                >
+                  <img
+                    src={user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                    alt={user.name}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #ffffff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <ChevronDown size={14} color="#64748b" />
+                </div>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '48px',
+                      width: '240px',
+                      background: '#ffffff',
+                      borderRadius: '14px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: 'var(--shadow-dropdown)',
+                      padding: '8px',
+                      zIndex: 1000
+                    }}
+                  >
+                    {/* User Header in Dropdown */}
+                    <div style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', margin: 0 }}>
+                          {user.name}
+                        </p>
+                        <CheckCircle size={14} color="#10b981" />
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '2px 0 0 0' }}>
+                        @{user.username}
+                      </p>
+
+                      {/* XP Progress Bar (Gibwork style) */}
+                      <div style={{ marginTop: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 600, color: '#64748b', marginBottom: '3px' }}>
+                          <span>Level 1 XP</span>
+                          <span>420 / 1000</span>
+                        </div>
+                        <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: '42%', height: '100%', background: 'var(--arc-blockstream-gold)', borderRadius: '4px' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div style={{ padding: '6px 0' }}>
+                      <button
+                        onClick={() => { setActiveView('profile'); setDropdownOpen(false); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <User size={15} color="#64748b" />
+                        <span>Profile &amp; Proof of Work</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setActiveView('account'); setDropdownOpen(false); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Settings size={15} color="#64748b" />
+                        <span>Account Settings</span>
+                      </button>
+
+                      <button
+                        onClick={() => { openWalletDrawer(); setDropdownOpen(false); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Wallet size={15} color="#64748b" />
+                        <span>Arc Wallet Drawer</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setActiveView('account-referrals'); setDropdownOpen(false); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Share2 size={15} color="#64748b" />
+                        <span>Refer Friends</span>
+                      </button>
+                    </div>
+
+                    {/* Logout */}
+                    <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '6px' }}>
+                      <button
+                        onClick={() => { onLogout(); setDropdownOpen(false); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <LogOut size={15} color="#ef4444" />
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>

@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import MetricsStrip from './components/MetricsStrip';
 import BountyList from './components/BountyList';
 import BountyDetailModal from './components/BountyDetailModal';
 import CreateBountyModal from './components/CreateBountyModal';
+import AuthModal from './components/AuthModal';
+import WalletDrawer from './components/WalletDrawer';
+import UserProfile from './components/UserProfile';
+import AccountSettings from './components/AccountSettings';
 import AgentSwarmPortal from './components/AgentSwarmPortal';
 import Leaderboard from './components/Leaderboard';
-import WalletModal from './components/WalletModal';
-import MobileDock from './components/MobileDock';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
-import { Zap, ExternalLink, CheckCircle2, X } from 'lucide-react';
-
-const API_BASE = 'http://localhost:4050/api';
+import { Zap, CheckCircle2, ExternalLink, X } from 'lucide-react';
 
 export default function App() {
   const [network, setNetwork] = useState(ARC_MAINNET);
+
+  // Authenticated user state (Default logged in as Olajide from screenshot)
+  const [user, setUser] = useState({
+    name: 'Olajide Abdulquadri',
+    username: 'olajide-amaranth-18',
+    email: 'olajideabdulquadri22@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    address: '0x461cd48D95993242bB04774cc68042795586BbAd',
+    balance: 10000,
+    type: 'verified'
+  });
+
   const [wallet, setWallet] = useState({
     connected: true,
     address: '0x461cd48D95993242bB04774cc68042795586BbAd',
@@ -25,7 +36,7 @@ export default function App() {
   });
 
   const [bounties, setBounties] = useState(() => {
-    const saved = localStorage.getItem('arcbounty_items_v2');
+    const saved = localStorage.getItem('arcbounty_clean_items_v1');
     return saved ? JSON.parse(saved) : INITIAL_BOUNTIES;
   });
 
@@ -33,25 +44,31 @@ export default function App() {
     tvlUsdc: 28450,
     totalSettledUsdc: 142800,
     avgSettlementTimeMs: 384,
-    aiAgentClaimsPercent: 42
+    activeBountiesCount: 164
   });
 
-  const [activeTab, setActiveTab] = useState('explore'); // 'explore' | 'swarm' | 'leaderboard'
+  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'swarm', 'leaderboard'
+  const [activeView, setActiveView] = useState('explore');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals & Drawers state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
+  const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedBounty, setSelectedBounty] = useState(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success', link = null) => {
     setToast({ message, type, link });
     setTimeout(() => {
       setToast(null);
-    }, 5000);
+    }, 4500);
   };
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('arcbounty_items_v2', JSON.stringify(bounties));
+    localStorage.setItem('arcbounty_clean_items_v1', JSON.stringify(bounties));
   }, [bounties]);
 
   // Handle posting a new bounty
@@ -61,7 +78,7 @@ export default function App() {
       bountyId: `0x${Date.now().toString(16).padStart(64, '0')}`,
       ...newBountyData,
       status: 'Open',
-      maintainerName: 'You (Sponsor)',
+      maintainerName: user?.name || 'Circle Creative Guild',
       solver: null,
       solverType: null,
       prUrl: null,
@@ -74,8 +91,8 @@ export default function App() {
       ...prev,
       balance: Math.max(0, prev.balance - newBountyData.amount)
     }));
-    setIsCreateModalOpen(false);
-    showToast(`BOUNTY POSTED! $${newBountyData.amount} USDC LOCKED INTO ARC ESCROW.`, 'success');
+    setCreateModalOpen(false);
+    showToast(`Bounty created! $${newBountyData.amount.toLocaleString()} USDC locked in Circle Arc Escrow.`);
   };
 
   // Handle solver deliverable submission
@@ -86,7 +103,7 @@ export default function App() {
           const updated = {
             ...b,
             status: 'InReview',
-            solver: solverAddress || '0x71C568ba74d3B107292995bB791e317614399A45',
+            solver: solverAddress || user?.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
             solverType: solverType || 'Human Creator',
             prUrl: submissionUrl
           };
@@ -96,10 +113,10 @@ export default function App() {
         return b;
       })
     );
-    showToast('WORK DELIVERABLE SUBMITTED! SPONSOR REVIEW INITIATED.', 'success');
+    showToast('Work submitted! Sponsor review initiated on Arc.');
   };
 
-  // Handle maintainer approving release & executing settlement
+  // Handle sponsor approving release & executing settlement
   const handleReleaseBounty = async (bountyId) => {
     const mockTx = `0xarc${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}88ad`;
 
@@ -119,62 +136,146 @@ export default function App() {
       })
     );
 
-    showToast(`SETTLEMENT CONFIRMED ON ARC MAINNET IN 382MS! USDC PAID.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
+    showToast(`Settlement confirmed on Arc Mainnet in 382ms! USDC disbursed.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
   };
 
-  const scrollToBounties = () => {
-    setActiveTab('explore');
-    const elem = document.getElementById('bounties-section');
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleOpenAuth = (mode = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setWallet({
+      connected: true,
+      address: userData.address,
+      balance: userData.balance || 10000,
+      type: userData.type
+    });
+    showToast(`Welcome back, ${userData.name}!`);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    showToast('Logged out successfully.');
   };
 
   return (
-    <div className="mobile-safe-bottom" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-canvas)' }}>
-      {/* Top Navigation Bar */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-canvas)' }}>
+      {/* Modern Top Navigation Bar */}
       <Navbar
-        network={network}
-        setNetwork={setNetwork}
+        user={user}
         wallet={wallet}
-        openWalletModal={() => setIsWalletModalOpen(true)}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        openCreateModal={() => setIsCreateModalOpen(true)}
+        network={network}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        openAuthModal={handleOpenAuth}
+        openWalletDrawer={() => setWalletDrawerOpen(true)}
+        openCreateModal={() => {
+          if (!user) {
+            handleOpenAuth('signup');
+          } else {
+            setCreateModalOpen(true);
+          }
+        }}
+        onLogout={handleLogout}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
-      {/* Main Content Areas based on Active Tab */}
+      {/* Main View Controller */}
       <main style={{ flex: 1 }}>
-        {activeTab === 'explore' && (
+        {activeView === 'explore' && (
           <>
             <Hero
-              openCreateModal={() => setIsCreateModalOpen(true)}
-              setActiveTab={setActiveTab}
-              onExploreClick={scrollToBounties}
+              openCreateModal={() => {
+                if (!user) handleOpenAuth('signup');
+                else setCreateModalOpen(true);
+              }}
+              onExploreClick={() => {
+                const el = document.getElementById('bounties-feed');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              openAuthModal={handleOpenAuth}
+              user={user}
             />
-            <MetricsStrip stats={stats} />
-            <BountyList
-              bounties={bounties}
-              onSelectBounty={(bounty) => setSelectedBounty(bounty)}
-              openCreateModal={() => setIsCreateModalOpen(true)}
-            />
+
+            <div id="bounties-feed">
+              <BountyList
+                bounties={bounties}
+                onSelectBounty={(bounty) => setSelectedBounty(bounty)}
+                stats={stats}
+                openCreateModal={() => {
+                  if (!user) handleOpenAuth('signup');
+                  else setCreateModalOpen(true);
+                }}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                setActiveTab={setActiveView}
+              />
+            </div>
           </>
         )}
 
-        {activeTab === 'swarm' && (
-          <div style={{ paddingTop: '80px' }}>
+        {activeView === 'profile' && user && (
+          <UserProfile
+            user={user}
+            wallet={wallet}
+            bounties={bounties}
+            onBackToFeed={() => setActiveView('explore')}
+            onSelectBounty={(bounty) => setSelectedBounty(bounty)}
+          />
+        )}
+
+        {(activeView === 'account' || activeView === 'account-referrals') && user && (
+          <AccountSettings
+            user={user}
+            wallet={wallet}
+            setWallet={setWallet}
+            initialTab={activeView === 'account-referrals' ? 'referrals' : 'account'}
+            onBackToFeed={() => setActiveView('explore')}
+          />
+        )}
+
+        {activeView === 'swarm' && (
+          <div style={{ paddingTop: '20px' }}>
             <AgentSwarmPortal />
           </div>
         )}
 
-        {activeTab === 'leaderboard' && (
-          <div style={{ paddingTop: '80px' }}>
+        {activeView === 'leaderboard' && (
+          <div style={{ paddingTop: '20px' }}>
             <Leaderboard />
           </div>
         )}
       </main>
 
-      {/* Modals & Drawers */}
+      {/* Modern Slide-out Wallet Drawer */}
+      <WalletDrawer
+        isOpen={walletDrawerOpen}
+        onClose={() => setWalletDrawerOpen(false)}
+        wallet={wallet}
+        setWallet={setWallet}
+        network={network}
+      />
+
+      {/* Split Login & Sign Up Modal (Gibwork style) */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Stepped Create Bounty Modal */}
+      <CreateBountyModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreateBounty={handleCreateBounty}
+        wallet={wallet}
+        user={user}
+      />
+
+      {/* Bounty Detail & Deliverable Submission Modal */}
       {selectedBounty && (
         <BountyDetailModal
           bounty={selectedBounty}
@@ -182,156 +283,98 @@ export default function App() {
           onSubmitSolution={handleSubmitSolution}
           onReleaseBounty={handleReleaseBounty}
           wallet={wallet}
+          user={user}
         />
       )}
 
-      {isCreateModalOpen && (
-        <CreateBountyModal
-          onClose={() => setIsCreateModalOpen(false)}
-          onCreateBounty={handleCreateBounty}
-          wallet={wallet}
-        />
-      )}
-
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        wallet={wallet}
-        setWallet={setWallet}
-        network={network}
-        setNetwork={setNetwork}
-      />
-
-      {/* Persistent Mobile Bottom App Dock */}
-      <MobileDock
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        openCreateModal={() => setIsCreateModalOpen(true)}
-        openWalletModal={() => setIsWalletModalOpen(true)}
-        wallet={wallet}
-      />
-
-      {/* Neo-Brutalist Notification Toast */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="notification-toast">
-          <div style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '6px',
-            background: 'var(--arc-sky-sync)',
-            border: '2px solid #000',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#000000',
-            flexShrink: 0
-          }}>
-            <CheckCircle2 size={18} strokeWidth={3} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 800, color: '#000000', fontSize: '0.88rem' }}>{toast.message}</p>
-            {toast.link && (
-              <a
-                href={toast.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#000000', fontWeight: 800, textDecoration: 'underline', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}
-              >
-                <span>VIEW SETTLEMENT ON ARCSCAN</span>
-                <ExternalLink size={12} strokeWidth={3} />
-              </a>
-            )}
-          </div>
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 10000,
+          background: '#0f172a',
+          color: '#ffffff',
+          padding: '14px 20px',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.88rem',
+          fontWeight: 600
+        }}>
+          <CheckCircle2 size={18} color="#10b981" />
+          <span>{toast.message}</span>
+          {toast.link && (
+            <a
+              href={toast.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--arc-sky-sync)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+            >
+              <span>View ArcScan</span>
+              <ExternalLink size={12} />
+            </a>
+          )}
           <button
             onClick={() => setToast(null)}
-            style={{ background: 'transparent', border: 'none', color: '#000000', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', marginLeft: '6px' }}
           >
-            <X size={18} strokeWidth={3} />
+            <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Neo-Brutalist Footer */}
+      {/* Clean Footer (Inspired by Gibwork & Superteam) */}
       <footer style={{
         background: '#ffffff',
-        borderTop: '3px solid #000000',
-        padding: '50px 0 30px 0',
+        borderTop: '1px solid #e2e8f0',
+        padding: '40px 0',
         marginTop: '60px'
       }}>
-        <div className="container">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '30px',
-            marginBottom: '40px'
-          }}>
-            <div style={{ maxWidth: '420px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '6px',
-                  background: 'var(--arc-validator-blue)',
-                  border: '3px solid #000',
-                  boxShadow: '2px 2px 0px #000',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Zap size={22} color="#ffffff" strokeWidth={3} />
-                </div>
-                <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--arc-protocol-navy)' }}>
-                  ARC<span style={{ background: 'var(--arc-token-sand)', color: '#000', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
-                </span>
-              </div>
-              <p style={{ color: '#1f2937', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.6 }}>
-                The decentralized creator &amp; autonomous agent bounty engine natively built on Circle Arc L1 (Chain ID 5042). For designers, video creators, writers, meme strategists, and developers.
-              </p>
+        <div className="container" style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              background: 'var(--arc-protocol-navy)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff'
+            }}>
+              <Zap size={16} fill="#ffcc6f" color="#ffcc6f" />
             </div>
-
-            <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap', fontSize: '0.9rem', fontWeight: 700 }}>
-              <div>
-                <p style={{ color: '#000000', fontWeight: 900, marginBottom: '12px', textTransform: 'uppercase' }}>CREATOR SECTORS</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#4b5563' }}>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🎨 Design &amp; 3D Art</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🎬 Video &amp; Reels</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>✍️ Writing &amp; Research</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🐸 Memes &amp; Social</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>💻 Code &amp; Apps</span>
-                </div>
-              </div>
-
-              <div>
-                <p style={{ color: '#000000', fontWeight: 900, marginBottom: '12px', textTransform: 'uppercase' }}>CIRCLE ARC L1</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#4b5563' }}>
-                  <a href="https://explorer.arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#000000', textDecoration: 'underline' }}>
-                    ArcScan Explorer (5042)
-                  </a>
-                  <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#000000', textDecoration: 'underline' }}>
-                    Arc.io Documentation
-                  </a>
-                  <span>Canonical USDC: 0x3600...</span>
-                </div>
-              </div>
-            </div>
+            <span className="font-space" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--arc-protocol-navy)' }}>
+              Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '8px' }}>
+              Built for Circle Arc L1 (Chain ID 5042)
+            </span>
           </div>
 
-          <div style={{
-            paddingTop: '24px',
-            borderTop: '2px solid #000000',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            color: '#4b5563'
-          }}>
-            <p>© 2026 ArcBounty Protocol. All rights reserved. Circle Arc Mainnet (5042) · Malachite BFT Consensus.</p>
-            <p>Native USDC Escrow · EIP-3009 Zero-Gas Settlements</p>
+          <div style={{ display: 'flex', gap: '24px', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>
+            <button onClick={() => setActiveView('explore')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
+              Bounties
+            </button>
+            <button onClick={() => setActiveView('swarm')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
+              AI Swarms
+            </button>
+            <button onClick={() => setActiveView('leaderboard')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
+              Leaderboard
+            </button>
+            <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+              Arc Docs ↗
+            </a>
           </div>
         </div>
       </footer>

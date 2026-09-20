@@ -1,239 +1,95 @@
 import React from 'react';
-import { ArrowRight, Zap, CheckCircle2, Sparkles, DollarSign, Palette, Video, PenTool, Smile } from 'lucide-react';
+import { ArrowRight, Zap, Sparkles, CheckCircle2 } from 'lucide-react';
 
-export default function Hero({ openCreateModal, setActiveTab, onExploreClick }) {
+export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user }) {
   return (
-    <section style={{ position: 'relative', paddingTop: '115px', paddingBottom: '30px', overflow: 'hidden' }}>
-      {/* Background Dots */}
-      <div className="brutal-dots" style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
-
-      <div className="container" style={{ position: 'relative', zIndex: 10 }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '36px',
-          alignItems: 'center',
-          minHeight: '52vh'
-        }}>
-          {/* Left Column: Hero Headline & CTAs */}
-          <div style={{ maxWidth: '680px' }}>
-            {/* Arc.io Sticker Pill Badges */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
-              <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000', transform: 'rotate(-1deg)' }}>
-                ⚡ THE ECONOMIC OS FOR CREATORS
-              </span>
-              <span className="brutal-badge" style={{ background: 'var(--arc-sky-sync)', color: '#000', transform: 'rotate(1deg)' }}>
-                💵 CANONICAL USDC GAS (0x3600...)
-              </span>
-              <span className="brutal-badge" style={{ background: 'var(--arc-blockstream-gold)', color: '#000', transform: 'rotate(-0.5deg)' }}>
-                ⚡ MALACHITE BFT &lt;400MS
-              </span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="font-space" style={{
-              fontSize: 'clamp(2.4rem, 5.2vw, 4.3rem)',
-              fontWeight: 900,
-              lineHeight: 1.02,
-              letterSpacing: '-0.035em',
-              color: 'var(--arc-protocol-navy)',
-              marginBottom: '18px'
-            }}>
-              CREATE &amp; EARN ON{' '}
-              <span style={{
-                background: 'var(--arc-sky-sync)',
-                border: '3px solid #000',
-                padding: '2px 8px',
-                display: 'inline-block',
-                boxShadow: '4px 4px 0px #000',
-                transform: 'rotate(-1deg)',
-                color: '#000'
-              }}>
-                CIRCLE ARC.
-              </span>
-            </h1>
-
-            {/* Description */}
-            <p style={{
-              fontSize: '1.15rem',
-              color: '#1f2937',
-              lineHeight: 1.55,
-              fontWeight: 600,
-              marginBottom: '26px'
-            }}>
-              The official creator bounty protocol built on <strong style={{ color: 'var(--arc-protocol-navy)' }}>Arc Platform (arc.io)</strong>.
-              For <strong>Designers, Video Creators, Thread Writers, Meme Strategists, and Developers</strong>.
-              Settle in pure USDC with <strong>sub-second finality and zero creator gas fees</strong>.
-            </p>
-
-            {/* Category Quick Pills */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
-              <span className="brutal-badge" style={{ background: '#ffffff', color: 'var(--arc-protocol-navy)' }}><Palette size={13} /> 3D &amp; Design</span>
-              <span className="brutal-badge" style={{ background: '#ffffff', color: 'var(--arc-protocol-navy)' }}><Video size={13} /> Video &amp; Motion</span>
-              <span className="brutal-badge" style={{ background: '#ffffff', color: 'var(--arc-protocol-navy)' }}><PenTool size={13} /> Writing &amp; Research</span>
-              <span className="brutal-badge" style={{ background: '#ffffff', color: 'var(--arc-protocol-navy)' }}><Smile size={13} /> Memes &amp; Social</span>
-              <span className="brutal-badge" style={{ background: '#ffffff', color: 'var(--arc-protocol-navy)' }}><Zap size={13} /> Code &amp; AI Swarms</span>
-            </div>
-
-            {/* Action Buttons in Arc.io Colors */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-              <button
-                id="hero-create-bounty-btn"
-                onClick={openCreateModal}
-                className="brutal-btn brutal-btn-gold"
-                style={{ fontSize: '1rem', padding: '14px 28px' }}
-              >
-                <span>+ Post a Bounty</span>
-                <ArrowRight size={18} strokeWidth={3} />
-              </button>
-
-              <button
-                id="hero-explore-bounties-btn"
-                onClick={onExploreClick}
-                className="brutal-btn brutal-btn-sky"
-                style={{ fontSize: '1rem', padding: '14px 28px' }}
-              >
-                <span>🔥 Browse Bounties</span>
-              </button>
-
-              <button
-                id="hero-ai-swarm-btn"
-                onClick={() => setActiveTab('swarm')}
-                className="brutal-btn brutal-btn-sand"
-                style={{ fontSize: '0.92rem', padding: '14px 20px' }}
-              >
-                <span>🤖 AI &amp; Creator Swarms</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Right Column: Neo-Brutalist Creator Showcase Cards */}
-          <div style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
-              {/* Creator Card 1: Design & 3D (Quantum Plum) */}
-              <div
-                className="brutal-card"
-                style={{
-                  padding: '16px 20px',
-                  background: '#ffffff',
-                  transform: 'rotate(1deg)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span className="brutal-badge" style={{ background: 'var(--arc-quantum-plum)', color: '#fff' }}>
-                    🎨 3D &amp; DESIGN
-                  </span>
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: 'var(--arc-protocol-navy)' }}>
-                    $1,200 USDC
-                  </span>
-                </div>
-                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
-                  Design Official 3D Mascot for Circle Arc
-                </h4>
-                <p style={{ fontSize: '0.78rem', color: '#4b5563', marginTop: '3px' }}>
-                  Deliverable: Blender GLTF + 15 expressive Telegram stickers
-                </p>
-              </div>
-
-              {/* Creator Card 2: Video & Motion (Blockstream Gold) */}
-              <div
-                className="brutal-card"
-                style={{
-                  padding: '16px 20px',
-                  background: 'var(--arc-blockstream-gold)',
-                  transform: 'rotate(-1.5deg)',
-                  marginLeft: '16px'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span className="brutal-badge" style={{ background: 'var(--arc-protocol-navy)', color: '#ffffff' }}>
-                    🎬 VIDEO &amp; MOTION
-                  </span>
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: '#000000' }}>
-                    $1,500 USDC
-                  </span>
-                </div>
-                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
-                  60-Second Viral Explainer: "Arc Native USDC Gas"
-                </h4>
-                <p style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 600, marginTop: '3px' }}>
-                  Deliverable: Kinetic 9:16 vertical edit for TikTok &amp; X
-                </p>
-              </div>
-
-              {/* Creator Card 3: Writing & Research (Sky Sync) */}
-              <div
-                className="brutal-card"
-                style={{
-                  padding: '16px 20px',
-                  background: 'var(--arc-sky-sync)',
-                  transform: 'rotate(0.5deg)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span className="brutal-badge" style={{ background: '#ffffff', color: '#000' }}>
-                    ✍️ VIRAL THREAD
-                  </span>
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: '#000000' }}>
-                    $800 USDC
-                  </span>
-                </div>
-                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
-                  15-Post Mega Thread: Malachite BFT vs Tendermint
-                </h4>
-                <p style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 600, marginTop: '3px' }}>
-                  Deliverable: Viral X thread with custom architecture infographics
-                </p>
-              </div>
-
-            </div>
-          </div>
+    <section style={{ padding: '52px 0 24px 0', textAlign: 'center' }}>
+      <div className="container" style={{ maxWidth: '820px' }}>
+        {/* Subtle Arc Tag */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#e0f2fe', color: 'var(--arc-validator-blue)', padding: '5px 14px', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '20px' }}>
+          <Zap size={14} fill="var(--arc-validator-blue)" />
+          <span>NATIVE CIRCLE ARC (5042) · CANONICAL USDC ESCROW</span>
         </div>
-      </div>
 
-      {/* Brutalist Marquee Banner in Arc.io Token Sand & Protocol Navy */}
-      <div style={{
-        marginTop: '45px',
-        borderTop: '3px solid #000000',
-        borderBottom: '3px solid #000000',
-        background: 'var(--arc-token-sand)',
-        padding: '12px 0',
-        overflow: 'hidden'
-      }}>
-        <div className="brutal-marquee">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '36px', paddingRight: '36px', color: 'var(--arc-protocol-navy)', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            <span>⚡ CIRCLE ARC PLATFORM (ARC.IO)</span>
-            <span>• CANONICAL USDC NATIVE GAS</span>
-            <span>• ZERO GAS FOR CREATORS (EIP-3009)</span>
-            <span>• &lt;400MS MALACHITE FINALITY</span>
-            <span>• 🎨 3D &amp; DESIGN</span>
-            <span>• 🎬 VIDEO &amp; REELS</span>
-            <span>• ✍️ RESEARCH &amp; THREADS</span>
-            <span>• 🐸 MEMES &amp; VIRAL</span>
-            <span>• 💻 DEV &amp; APPS</span>
-            <span>• 🤖 AI SWARMS</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '36px', paddingRight: '36px', color: 'var(--arc-protocol-navy)', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            <span>⚡ CIRCLE ARC PLATFORM (ARC.IO)</span>
-            <span>• CANONICAL USDC NATIVE GAS</span>
-            <span>• ZERO GAS FOR CREATORS (EIP-3009)</span>
-            <span>• &lt;400MS MALACHITE FINALITY</span>
-            <span>• 🎨 3D &amp; DESIGN</span>
-            <span>• 🎬 VIDEO &amp; REELS</span>
-            <span>• ✍️ RESEARCH &amp; THREADS</span>
-            <span>• 🐸 MEMES &amp; VIRAL</span>
-            <span>• 💻 DEV &amp; APPS</span>
-            <span>• 🤖 AI SWARMS</span>
-          </div>
+        {/* Headline (Inspired by Gibwork's Hero) */}
+        <h1 className="font-space" style={{
+          fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
+          fontWeight: 800,
+          color: 'var(--arc-protocol-navy)',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.15,
+          marginBottom: '16px'
+        }}>
+          Hire the internet{' '}
+          <span style={{
+            display: 'inline-block',
+            background: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '9999px',
+            padding: '2px 14px',
+            fontSize: '0.75em',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+            verticalAlign: 'middle',
+            color: '#0f172a'
+          }}>
+            Submit Deliverables
+          </span>
+          <br />
+          or collect the{' '}
+          <span style={{
+            display: 'inline-block',
+            background: '#dcfce7',
+            color: '#16a34a',
+            borderRadius: '10px',
+            padding: '2px 12px',
+            fontSize: '0.9em',
+            verticalAlign: 'middle'
+          }}>
+            $1,500 USDC
+          </span>{' '}
+          bounty
+        </h1>
+
+        <p style={{
+          fontSize: '1.05rem',
+          color: '#64748b',
+          lineHeight: 1.55,
+          maxWidth: '620px',
+          margin: '0 auto 28px auto',
+          fontWeight: 500
+        }}>
+          Get help with your creative tasks or earn by completing others.
+          For <strong>designers, video creators, thread writers, developers, and autonomous AI agents</strong>.
+        </p>
+
+        {/* Clean Call to Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={openCreateModal}
+            className="btn-primary"
+            style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+          >
+            <span>+ Create a Bounty</span>
+            <ArrowRight size={16} />
+          </button>
+
+          {!user && (
+            <button
+              onClick={() => openAuthModal('signup')}
+              className="btn-secondary"
+              style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+            >
+              <span>Sign Up for Free</span>
+            </button>
+          )}
+
+          <button
+            onClick={onExploreClick}
+            className="btn-secondary"
+            style={{ padding: '12px 20px', fontSize: '0.95rem' }}
+          >
+            <span>Explore Opportunities</span>
+          </button>
         </div>
       </div>
     </section>
