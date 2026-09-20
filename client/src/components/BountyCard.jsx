@@ -1,24 +1,36 @@
 import React from 'react';
-import { ArrowUpRight, CheckCircle2, Clock, MessageSquare, Star, Bot, Zap } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Star,
+  Bot,
+  Zap,
+  Palette,
+  FileText,
+  Code,
+  Share2,
+  Globe,
+  Layers
+} from 'lucide-react';
 
 export default function BountyCard({ bounty, onSelect }) {
-  // Category color configuration (Arc-themed)
+  // Category theme mapped cleanly to official Circle Arc colors
   const getCategoryTheme = (cat) => {
     switch (cat) {
       case 'DESIGN':
-        return { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', label: '🎨 Design & 3D' };
-      case 'VIDEO':
-        return { bg: '#fef3c7', text: '#92400e', border: '#fde68a', label: '🎬 Video & Motion' };
-      case 'WRITING':
-        return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd', label: '✍️ Writing & Threads' };
-      case 'MEMES':
-        return { bg: '#fef9c3', text: '#854d0e', border: '#fef08a', label: '🐸 Memes & Social' };
+        return { bg: '#f3e8ff', text: '#6b21a8', border: '#000000', label: 'Design' };
+      case 'CONTENT':
+        return { bg: '#fff7ed', text: '#c2410c', border: '#000000', label: 'Content' };
       case 'DEV':
-        return { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', label: '💻 Code & Apps' };
-      case 'TRANSLATION':
-        return { bg: '#ffe4e6', text: '#9f1239', border: '#fecdd3', label: '🌐 Translation' };
+        return { bg: '#eff6ff', text: '#1d4ed8', border: '#000000', label: 'Development' };
+      case 'SOCIAL':
+        return { bg: '#fefce8', text: '#a16207', border: '#000000', label: 'All Social' };
+      case 'OTHER':
+        return { bg: '#fff1f2', text: '#be123c', border: '#000000', label: 'Other' };
       default:
-        return { bg: '#f1f5f9', text: '#334155', border: '#e2e8f0', label: '⚡ Creative Task' };
+        return { bg: '#f8fafc', text: '#334155', border: '#000000', label: 'Creative Task' };
     }
   };
 
@@ -29,36 +41,37 @@ export default function BountyCard({ bounty, onSelect }) {
       onClick={() => onSelect(bounty)}
       className="bounty-row"
     >
-      {/* Left: Sponsor Avatar */}
+      {/* Left: Sponsor Avatar & Discipline Icon */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
         <div style={{
           width: '46px',
           height: '46px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-          border: '1px solid #e2e8f0',
+          borderRadius: '10px',
+          background: theme.bg,
+          border: '2px solid #000000',
+          boxShadow: '2px 2px 0px #000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '1.3rem',
           flexShrink: 0
         }}>
-          {bounty.category === 'DESIGN' && '🎨'}
-          {bounty.category === 'VIDEO' && '🎬'}
-          {bounty.category === 'WRITING' && '✍️'}
-          {bounty.category === 'MEMES' && '🐸'}
-          {bounty.category === 'DEV' && '💻'}
-          {bounty.category === 'TRANSLATION' && '🌐'}
-          {!['DESIGN','VIDEO','WRITING','MEMES','DEV','TRANSLATION'].includes(bounty.category) && '⚡'}
+          {bounty.category === 'DESIGN' && <Palette size={22} color="#664c88" strokeWidth={2.3} />}
+          {bounty.category === 'CONTENT' && <FileText size={22} color="#c2410c" strokeWidth={2.3} />}
+          {bounty.category === 'DEV' && <Code size={22} color="#1d4ed8" strokeWidth={2.3} />}
+          {bounty.category === 'SOCIAL' && <Share2 size={22} color="#a16207" strokeWidth={2.3} />}
+          {bounty.category === 'OTHER' && <Globe size={22} color="#be123c" strokeWidth={2.3} />}
+          {!['DESIGN', 'CONTENT', 'DEV', 'SOCIAL', 'OTHER'].includes(bounty.category) && (
+            <Layers size={22} color="#1b3158" strokeWidth={2.3} />
+          )}
         </div>
 
         {/* Center: Title & Metadata */}
         <div style={{ minWidth: 0, paddingRight: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
             <h3 style={{
-              fontSize: '0.98rem',
-              fontWeight: 700,
-              color: '#0f172a',
+              fontSize: '1rem',
+              fontWeight: 800,
+              color: '#000000',
               margin: 0,
               lineHeight: 1.35
             }}>
@@ -69,56 +82,70 @@ export default function BountyCard({ bounty, onSelect }) {
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '3px',
+                gap: '4px',
                 fontSize: '0.68rem',
-                fontWeight: 700,
-                color: '#7c3aed',
-                background: '#f3e8ff',
-                padding: '1px 6px',
+                fontWeight: 800,
+                color: '#000000',
+                background: 'var(--arc-token-sand)',
+                border: '1.5px solid #000000',
+                boxShadow: '1.5px 1.5px 0px #000000',
+                padding: '1px 7px',
                 borderRadius: '4px',
                 textTransform: 'uppercase'
               }}>
-                <Star size={10} fill="#7c3aed" />
+                <Star size={10} fill="#000000" strokeWidth={2} />
                 FEATURED
               </span>
             ) : null}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#4b5563' }}>
             {/* Sponsor */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: '#334155' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#000000' }}>
               <span>{bounty.maintainerName || 'Arc Sponsor'}</span>
-              <CheckCircle2 size={13} color="#2563eb" />
+              <CheckCircle2 size={13} color="var(--arc-validator-blue)" />
             </div>
 
             {/* Category Pill */}
             <span style={{
               background: theme.bg,
               color: theme.text,
-              border: `1px solid ${theme.border}`,
-              padding: '1px 7px',
-              borderRadius: '9999px',
-              fontWeight: 600,
-              fontSize: '0.72rem'
+              border: '1.5px solid #000000',
+              boxShadow: '1.5px 1.5px 0px #000000',
+              padding: '2px 8px',
+              borderRadius: '6px',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              textTransform: 'uppercase'
             }}>
               {theme.label}
             </span>
 
             {/* Deadline */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
               <Clock size={12} />
               <span>Due in 10d</span>
             </div>
 
             {/* Submissions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }} className="desktop-only">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }} className="desktop-only">
               <MessageSquare size={12} />
               <span>{bounty.status === 'Open' ? 'Open' : '1 review'}</span>
             </div>
 
             {/* AI Agent badge if eligible */}
             {bounty.isAiEligible && (
-              <span className="desktop-only" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--arc-validator-blue)', fontWeight: 600 }}>
+              <span className="desktop-only" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                color: 'var(--arc-validator-blue)',
+                fontWeight: 700,
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                padding: '1px 6px',
+                borderRadius: '4px'
+              }}>
                 <Bot size={12} />
                 <span>AI Eligible</span>
               </span>
@@ -131,49 +158,71 @@ export default function BountyCard({ bounty, onSelect }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0, paddingLeft: '12px' }}>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-            {/* Circle USDC Icon */}
+            {/* Circle USDC Symbol */}
             <div style={{
-              width: '18px',
-              height: '18px',
+              width: '20px',
+              height: '20px',
               borderRadius: '50%',
-              background: '#2775ca',
+              background: 'var(--arc-usdc-blue)',
               color: '#ffffff',
+              border: '1.5px solid #000000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.65rem',
+              fontSize: '0.7rem',
               fontWeight: 900
             }}>
               $
             </div>
-            <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+            <span className="font-space" style={{ fontSize: '1.3rem', fontWeight: 900, color: '#000000' }}>
               ${bounty.amount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4b5563' }}>USDC</span>
           </div>
 
-          <span style={{
-            fontSize: '0.7rem',
-            fontWeight: 600,
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '4px',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            marginTop: '2px',
             color: bounty.status === 'Settled' ? '#16a34a' : bounty.status === 'InReview' ? '#d97706' : '#64748b'
           }}>
-            {bounty.status === 'Settled' ? '✓ Paid & Settled' : bounty.status === 'InReview' ? '⏳ Under Review' : '0 Gas Payout'}
-          </span>
+            {bounty.status === 'Settled' ? (
+              <>
+                <CheckCircle2 size={12} color="#16a34a" />
+                <span>Paid &amp; Settled</span>
+              </>
+            ) : bounty.status === 'InReview' ? (
+              <>
+                <Clock size={12} color="#d97706" />
+                <span>Under Review</span>
+              </>
+            ) : (
+              <>
+                <Zap size={12} color="var(--arc-validator-blue)" />
+                <span>0 Gas Payout</span>
+              </>
+            )}
+          </div>
         </div>
 
         <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          background: '#ffffff',
+          border: '2px solid #000000',
+          boxShadow: '2px 2px 0px #000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#64748b',
+          color: '#000000',
           transition: 'all 0.15s ease'
         }}>
-          <ArrowUpRight size={16} />
+          <ArrowUpRight size={17} strokeWidth={2.5} />
         </div>
       </div>
     </div>

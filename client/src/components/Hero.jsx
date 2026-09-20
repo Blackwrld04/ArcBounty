@@ -1,94 +1,105 @@
 import React from 'react';
-import { ArrowRight, Zap, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Zap, Sparkles, CheckCircle2, ShieldCheck, Bot, Plus } from 'lucide-react';
 
 export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user }) {
   return (
-    <section style={{ padding: '52px 0 24px 0', textAlign: 'center' }}>
-      <div className="container" style={{ maxWidth: '820px' }}>
-        {/* Subtle Arc Tag */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#e0f2fe', color: 'var(--arc-validator-blue)', padding: '5px 14px', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '20px' }}>
-          <Zap size={14} fill="var(--arc-validator-blue)" />
-          <span>NATIVE CIRCLE ARC (5042) · CANONICAL USDC ESCROW</span>
+    <section style={{ padding: '48px 0 28px 0', textAlign: 'center' }}>
+      <div className="container" style={{ maxWidth: '860px' }}>
+        {/* Arc L1 Sticker Badge (Neo-Brutalist) */}
+        <div style={{ marginBottom: '22px' }}>
+          <span className="sticker-tape">
+            CIRCLE ARC L1 (CHAIN ID 5042) · NATIVE USDC ESCROW · ZERO-GAS CREATOR SETTLEMENT
+          </span>
         </div>
 
-        {/* Headline (Inspired by Gibwork's Hero) */}
+        {/* Unique ArcBounty Headline */}
         <h1 className="font-space" style={{
-          fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
-          fontWeight: 800,
+          fontSize: 'clamp(2.3rem, 4.6vw, 3.8rem)',
+          fontWeight: 900,
           color: 'var(--arc-protocol-navy)',
           letterSpacing: '-0.03em',
-          lineHeight: 1.15,
-          marginBottom: '16px'
+          lineHeight: 1.16,
+          marginBottom: '20px'
         }}>
-          Hire the internet{' '}
-          <span style={{
-            display: 'inline-block',
-            background: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: '9999px',
-            padding: '2px 14px',
-            fontSize: '0.75em',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            verticalAlign: 'middle',
-            color: '#0f172a'
-          }}>
-            Submit Deliverables
+          The Open Bounty Protocol for{' '}
+          <span className="neo-highlight-sky">
+            Web3 Creators
           </span>
           <br />
-          or collect the{' '}
-          <span style={{
-            display: 'inline-block',
-            background: '#dcfce7',
-            color: '#16a34a',
-            borderRadius: '10px',
-            padding: '2px 12px',
-            fontSize: '0.9em',
-            verticalAlign: 'middle'
-          }}>
-            $1,500 USDC
-          </span>{' '}
-          bounty
+          Settled in{' '}
+          <span className="neo-highlight-gold">
+            Canonical USDC
+          </span>
         </h1>
 
+        {/* Unique Value Proposition Write-Up */}
         <p style={{
-          fontSize: '1.05rem',
-          color: '#64748b',
-          lineHeight: 1.55,
-          maxWidth: '620px',
+          fontSize: '1.08rem',
+          color: '#334155',
+          lineHeight: 1.6,
+          maxWidth: '680px',
           margin: '0 auto 28px auto',
-          fontWeight: 500
+          fontWeight: 600
         }}>
-          Get help with your creative tasks or earn by completing others.
-          For <strong>designers, video creators, thread writers, developers, and autonomous AI agents</strong>.
+          The high-velocity bounty protocol built on Circle's Arc Layer-1. Lock verified escrow, deliver high-impact work in <strong>Content, Design, Development, and All Social</strong> campaigns, and receive instant payouts with sub-second Malachite BFT finality.
         </p>
 
-        {/* Clean Call to Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {/* Proof-Point Pills (Clean Neo-Brutalist Badges) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          marginBottom: '32px'
+        }}>
+          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
+            <ShieldCheck size={15} color="var(--arc-validator-blue)" />
+            <span>Verifiable On-Chain Escrow</span>
+          </div>
+
+          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
+            <Zap size={15} color="#d97706" />
+            <span>&lt;400ms Settlement Speed</span>
+          </div>
+
+          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
+            <Bot size={15} color="var(--arc-quantum-plum)" />
+            <span>Autonomous AI Swarm Ready</span>
+          </div>
+        </div>
+
+        {/* Neo-Brutalist Call-to-Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <button
+            id="hero-create-bounty-btn"
             onClick={openCreateModal}
             className="btn-primary"
-            style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+            style={{ padding: '13px 26px', fontSize: '0.96rem' }}
           >
-            <span>+ Create a Bounty</span>
-            <ArrowRight size={16} />
+            <Plus size={18} strokeWidth={2.5} />
+            <span>Post a Bounty</span>
           </button>
 
           {!user && (
             <button
+              id="hero-signup-btn"
               onClick={() => openAuthModal('signup')}
-              className="btn-secondary"
-              style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+              className="btn-accent"
+              style={{ padding: '13px 26px', fontSize: '0.96rem' }}
             >
-              <span>Sign Up for Free</span>
+              <span>Join as Creator</span>
+              <ArrowRight size={17} />
             </button>
           )}
 
           <button
+            id="hero-explore-btn"
             onClick={onExploreClick}
             className="btn-secondary"
-            style={{ padding: '12px 20px', fontSize: '0.95rem' }}
+            style={{ padding: '13px 24px', fontSize: '0.96rem' }}
           >
-            <span>Explore Opportunities</span>
+            <span>Browse Opportunities</span>
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Filter, Sparkles, Bot, Search, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { Filter, Sparkles, Bot, Search, SlidersHorizontal, ArrowRight, Layers } from 'lucide-react';
 import BountyCard from './BountyCard';
 import SidebarWidgets from './SidebarWidgets';
 import { CREATOR_CATEGORIES } from '../data/initialBounties';
@@ -46,39 +46,56 @@ export default function BountyList({
   return (
     <section style={{ padding: '24px 0 60px 0' }}>
       <div className="container">
-        {/* Top Announcement Bar (Superteam Earn style) */}
+        {/* Top Announcement Bar (Neo-Brutalist, No Emojis) */}
         <div style={{
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
+          background: '#ffffff',
+          border: 'var(--border-medium)',
           borderRadius: '10px',
-          padding: '8px 16px',
+          boxShadow: 'var(--shadow-hard-sm)',
+          padding: '10px 18px',
           marginBottom: '28px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: '0.8rem',
-          color: '#334155'
+          flexWrap: 'wrap',
+          gap: '12px',
+          fontSize: '0.82rem',
+          color: '#0f172a'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.72rem' }}>
-              🤖 AI SWARMS
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              background: 'var(--arc-sky-sync)',
+              color: '#000000',
+              padding: '3px 9px',
+              borderRadius: '6px',
+              border: '1.5px solid #000000',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <Bot size={13} strokeWidth={2.5} />
+              <span>AI SWARMS</span>
             </span>
-            <span style={{ fontWeight: 600 }}>
-              IF YOU'RE AN AUTONOMOUS AI AGENT, QUERY OUR /API/AGENT/FEED TO EARN ZERO-GAS USDC.
+            <span style={{ fontWeight: 700 }}>
+              Autonomous AI agents can query our <code style={{ background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>/api/agent/feed</code> for zero-gas programmatic tasks.
             </span>
           </div>
 
           <button
             onClick={() => setAiOnly(!aiOnly)}
             style={{
-              background: aiOnly ? 'var(--arc-validator-blue)' : '#ffffff',
-              color: aiOnly ? '#ffffff' : '#334155',
-              border: '1px solid #cbd5e1',
+              background: aiOnly ? 'var(--arc-protocol-navy)' : '#ffffff',
+              color: aiOnly ? '#ffffff' : '#000000',
+              border: '2px solid #000000',
               borderRadius: '6px',
-              padding: '3px 10px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer'
+              padding: '4px 12px',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '2px 2px 0px #000000',
+              transition: 'all 0.1s ease'
             }}
           >
             {aiOnly ? 'Showing AI Eligible' : 'Filter AI Bounties'}
@@ -99,35 +116,35 @@ export default function BountyList({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '16px',
+              marginBottom: '18px',
               flexWrap: 'wrap',
-              gap: '12px'
+              gap: '14px'
             }}>
               <div>
-                <h2 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                <h2 className="font-space" style={{ fontSize: '1.5rem', fontWeight: 900, color: '#000000', margin: 0, letterSpacing: '-0.02em' }}>
                   Browse Opportunities
                 </h2>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '2px 0 0 0' }}>
-                  Showing {filteredBounties.length} open creator &amp; developer tasks on Circle Arc
+                <p style={{ fontSize: '0.85rem', color: '#475569', margin: '2px 0 0 0', fontWeight: 600 }}>
+                  Showing {filteredBounties.length} open creator tasks across Content, Design, Dev, Social, and Other
                 </p>
               </div>
 
-              {/* Status Filter Subtabs */}
-              <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '3px', borderRadius: '8px' }}>
+              {/* Status Filter Subtabs (Neo-Brutalist) */}
+              <div style={{ display: 'flex', gap: '6px', background: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000' }}>
                 {['All', 'Open', 'InReview', 'Settled'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setActiveStatus(st)}
                     style={{
-                      background: activeStatus === st ? '#ffffff' : 'transparent',
-                      color: activeStatus === st ? '#0f172a' : '#64748b',
+                      background: activeStatus === st ? 'var(--arc-protocol-navy)' : 'transparent',
+                      color: activeStatus === st ? '#ffffff' : '#000000',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '5px',
                       padding: '5px 12px',
                       fontSize: '0.8rem',
-                      fontWeight: 600,
+                      fontWeight: 800,
                       cursor: 'pointer',
-                      boxShadow: activeStatus === st ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                      transition: 'all 0.12s ease'
                     }}
                   >
                     {st === 'InReview' ? 'In Review' : st}
@@ -136,18 +153,19 @@ export default function BountyList({
               </div>
             </div>
 
-            {/* Category Filter Pills (Horizontal scrolling) */}
+            {/* Category Filter Pills (Exact 6 Categories: All Bounties, Content, Design, Development, All Social, Other) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               overflowX: 'auto',
               paddingBottom: '14px',
-              marginBottom: '14px'
+              marginBottom: '16px'
             }}>
               {CREATOR_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
+                  id={`filter-category-${cat.id.toLowerCase()}`}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`category-pill ${activeCategory === cat.id ? 'active' : ''}`}
                 >
@@ -169,11 +187,11 @@ export default function BountyList({
               </div>
             ) : (
               <div className="clean-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-                <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
+                <p style={{ fontSize: '1.1rem', fontWeight: 800, color: '#000000' }}>
                   No matching bounties found
                 </p>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
-                  Try changing your category filters or clearing search terms.
+                <p style={{ fontSize: '0.85rem', color: '#475569', marginTop: '4px', fontWeight: 500 }}>
+                  Try switching categories or clearing your search filter.
                 </p>
                 <button
                   onClick={() => { setActiveCategory('ALL'); setActiveStatus('All'); setSearchQuery(''); setAiOnly(false); }}

@@ -216,8 +216,8 @@ export default function AccountSettings({ user, wallet, setWallet, onBackToFeed,
                   background: '#ffffff'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#000000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
-                      𝕏
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#000000', color: '#fff', border: '1.5px solid #000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.95rem' }}>
+                      X
                     </div>
                     <div>
                       <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>X (Twitter)</p>
@@ -357,8 +357,9 @@ export default function AccountSettings({ user, wallet, setWallet, onBackToFeed,
               </button>
 
               {savedNotifications && (
-                <span style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
-                  ✓ Preferences updated successfully
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', color: '#16a34a', fontWeight: 700 }}>
+                  <Check size={15} strokeWidth={3} />
+                  <span>Preferences updated successfully</span>
                 </span>
               )}
             </div>

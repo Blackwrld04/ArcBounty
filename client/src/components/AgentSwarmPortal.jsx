@@ -56,7 +56,7 @@ export default function AgentSwarmPortal() {
       setIsRunning(false);
       setLogs((prev) => [
         ...prev,
-        { id: 6, time: '382ms', text: '⚡ CONFIRMED: Block #1849780 settled via Malachite BFT! Payout: $1,200 USDC received!' },
+        { id: 6, time: '382ms', text: '[CONFIRMED] Block #1849780 settled via Malachite BFT! Payout: $1,200 USDC received!' },
       ]);
       confetti({
         particleCount: 130,
@@ -156,8 +156,9 @@ export default function AgentSwarmPortal() {
           {/* Terminal Logs */}
           <div className="brutal-card" style={{ padding: '24px', background: '#000000', color: '#ffffff', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '2px solid #333', marginBottom: '14px' }}>
-              <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '0.82rem', color: 'var(--arc-token-sand)', fontWeight: 700 }}>
-                ⚡ arc_agent_stream.log
+              <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '0.82rem', color: 'var(--arc-token-sand)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Terminal size={14} />
+                <span>arc_agent_stream.log</span>
               </span>
               <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000' }}>
                 MALACHITE BFT &lt;400MS

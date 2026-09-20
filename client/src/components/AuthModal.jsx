@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, ArrowRight, Wallet, Shield, Zap, Sparkles } from 'lucide-react';
+import { X, Check, ArrowRight, Wallet, Shield, Zap, Sparkles, Palette } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [mode, setMode] = useState('login'); // 'login' or 'signup'
@@ -53,10 +53,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           maxWidth: '820px',
           display: 'flex',
           overflow: 'hidden',
-          borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+          borderRadius: '14px',
+          border: 'var(--border-thick)',
+          boxShadow: 'var(--shadow-hard)',
           position: 'relative',
-          minHeight: '480px'
+          minHeight: '480px',
+          background: '#ffffff'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -67,9 +69,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             position: 'absolute',
             top: '16px',
             right: '16px',
-            background: '#f1f5f9',
-            border: 'none',
-            borderRadius: '50%',
+            background: '#ffffff',
+            border: '2px solid #000000',
+            boxShadow: '2px 2px 0px #000000',
+            borderRadius: '6px',
             width: '32px',
             height: '32px',
             display: 'flex',
@@ -79,56 +82,67 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             zIndex: 10
           }}
         >
-          <X size={18} color="#64748b" />
+          <X size={18} color="#000000" />
         </button>
 
-        {/* Left Panel: Value Proposition & 3D Artwork (Gibwork style) */}
-        <div
-          className="desktop-only"
-          style={{
-            width: '42%',
-            background: 'linear-gradient(145deg, #1b3158 0%, #2f578c 50%, #412c5c 100%)',
-            color: '#ffffff',
-            padding: '36px 28px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            position: 'relative'
-          }}
-        >
+        {/* Left Brand Panel (Circle Arc Navy Theme) */}
+        <div style={{
+          width: '40%',
+          background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
+          color: '#ffffff',
+          padding: '36px 30px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          borderRight: '2.5px solid #000000'
+        }} className="desktop-only">
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, marginBottom: '18px' }}>
-              <Zap size={13} fill="#ffcc6f" color="#ffcc6f" />
-              <span>Circle Arc Ecosystem</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: '#ffffff',
+                border: '1.5px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--arc-protocol-navy)'
+              }}>
+                <Zap size={18} fill="#e9a13f" color="#e9a13f" />
+              </div>
+              <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                Arc<span style={{ color: 'var(--arc-token-sand)' }}>Bounty</span>
+              </span>
             </div>
 
-            <h2 className="font-space" style={{ fontSize: '1.75rem', fontWeight: 800, lineHeight: 1.2, marginBottom: '14px' }}>
-              Find Talent, Find Work
-            </h2>
+            <h3 className="font-space" style={{ fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '14px' }}>
+              The Capital Engine for Web3 Creators
+            </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.88rem', opacity: 0.9 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <Check size={16} color="#acc6e9" style={{ marginTop: '2px', flexShrink: 0 }} strokeWidth={2.5} />
-                <span>Global access to top Web3 creators without traditional barriers.</span>
+            <p style={{ fontSize: '0.85rem', opacity: 0.88, lineHeight: 1.5, marginBottom: '24px' }}>
+              Sign in to earn canonical Circle USDC with zero gas fees or fund creative bounties in Content, Design, Dev, and Social.
+            </p>
+
+            {/* Feature Bullets */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Check size={16} color="var(--arc-token-sand)" strokeWidth={3} />
+                <span>Zero creator gas via EIP-3009 transfer authorizations.</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <Check size={16} color="#acc6e9" style={{ marginTop: '2px', flexShrink: 0 }} strokeWidth={2.5} />
-                <span>Escrowed in pure Circle USDC (0x3600...0000) with zero gas for creators.</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <Check size={16} color="#acc6e9" style={{ marginTop: '2px', flexShrink: 0 }} strokeWidth={2.5} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Check size={16} color="var(--arc-token-sand)" strokeWidth={3} />
                 <span>Deterministic &lt;400ms Malachite BFT instant settlement.</span>
               </div>
             </div>
           </div>
 
-          {/* 3D Creator Badge */}
+          {/* Verified Creator Guild Badge */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '12px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '2px solid rgba(255, 255, 255, 0.25)',
+            borderRadius: '10px',
             padding: '14px',
-            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             gap: '12px'
@@ -136,18 +150,18 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             <div style={{
               width: '40px',
               height: '40px',
-              borderRadius: '10px',
-              background: '#e9a13f',
+              borderRadius: '8px',
+              background: 'var(--arc-blockstream-gold)',
+              border: '1.5px solid #000000',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem'
+              justifyContent: 'center'
             }}>
-              🎨
+              <Palette size={20} color="#000000" strokeWidth={2.4} />
             </div>
             <div>
-              <p style={{ fontSize: '0.82rem', fontWeight: 700, margin: 0 }}>Verified Creator Guild</p>
-              <p style={{ fontSize: '0.72rem', opacity: 0.75, margin: 0 }}>Design · Video · Writing · Dev</p>
+              <p style={{ fontSize: '0.82rem', fontWeight: 800, margin: 0 }}>Verified Creator Guild</p>
+              <p style={{ fontSize: '0.72rem', opacity: 0.8, margin: 0 }}>Design · Content · Dev · Social</p>
             </div>
           </div>
         </div>
@@ -161,11 +175,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           justifyContent: 'center'
         }}>
           <div style={{ marginBottom: '22px' }}>
-            <h3 className="font-space" style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0f172a' }}>
-              {mode === 'login' ? 'Welcome back' : 'Create an account'}
+            <h3 className="font-space" style={{ fontSize: '1.65rem', fontWeight: 900, color: '#000000' }}>
+              {mode === 'login' ? 'Welcome Back' : 'Create an Account'}
             </h3>
-            <p style={{ fontSize: '0.88rem', color: '#64748b', marginTop: '4px' }}>
-              {mode === 'login' ? 'Login to your ArcBounty creator account' : 'Join thousands of Web3 creators and sponsors'}
+            <p style={{ fontSize: '0.88rem', color: '#4b5563', marginTop: '4px', fontWeight: 500 }}>
+              {mode === 'login' ? 'Login to your ArcBounty creator profile' : 'Join thousands of Web3 creators and sponsors on Circle Arc'}
             </p>
           </div>
 
@@ -181,11 +195,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.92rem',
-                  outline: 'none',
-                  transition: 'border-color 0.15s ease'
+                  borderRadius: '8px',
+                  border: '2px solid #000000',
+                  boxShadow: '2px 2px 0px #000000',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  outline: 'none'
                 }}
               />
             </div>
@@ -193,36 +208,22 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                background: 'var(--arc-protocol-navy)',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '0.92rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'background 0.15s ease'
-              }}
+              className="btn-primary"
+              style={{ width: '100%', padding: '12px', fontSize: '0.92rem' }}
             >
-              <span>{isLoading ? 'Authenticating...' : 'Continue with Email'}</span>
+              <span>{isLoading ? 'Processing...' : mode === 'login' ? 'Continue with Email' : 'Sign Up with Email'}</span>
               <ArrowRight size={16} />
             </button>
           </form>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '14px 0', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700 }}>
             <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-            <span style={{ fontSize: '0.78rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>or</span>
+            <span>OR CONNECT WITH</span>
             <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
           </div>
 
-          {/* Social & Web3 Buttons */}
+          {/* Social / Wallet Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button
               type="button"
@@ -230,17 +231,19 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
+                border: '2px solid #000000',
+                boxShadow: '2px 2px 0px #000000',
                 fontSize: '0.88rem',
-                fontWeight: 600,
-                color: '#1e293b',
+                fontWeight: 700,
+                color: '#000000',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -258,17 +261,19 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
+                border: '2px solid #000000',
+                boxShadow: '2px 2px 0px #000000',
                 fontSize: '0.88rem',
-                fontWeight: 600,
-                color: '#1e293b',
+                fontWeight: 700,
+                color: '#000000',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
               }}
             >
               <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
@@ -283,17 +288,19 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                borderRadius: '10px',
-                background: '#f8fafc',
-                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                background: 'var(--arc-static-ether)',
+                border: '2px solid #000000',
+                boxShadow: '2px 2px 0px #000000',
                 fontSize: '0.88rem',
-                fontWeight: 600,
-                color: 'var(--arc-validator-blue)',
+                fontWeight: 700,
+                color: 'var(--arc-protocol-navy)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
               }}
             >
               <Wallet size={16} />
@@ -302,7 +309,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </div>
 
           {/* Toggle between mode */}
-          <p style={{ textAlign: 'center', fontSize: '0.82rem', color: '#64748b', marginTop: '18px' }}>
+          <p style={{ textAlign: 'center', fontSize: '0.82rem', color: '#4b5563', marginTop: '18px', fontWeight: 600 }}>
             {mode === 'login' ? "Don't have an account yet?" : 'Already have an account?'}
             <button
               type="button"
@@ -311,16 +318,17 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 background: 'none',
                 border: 'none',
                 color: 'var(--arc-validator-blue)',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
-                marginLeft: '4px'
+                marginLeft: '6px',
+                textDecoration: 'underline'
               }}
             >
               {mode === 'login' ? 'Sign up' : 'Log in'}
             </button>
           </p>
 
-          <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#94a3b8', marginTop: '10px' }}>
+          <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '10px' }}>
             By continuing, you confirm that you accept our Terms of Service &amp; Privacy Policy.
           </p>
         </div>

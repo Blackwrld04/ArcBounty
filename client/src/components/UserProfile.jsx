@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Edit3, MapPin, Globe, ExternalLink, Plus, CheckCircle, Zap, Shield, ArrowLeft } from 'lucide-react';
+import { Share2, Edit3, MapPin, Globe, ExternalLink, Plus, CheckCircle, Zap, Shield, ArrowLeft, Palette, Video } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 
 export default function UserProfile({ user, wallet, bounties, onBackToFeed, onSelectBounty }) {
@@ -241,11 +241,11 @@ export default function UserProfile({ user, wallet, bounties, onBackToFeed, onSe
             <div className="clean-card" style={{ padding: '18px 22px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                    🎨
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#f3e8ff', border: '1.5px solid #000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Palette size={20} color="#664c88" strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                    <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                       Design Official 3D Mascot &amp; Sticker Pack for Circle Arc
                     </h4>
                     <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0 0' }}>
@@ -255,7 +255,7 @@ export default function UserProfile({ user, wallet, bounties, onBackToFeed, onSe
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ background: '#dcfce7', color: '#16a34a', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <span style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #000000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>
                     WON &amp; DISBURSED
                   </span>
                   <p style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
@@ -268,8 +268,8 @@ export default function UserProfile({ user, wallet, bounties, onBackToFeed, onSe
             <div className="clean-card" style={{ padding: '18px 22px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                    🎬
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#fef3c7', border: '1.5px solid #000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Video size={20} color="#d97706" strokeWidth={2.4} />
                   </div>
                   <div>
                     <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
