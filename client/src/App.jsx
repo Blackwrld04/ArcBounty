@@ -11,7 +11,7 @@ import WalletModal from './components/WalletModal';
 import MobileDock from './components/MobileDock';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
-import { Shield, ExternalLink, Cpu, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Zap, ExternalLink, CheckCircle2, X } from 'lucide-react';
 
 const API_BASE = 'http://localhost:4050/api';
 
@@ -25,7 +25,7 @@ export default function App() {
   });
 
   const [bounties, setBounties] = useState(() => {
-    const saved = localStorage.getItem('arcbounty_items');
+    const saved = localStorage.getItem('arcbounty_items_v2');
     return saved ? JSON.parse(saved) : INITIAL_BOUNTIES;
   });
 
@@ -46,98 +46,40 @@ export default function App() {
     setToast({ message, type, link });
     setTimeout(() => {
       setToast(null);
-    }, 4500);
+    }, 5000);
   };
-
-  // Fetch live bounties & stats from backend with graceful local fallback
-  useEffect(() => {
-    const fetchBackendData = async () => {
-      try {
-        const [bountyRes, statsRes] = await Promise.all([
-          fetch(`${API_BASE}/bounties`),
-          fetch(`${API_BASE}/stats`)
-        ]);
-
-        if (bountyRes.ok) {
-          const data = await bountyRes.json();
-          if (data.bounties && data.bounties.length > 0) {
-            setBounties(data.bounties);
-          }
-        }
-
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          if (statsData.data) {
-            setStats(statsData.data);
-          }
-        }
-      } catch (err) {
-        console.log('[ArcBounty] Using offline resilient state');
-      }
-    };
-
-    fetchBackendData();
-  }, []);
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('arcbounty_items', JSON.stringify(bounties));
+    localStorage.setItem('arcbounty_items_v2', JSON.stringify(bounties));
   }, [bounties]);
 
   // Handle posting a new bounty
   const handleCreateBounty = async (newBountyData) => {
-    let created = null;
+    const newBounty = {
+      id: `bounty-arc-${Date.now().toString().slice(-4)}`,
+      bountyId: `0x${Date.now().toString(16).padStart(64, '0')}`,
+      ...newBountyData,
+      status: 'Open',
+      maintainerName: 'You (Sponsor)',
+      solver: null,
+      solverType: null,
+      prUrl: null,
+      createdAt: Date.now(),
+      deadline: Date.now() + newBountyData.deadlineDays * 86400000,
+    };
 
-    try {
-      const res = await fetch(`${API_BASE}/bounties`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBountyData),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        created = json.bounty;
-      }
-    } catch (err) {
-      console.log('Backend sync skipped, saving to client state');
-    }
-
-    if (!created) {
-      created = {
-        id: `bounty-arc-${Date.now().toString().slice(-4)}`,
-        bountyId: `0x${Date.now().toString(16).padStart(64, '0')}`,
-        ...newBountyData,
-        status: 'Open',
-        maintainerName: 'You (Maintainer)',
-        solver: null,
-        solverType: null,
-        prUrl: null,
-        createdAt: Date.now(),
-        deadline: Date.now() + newBountyData.deadlineDays * 86400000,
-      };
-    }
-
-    setBounties([created, ...bounties]);
+    setBounties([newBounty, ...bounties]);
     setWallet((prev) => ({
       ...prev,
       balance: Math.max(0, prev.balance - newBountyData.amount)
     }));
     setIsCreateModalOpen(false);
-    showToast(`Bounty created! $${newBountyData.amount} USDC locked into Arc Escrow.`, 'success');
+    showToast(`BOUNTY POSTED! $${newBountyData.amount} USDC LOCKED INTO ARC ESCROW.`, 'success');
   };
 
-  // Handle solver PR submission
-  const handleSubmitSolution = async (bountyId, prUrl, solverAddress, solverType) => {
-    try {
-      await fetch(`${API_BASE}/bounties/${bountyId}/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prUrl, solverAddress, solverType }),
-      });
-    } catch (err) {
-      console.log('Backend claim skipped, updating local state');
-    }
-
+  // Handle solver deliverable submission
+  const handleSubmitSolution = async (bountyId, submissionUrl, solverAddress, solverType) => {
     setBounties((prev) =>
       prev.map((b) => {
         if (b.id === bountyId) {
@@ -145,8 +87,8 @@ export default function App() {
             ...b,
             status: 'InReview',
             solver: solverAddress || '0x71C568ba74d3B107292995bB791e317614399A45',
-            solverType: solverType || 'Human Developer',
-            prUrl
+            solverType: solverType || 'Human Creator',
+            prUrl: submissionUrl
           };
           setSelectedBounty(updated);
           return updated;
@@ -154,30 +96,12 @@ export default function App() {
         return b;
       })
     );
-    showToast('Pull Request proof submitted! Maintainer review initiated.', 'success');
+    showToast('WORK DELIVERABLE SUBMITTED! SPONSOR REVIEW INITIATED.', 'success');
   };
 
-  // Handle maintainer approving release & executing EIP-3009 settlement
+  // Handle maintainer approving release & executing settlement
   const handleReleaseBounty = async (bountyId) => {
-    let mockTx = `0xarc${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}88ad`;
-
-    try {
-      const res = await fetch(`${API_BASE}/bounties/${bountyId}/release`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eip3009Signature: '0x3045022100e478c9497e2f1704c7c8c6a0868f00dbf20c90c765042a326aeee966fd9012a50220268a7f9247c1dfa65320f40d97b0e6b201cb6613476687cb2f0681b472e241e61b'
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.settlement?.txHash) {
-          mockTx = json.settlement.txHash;
-        }
-      }
-    } catch (err) {
-      console.log('Backend release skipped, executing client simulation');
-    }
+    const mockTx = `0xarc${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}88ad`;
 
     setBounties((prev) =>
       prev.map((b) => {
@@ -195,7 +119,7 @@ export default function App() {
       })
     );
 
-    showToast(`Settlement confirmed on Arc Mainnet in 382ms! USDC released.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
+    showToast(`SETTLEMENT CONFIRMED ON ARC MAINNET IN 382MS! USDC PAID.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
   };
 
   const scrollToBounties = () => {
@@ -207,8 +131,8 @@ export default function App() {
   };
 
   return (
-    <div className="mobile-safe-bottom" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Fixed Top Navigation Bar */}
+    <div className="mobile-safe-bottom" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-canvas)' }}>
+      {/* Top Navigation Bar */}
       <Navbar
         network={network}
         setNetwork={setNetwork}
@@ -250,7 +174,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Modals & Slide-up Drawers */}
+      {/* Modals & Drawers */}
       {selectedBounty && (
         <BountyDetailModal
           bounty={selectedBounty}
@@ -287,49 +211,50 @@ export default function App() {
         wallet={wallet}
       />
 
-      {/* Toast Notification */}
+      {/* Neo-Brutalist Notification Toast */}
       {toast && (
         <div className="notification-toast">
           <div style={{
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            background: 'rgba(193, 255, 114, 0.2)',
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            background: 'var(--c-lime)',
+            border: '2px solid #000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#c1ff72',
+            color: '#000000',
             flexShrink: 0
           }}>
-            <CheckCircle2 size={16} />
+            <CheckCircle2 size={18} strokeWidth={3} />
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 500, color: '#f3f4f6' }}>{toast.message}</p>
+            <p style={{ fontWeight: 800, color: '#000000', fontSize: '0.88rem' }}>{toast.message}</p>
             {toast.link && (
               <a
                 href={toast.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#00f2fe', fontSize: '0.75rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}
+                style={{ color: '#000000', fontWeight: 800, textDecoration: 'underline', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}
               >
-                <span>View Transaction on ArcScan</span>
-                <ExternalLink size={12} />
+                <span>VIEW SETTLEMENT ON ARCSCAN</span>
+                <ExternalLink size={12} strokeWidth={3} />
               </a>
             )}
           </div>
           <button
             onClick={() => setToast(null)}
-            style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', color: '#000000', cursor: 'pointer' }}
           >
-            <X size={16} />
+            <X size={18} strokeWidth={3} />
           </button>
         </div>
       )}
 
-      {/* Desktop / Web Footer */}
+      {/* Neo-Brutalist Footer */}
       <footer style={{
-        background: '#060910',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        background: '#ffffff',
+        borderTop: '3px solid #000000',
         padding: '50px 0 30px 0',
         marginTop: '60px'
       }}>
@@ -342,45 +267,49 @@ export default function App() {
             gap: '30px',
             marginBottom: '40px'
           }}>
-            <div style={{ maxWidth: '380px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ maxWidth: '420px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                 <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#c1ff72',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '6px',
+                  background: 'var(--c-lime)',
+                  border: '3px solid #000',
+                  boxShadow: '2px 2px 0px #000',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Shield size={18} color="#090d14" />
+                  <Zap size={22} color="#000000" strokeWidth={3} />
                 </div>
-                <span className="font-space" style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff' }}>
-                  Arc<span style={{ color: '#c1ff72' }}>Bounty</span>
+                <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000' }}>
+                  ARC<span style={{ background: 'var(--c-yellow)', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
                 </span>
               </div>
-              <p style={{ color: '#9ca3af', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                Decentralized developer and autonomous AI agent bounty protocol natively built on Circle's Arc L1 (Chain ID 5042). Dollar-predictable gas, sub-second Malachite BFT settlement, and EIP-3009 gasless releases.
+              <p style={{ color: '#1f2937', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.6 }}>
+                The decentralized creator &amp; autonomous agent bounty engine natively built on Circle Arc L1 (Chain ID 5042). For designers, video creators, writers, meme strategists, and developers.
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap', fontSize: '0.9rem', fontWeight: 700 }}>
               <div>
-                <p style={{ color: '#ffffff', fontWeight: 600, marginBottom: '12px' }}>Protocol</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#9ca3af' }}>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>Bounty Explorer</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('swarm')}>Agent Swarm API</span>
-                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('leaderboard')}>Leaderboard</span>
+                <p style={{ color: '#000000', fontWeight: 900, marginBottom: '12px', textTransform: 'uppercase' }}>CREATOR SECTORS</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#4b5563' }}>
+                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🎨 Design &amp; 3D Art</span>
+                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🎬 Video &amp; Reels</span>
+                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>✍️ Writing &amp; Research</span>
+                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>🐸 Memes &amp; Social</span>
+                  <span style={{ cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>💻 Code &amp; Apps</span>
                 </div>
               </div>
 
               <div>
-                <p style={{ color: '#ffffff', fontWeight: 600, marginBottom: '12px' }}>Circle Arc L1</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#9ca3af' }}>
-                  <a href="https://explorer.arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#9ca3af', textDecoration: 'none' }}>
+                <p style={{ color: '#000000', fontWeight: 900, marginBottom: '12px', textTransform: 'uppercase' }}>CIRCLE ARC L1</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: '#4b5563' }}>
+                  <a href="https://explorer.arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#000000', textDecoration: 'underline' }}>
                     ArcScan Explorer (5042)
                   </a>
-                  <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#9ca3af', textDecoration: 'none' }}>
+                  <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: '#000000', textDecoration: 'underline' }}>
                     Arc.io Documentation
                   </a>
                   <span>Canonical USDC: 0x3600...</span>
@@ -391,17 +320,18 @@ export default function App() {
 
           <div style={{
             paddingTop: '24px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+            borderTop: '2px solid #000000',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: '12px',
-            fontSize: '0.78rem',
-            color: '#6b7280'
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            color: '#4b5563'
           }}>
-            <p>© 2026 ArcBounty Protocol. All rights reserved. Mainnet: 5042 · Gas: Native USDC</p>
-            <p>Sub-second finality via Circle Arc Malachite BFT consensus engine</p>
+            <p>© 2026 ArcBounty Protocol. All rights reserved. Circle Arc Mainnet (5042) · Malachite BFT Consensus.</p>
+            <p>Native USDC Escrow · EIP-3009 Zero-Gas Settlements</p>
           </div>
         </div>
       </footer>

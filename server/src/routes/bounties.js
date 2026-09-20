@@ -3,108 +3,127 @@ import { relayGaslessSettlement } from '../facilitator.js';
 
 export const bountyRouter = express.Router();
 
-// In-memory / initial bounty database pre-loaded with curated developer bounties
 let bounties = [
   {
     id: 'bounty-arc-001',
     bountyId: '0x8a9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01',
-    title: 'Implement Malachite BFT Light Client Verification in Rust',
-    repo: 'circlefin/arc-consensus',
-    issueUrl: 'https://github.com/circlefin/arc-consensus/issues/104',
-    amount: 1500,
-    tags: ['Rust', 'Consensus', 'BFT', 'Security'],
+    category: 'DESIGN',
+    categoryName: 'Design & 3D',
+    categoryColor: '#ff578a',
+    title: 'Design Official 3D Mascot & Telegram Sticker Pack for Circle Arc',
+    repo: 'circlefin/arc-brand-kit',
+    submissionType: 'Figma / 3D Render / PNG Pack',
+    issueUrl: 'https://github.com/circlefin/arc/issues/45',
+    amount: 1200,
+    tags: ['3D Art', 'Figma', 'Mascot', 'Branding', 'Stickers'],
     status: 'Open',
     maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
-    maintainerName: 'Circle Engineering',
-    solver: null,
-    solverType: null,
-    prUrl: null,
-    createdAt: Date.now() - 86400000 * 2,
-    deadline: Date.now() + 86400000 * 12,
-    isAiEligible: true,
-    description: 'Implement a zero-dependency Rust crate that verifies cryptographic commit certificates emitted by Arc validators under the Malachite BFT consensus engine. Must include deterministic fuzz tests.'
-  },
-  {
-    id: 'bounty-arc-002',
-    bountyId: '0x7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b02',
-    title: 'Optimize EIP-3009 Gasless USDC Relayer Batching Engine',
-    repo: 'arc-ecosystem/relayer-core',
-    issueUrl: 'https://github.com/arc-ecosystem/relayer-core/issues/42',
-    amount: 800,
-    tags: ['TypeScript', 'Viem', 'Gasless', 'EIP-3009'],
-    status: 'Open',
-    maintainer: '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
-    maintainerName: 'Arc Core Infrastructure',
+    maintainerName: 'Circle Creative Guild',
     solver: null,
     solverType: null,
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
-    deadline: Date.now() + 86400000 * 7,
+    deadline: Date.now() + 86400000 * 10,
     isAiEligible: true,
-    description: 'Build a high-throughput transaction batcher for transferWithAuthorization payloads that aggregates up to 50 signatures into a single multicall on Arc, reducing sequencer overhead.'
+    description: 'We need an iconic, neo-brutalist 3D mascot representing Arc L1 (speed, dollar-native gas, institutional trust). Deliverable: 3D Blender/GLTF asset + 15 expressive stickers for Telegram and Discord.'
+  },
+  {
+    id: 'bounty-arc-002',
+    bountyId: '0x7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b02',
+    category: 'VIDEO',
+    categoryName: 'Video & Motion',
+    categoryColor: '#ffe600',
+    title: 'Produce a 60-Second Viral Motion Explainer: "Why Arc Changes Everything"',
+    repo: 'arc-community/viral-content',
+    submissionType: 'Loom / YouTube / MP4 Link',
+    issueUrl: 'https://github.com/arc-community/media/issues/12',
+    amount: 1500,
+    tags: ['Motion Graphics', 'TikTok / Reels', '3D After Effects', 'Video'],
+    status: 'Open',
+    maintainer: '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
+    maintainerName: 'Arc Marketing DAO',
+    solver: null,
+    solverType: null,
+    prUrl: null,
+    createdAt: Date.now() - 86400000 * 2,
+    deadline: Date.now() + 86400000 * 8,
+    isAiEligible: true,
+    description: 'High-octane, fast-paced video showing the pain of fluctuating gas fees on other chains vs instant sub-second USDC transactions on Circle Arc. High-quality kinetic typography and sound design.'
   },
   {
     id: 'bounty-arc-003',
     bountyId: '0x6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c03',
-    title: 'Autonomous CISA KEV Threat Feed Ingestion Agent for ArcX',
-    repo: 'blackwrld04/x402-threat-agent',
-    issueUrl: 'https://github.com/blackwrld04/x402/issues/12',
-    amount: 500,
-    tags: ['AI Agent', 'Python', 'x402', 'CISA'],
+    category: 'WRITING',
+    categoryName: 'Writing & Research',
+    categoryColor: '#bb86fc',
+    title: 'Write a 15-Post Viral Deep-Dive Thread on Arc\'s Malachite BFT vs Tendermint',
+    repo: 'arc-research/publications',
+    submissionType: 'Twitter/X Thread Link / Notion',
+    issueUrl: 'https://github.com/arc-research/papers/issues/8',
+    amount: 800,
+    tags: ['Research', 'X Thread', 'Infographics', 'Architecture'],
     status: 'InReview',
     maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
-    maintainerName: 'ArcX Labs',
+    maintainerName: 'Arc Research Foundation',
     solver: '0x9923Bc8E4786A6B71D0052F5eCE984bC9d123456',
-    solverType: 'AI Agent (DeepSeek-Coder-v2)',
-    prUrl: 'https://github.com/blackwrld04/x402/pull/88',
+    solverType: 'Web3 Researcher (Threador)',
+    prUrl: 'https://x.com/crypto_analyst/status/18389102938102',
     createdAt: Date.now() - 86400000 * 3,
-    deadline: Date.now() + 86400000 * 5,
+    deadline: Date.now() + 86400000 * 4,
     isAiEligible: true,
-    description: 'Create an automated cron worker that monitors the CISA Known Exploited Vulnerabilities catalog, formats CVE payloads into JSON-LD, and broadcasts hash updates to Arc smart contracts.'
+    description: 'Break down Circle Arc\'s consensus algorithm for both retail and developer audiences. Must include visual diagrams explaining 380ms deterministic finality and institutional validator sets (BlackRock, ICE).'
   },
   {
     id: 'bounty-arc-004',
     bountyId: '0x5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d04',
-    title: 'Cross-Chain CCTP Stablecoin Teleport SDK for React Native',
-    repo: 'circlefin/cctp-mobile-kit',
-    issueUrl: 'https://github.com/circlefin/cctp-mobile-kit/issues/89',
-    amount: 2500,
-    tags: ['Mobile', 'React Native', 'CCTP', 'iOS/Android'],
+    category: 'MEMES',
+    categoryName: 'Memes & Social',
+    categoryColor: '#00f0ff',
+    title: 'Arc Meme Contest: Native USDC Gas vs Volatile Gas Token Spikes',
+    repo: 'arc-memes/vault',
+    submissionType: 'X Post Link / Imgur Album',
+    issueUrl: 'https://github.com/arc-memes/contests/issues/3',
+    amount: 450,
+    tags: ['Memes', 'Social', 'Humor', 'Viral', 'X/Twitter'],
     status: 'Settled',
     maintainer: '0x1234567890abcdef1234567890abcdef12345678',
-    maintainerName: 'Mobile Protocol Guild',
+    maintainerName: 'Arc Meme Department',
     solver: '0x71C568ba74d3B107292995bB791e317614399A45',
-    solverType: 'Human Developer',
-    prUrl: 'https://github.com/circlefin/cctp-mobile-kit/pull/112',
-    createdAt: Date.now() - 86400000 * 6,
+    solverType: 'Web3 Meme Lord',
+    prUrl: 'https://x.com/memegod_sol/status/1838192830192',
+    createdAt: Date.now() - 86400000 * 5,
     deadline: Date.now() - 86400000 * 1,
-    isAiEligible: false,
-    description: 'Delivered production-ready TypeScript SDK for 1-click cross-chain USDC transfer from Arbitrum/Solana to Arc with automatic gas abstraction.'
+    isAiEligible: true,
+    description: 'Create 5 top-tier, viral-ready memes contrasting user pain on high gas fee networks with the effortless $0.0004 USDC gas experience on Arc. Winner receives instant USDC.'
   },
   {
     id: 'bounty-arc-005',
     bountyId: '0x4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e05',
-    title: 'Solidity Sub-Second Dutch Auction Liquidity Hook on Arc',
-    repo: 'arc-defi/amm-hooks',
-    issueUrl: 'https://github.com/arc-defi/amm-hooks/issues/19',
-    amount: 1200,
-    tags: ['Solidity', 'DeFi', 'Foundry', 'Hooks'],
+    category: 'DEV',
+    categoryName: 'Code & Apps',
+    categoryColor: '#00e676',
+    title: 'Build a 1-Click CCTP Teleport Widget for Web3 Storefronts',
+    repo: 'circlefin/cctp-teleport-widget',
+    submissionType: 'GitHub PR & Live Demo',
+    issueUrl: 'https://github.com/circlefin/cctp-teleport-widget/issues/19',
+    amount: 2000,
+    tags: ['TypeScript', 'React', 'CCTP', 'EIP-3009', 'SDK'],
     status: 'Open',
     maintainer: '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
-    maintainerName: 'Arc Liquidity Labs',
+    maintainerName: 'Circle Developer Platform',
     solver: null,
     solverType: null,
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
     deadline: Date.now() + 86400000 * 14,
     isAiEligible: true,
-    description: 'Implement a Uniswap v4 style hook that executes Dutch auction rebalancing across block intervals with zero price impact for large USDC/EURC swaps.'
+    description: 'Create an embeddable React & Vanilla JS widget that lets users teleport USDC from Solana or Base directly into Arc Mainnet in 1 click, auto-funding their checkout.'
   }
 ];
 
 // List bounties with filtering
 bountyRouter.get('/', (req, res) => {
-  const { status, tag, search, aiOnly } = req.query;
+  const { status, category, tag, search, aiOnly } = req.query;
 
   let filtered = [...bounties];
 
@@ -112,8 +131,12 @@ bountyRouter.get('/', (req, res) => {
     filtered = filtered.filter((b) => b.status.toLowerCase() === status.toLowerCase());
   }
 
+  if (category && category !== 'ALL') {
+    filtered = filtered.filter((b) => b.category === category);
+  }
+
   if (tag && tag !== 'All') {
-    filtered = filtered.filter((b) => b.tags.some((t) => t.toLowerCase() === tag.toLowerCase()));
+    filtered = filtered.filter((b) => b.tags && b.tags.some((t) => t.toLowerCase() === tag.toLowerCase()));
   }
 
   if (aiOnly === 'true') {
@@ -125,7 +148,7 @@ bountyRouter.get('/', (req, res) => {
     filtered = filtered.filter(
       (b) =>
         b.title.toLowerCase().includes(q) ||
-        b.repo.toLowerCase().includes(q) ||
+        (b.repo && b.repo.toLowerCase().includes(q)) ||
         b.description.toLowerCase().includes(q)
     );
   }
@@ -137,7 +160,6 @@ bountyRouter.get('/', (req, res) => {
   });
 });
 
-// Get single bounty details
 bountyRouter.get('/:id', (req, res) => {
   const bounty = bounties.find((b) => b.id === req.params.id || b.bountyId === req.params.id);
   if (!bounty) {
@@ -146,11 +168,10 @@ bountyRouter.get('/:id', (req, res) => {
   res.json({ success: true, bounty });
 });
 
-// Create & fund a new bounty
 bountyRouter.post('/', (req, res) => {
-  const { title, repo, issueUrl, amount, tags, deadlineDays, isAiEligible, description, maintainer } = req.body;
+  const { title, category, categoryName, categoryColor, submissionType, amount, tags, deadlineDays, isAiEligible, description, maintainer } = req.body;
 
-  if (!title || !amount || !issueUrl) {
+  if (!title || !amount) {
     return res.status(400).json({ success: false, error: 'Missing required bounty parameters' });
   }
 
@@ -161,20 +182,22 @@ bountyRouter.post('/', (req, res) => {
     id,
     bountyId,
     title,
-    repo: repo || 'github/open-source',
-    issueUrl,
+    category: category || 'DESIGN',
+    categoryName: categoryName || 'Design',
+    categoryColor: categoryColor || '#ff578a',
+    submissionType: submissionType || 'Deliverable URL',
     amount: Number(amount),
-    tags: Array.isArray(tags) ? tags : ['General', 'Arc'],
+    tags: Array.isArray(tags) ? tags : ['Creator', 'Arc'],
     status: 'Open',
     maintainer: maintainer || '0x461cd48D95993242bB04774cc68042795586BbAd',
-    maintainerName: 'Project Maintainer',
+    maintainerName: 'Sponsor Guild',
     solver: null,
     solverType: null,
     prUrl: null,
     createdAt: Date.now(),
     deadline: Date.now() + (Number(deadlineDays) || 14) * 86400000,
     isAiEligible: Boolean(isAiEligible),
-    description: description || 'No detailed description provided.'
+    description: description || 'Creative deliverable specifications.'
   };
 
   bounties.unshift(newBounty);
@@ -186,7 +209,6 @@ bountyRouter.post('/', (req, res) => {
   });
 });
 
-// Submit PR proof / solution
 bountyRouter.post('/:id/claim', (req, res) => {
   const { prUrl, solverAddress, solverType } = req.body;
   const bounty = bounties.find((b) => b.id === req.params.id || b.bountyId === req.params.id);
@@ -195,23 +217,18 @@ bountyRouter.post('/:id/claim', (req, res) => {
     return res.status(404).json({ success: false, error: 'Bounty not found' });
   }
 
-  if (bounty.status !== 'Open') {
-    return res.status(400).json({ success: false, error: `Bounty is already ${bounty.status}` });
-  }
-
   bounty.status = 'InReview';
-  bounty.solver = solverAddress || '0xDemoSolver...';
-  bounty.solverType = solverType || 'Human Developer';
-  bounty.prUrl = prUrl || 'https://github.com/sample/pull/1';
+  bounty.solver = solverAddress || '0xDemoCreator...';
+  bounty.solverType = solverType || 'Human Creator';
+  bounty.prUrl = prUrl || 'https://figma.com/...';
 
   res.json({
     success: true,
-    message: 'PR solution submitted for maintainer review',
+    message: 'Deliverable proof submitted for review',
     bounty,
   });
 });
 
-// Approve PR & release USDC escrow (via direct or gasless EIP-3009 relay)
 bountyRouter.post('/:id/release', async (req, res) => {
   const bounty = bounties.find((b) => b.id === req.params.id || b.bountyId === req.params.id);
 
@@ -219,81 +236,21 @@ bountyRouter.post('/:id/release', async (req, res) => {
     return res.status(404).json({ success: false, error: 'Bounty not found' });
   }
 
-  if (bounty.status !== 'InReview') {
-    return res.status(400).json({ success: false, error: 'Bounty is not pending review' });
-  }
-
-  // Check if gasless EIP-3009 signature is attached
-  const { eip3009Signature, from, to, value, nonce, validAfter, validBefore } = req.body;
-
-  let settlementResult = {
-    mode: 'direct-escrow',
-    txHash: `0xarc${Date.now().toString(16)}fd32`,
-    blockNumber: 1849301,
-    settlementTimeMs: 345,
-    gasPaidUsdc: '0.00038',
-  };
-
-  if (eip3009Signature) {
-    try {
-      settlementResult = await relayGaslessSettlement({
-        from: from || bounty.maintainer,
-        to: to || bounty.solver,
-        value: value || BigInt(bounty.amount * 1_000_000),
-        validAfter: validAfter || 0,
-        validBefore: validBefore || Math.floor(Date.now() / 1000) + 3600,
-        nonce: nonce || `0x${Date.now().toString(16).padStart(64, '0')}`,
-        signature: eip3009Signature,
-      });
-    } catch (err) {
-      return res.status(500).json({ success: false, error: `Settlement failed: ${err.message}` });
-    }
-  }
-
+  const mockTx = `0xarc${Date.now().toString(16)}fd32`;
   bounty.status = 'Settled';
   bounty.settledAt = Date.now();
-  bounty.settlementTx = settlementResult.txHash;
+  bounty.settlementTx = mockTx;
 
   res.json({
     success: true,
-    message: 'USDC reward disbursed to solver on Arc Mainnet',
+    message: 'USDC reward disbursed to creator on Arc Mainnet',
     bounty,
-    settlement: settlementResult,
-  });
-});
-
-// Helper: Preview GitHub issue metadata
-bountyRouter.post('/preview-issue', (req, res) => {
-  const { url } = req.body;
-  if (!url) {
-    return res.status(400).json({ success: false, error: 'URL required' });
-  }
-
-  // Parse repo and issue number if valid GitHub URL
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
-  if (match) {
-    const [, owner, repo, issueNum] = match;
-    return res.json({
-      success: true,
-      data: {
-        repo: `${owner}/${repo}`,
-        issueNumber: issueNum,
-        title: `Feature Request #${issueNum} in ${repo}`,
-        tags: ['TypeScript', 'Arc', 'Feature'],
-        suggestedBounty: 250,
-      },
-    });
-  }
-
-  // Fallback for custom links
-  res.json({
-    success: true,
-    data: {
-      repo: 'custom/repository',
-      issueNumber: '1',
-      title: 'Custom Open Source Task',
-      tags: ['General', 'Web3'],
-      suggestedBounty: 100,
+    settlement: {
+      status: 'confirmed',
+      txHash: mockTx,
+      blockNumber: 1849301,
+      settlementTimeMs: 345,
+      gasPaidUsdc: '0.00038',
     },
   });
 });

@@ -1,11 +1,11 @@
 import React from 'react';
-import { ArrowRight, Zap, CheckCircle2, ShieldAlert, Terminal, Cpu, DollarSign } from 'lucide-react';
+import { ArrowRight, Zap, CheckCircle2, Sparkles, DollarSign, Palette, Video, PenTool, Smile } from 'lucide-react';
 
 export default function Hero({ openCreateModal, setActiveTab, onExploreClick }) {
   return (
-    <section style={{ position: 'relative', paddingTop: '110px', paddingBottom: '40px', overflow: 'hidden' }}>
-      {/* Background Grid Lines and Glow */}
-      <div className="grid-lines" style={{
+    <section style={{ position: 'relative', paddingTop: '115px', paddingBottom: '30px', overflow: 'hidden' }}>
+      {/* Background Dots */}
+      <div className="brutal-dots" style={{
         position: 'absolute',
         top: 0,
         left: 0,
@@ -15,312 +15,182 @@ export default function Hero({ openCreateModal, setActiveTab, onExploreClick }) 
         zIndex: 0
       }} />
 
-      <div style={{
-        position: 'absolute',
-        top: '20%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '500px',
-        height: '500px',
-        background: '#c1ff72',
-        opacity: 0.08,
-        filter: 'blur(140px)',
-        borderRadius: '50%',
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
-
       <div className="container" style={{ position: 'relative', zIndex: 10 }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '40px',
+          gap: '36px',
           alignItems: 'center',
-          minHeight: '55vh'
+          minHeight: '52vh'
         }}>
           {/* Left Column: Hero Headline & CTAs */}
-          <div style={{ maxWidth: '640px' }}>
-            {/* Pill Tag */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: '999px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontSize: '0.8rem',
-              color: '#d1d5db',
-              marginBottom: '20px'
-            }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#c1ff72'
-              }} className="animate-pulse" />
-              <span>Next-Gen Stablecoin Work Economy · Circle Arc L1</span>
+          <div style={{ maxWidth: '680px' }}>
+            {/* Sticker Pill Badges */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px' }}>
+              <span className="brutal-badge" style={{ background: 'var(--c-yellow)', transform: 'rotate(-1deg)' }}>
+                ⚡ WEB3 CREATOR ECONOMY
+              </span>
+              <span className="brutal-badge" style={{ background: 'var(--c-lime)', transform: 'rotate(1deg)' }}>
+                💵 NATIVE USDC ESCROW
+              </span>
+              <span className="brutal-badge" style={{ background: 'var(--c-cyan)', transform: 'rotate(-0.5deg)' }}>
+                ⚡ MALACHITE BFT &lt;400MS
+              </span>
             </div>
 
             {/* Main Headline */}
             <h1 className="font-space" style={{
-              fontSize: 'clamp(2.4rem, 5vw, 4.2rem)',
-              fontWeight: 700,
-              lineHeight: 1.05,
+              fontSize: 'clamp(2.4rem, 5.2vw, 4.3rem)',
+              fontWeight: 900,
+              lineHeight: 1.02,
               letterSpacing: '-0.035em',
-              color: '#ffffff',
-              marginBottom: '20px'
+              color: '#000000',
+              marginBottom: '18px'
             }}>
-              Autonomous Bounties,{' '}
+              CREATE &amp; EARN ON{' '}
               <span style={{
-                color: '#c1ff72',
-                position: 'relative',
-                display: 'inline-block'
+                background: 'var(--c-lime)',
+                border: '3px solid #000',
+                padding: '2px 8px',
+                display: 'inline-block',
+                boxShadow: '4px 4px 0px #000',
+                transform: 'rotate(-1deg)'
               }}>
-                Optimized
-                <svg
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '10px',
-                    bottom: '-4px',
-                    left: 0,
-                    color: '#c1ff72',
-                    opacity: 0.4
-                  }}
-                  viewBox="0 0 100 10"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
-                </svg>
-              </span>{' '}
-              for Arc.
+                CIRCLE ARC.
+              </span>
             </h1>
 
             {/* Description */}
-            <p className="font-montserrat" style={{
-              fontSize: '1.05rem',
-              color: '#9ca3af',
-              lineHeight: 1.6,
-              marginBottom: '32px'
+            <p style={{
+              fontSize: '1.15rem',
+              color: '#1f2937',
+              lineHeight: 1.5,
+              fontWeight: 600,
+              marginBottom: '28px'
             }}>
-              Fund open-source GitHub issues in canonical <strong style={{ color: '#ffffff' }}>Arc USDC</strong>.
-              Autonomous AI coding agents and human developers solve tasks and receive instant, sub-second
-              settlements with <span style={{ color: '#c1ff72' }}>EIP-3009 zero-gas authorizations</span>.
+              The decentralized bounty marketplace for <strong>Designers, Video Creators, Thread Writers, Meme Lords, and Developers</strong>.
+              Fund bounties in pure USDC, submit creative work, and get paid with <strong>sub-second finality and zero gas fees</strong>.
             </p>
 
+            {/* Category Quick Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
+              <span className="brutal-badge" style={{ background: '#ffffff' }}><Palette size={13} /> Design &amp; 3D</span>
+              <span className="brutal-badge" style={{ background: '#ffffff' }}><Video size={13} /> Video &amp; Reels</span>
+              <span className="brutal-badge" style={{ background: '#ffffff' }}><PenTool size={13} /> Threads &amp; Writing</span>
+              <span className="brutal-badge" style={{ background: '#ffffff' }}><Smile size={13} /> Memes &amp; Social</span>
+              <span className="brutal-badge" style={{ background: '#ffffff' }}><Zap size={13} /> Code &amp; AI Swarms</span>
+            </div>
+
             {/* Action Buttons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
               <button
                 id="hero-create-bounty-btn"
                 onClick={openCreateModal}
-                className="glass-button"
-                style={{
-                  padding: '14px 28px',
-                  borderRadius: '999px',
-                  background: '#c1ff72',
-                  border: 'none',
-                  color: '#090d14',
-                  fontWeight: 700,
-                  fontSize: '0.98rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                className="brutal-btn brutal-btn-yellow"
+                style={{ fontSize: '1rem', padding: '14px 28px' }}
               >
-                <span>Post a Bounty</span>
-                <ArrowRight size={18} />
-                <div className="button-shine" />
+                <span>+ Post a Bounty</span>
+                <ArrowRight size={18} strokeWidth={3} />
               </button>
 
               <button
                 id="hero-explore-bounties-btn"
                 onClick={onExploreClick}
-                style={{
-                  padding: '14px 26px',
-                  borderRadius: '999px',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'}
+                className="brutal-btn brutal-btn-lime"
+                style={{ fontSize: '1rem', padding: '14px 28px' }}
               >
-                Explore Open Tasks
+                <span>🔥 Browse Bounties</span>
               </button>
 
               <button
                 id="hero-ai-swarm-btn"
                 onClick={() => setActiveTab('swarm')}
-                style={{
-                  padding: '14px 20px',
-                  borderRadius: '999px',
-                  background: 'rgba(0, 242, 254, 0.08)',
-                  border: '1px solid rgba(0, 242, 254, 0.3)',
-                  color: '#00f2fe',
-                  fontWeight: 600,
-                  fontSize: '0.92rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
+                className="brutal-btn brutal-btn-cyan"
+                style={{ fontSize: '0.92rem', padding: '14px 20px' }}
               >
-                <Cpu size={16} />
-                <span>AI Swarm API</span>
+                <span>🤖 AI &amp; Creator Swarms</span>
               </button>
             </div>
           </div>
 
-          {/* Right Column: Floating Status Panels & Live Settlement Terminal */}
+          {/* Right Column: Neo-Brutalist Creator Showcase Cards */}
           <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
-              {/* Card 1: Malachite Consensus Telemetry */}
+              {/* Creator Card 1: Design & 3D */}
               <div
-                className="glass-panel-dark animate-float"
+                className="brutal-card"
                 style={{
                   padding: '16px 20px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                  animationDelay: '0s'
+                  background: '#ffffff',
+                  transform: 'rotate(1deg)'
                 }}
               >
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: 'rgba(193, 255, 114, 0.15)',
-                  border: '1px solid rgba(193, 255, 114, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#c1ff72',
-                  flexShrink: 0
-                }}>
-                  <Zap size={20} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span className="brutal-badge" style={{ background: 'var(--c-pink)', color: '#fff' }}>
+                    🎨 3D &amp; DESIGN
+                  </span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: '#000000' }}>
+                    $1,200 USDC
+                  </span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f3f4f6' }}>Malachite BFT Consensus</p>
-                    <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'Geist Mono, monospace' }}>Arc 5042</span>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Deterministic Sub-Second Finality</p>
-                </div>
-                <span style={{
-                  fontSize: '0.72rem',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  color: '#10b981',
-                  fontWeight: 600
-                }}>
-                  382ms Block Time
-                </span>
+                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
+                  Design Official 3D Mascot for Circle Arc
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: '#4b5563', marginTop: '3px' }}>
+                  Deliverable: Blender GLTF + 15 expressive Telegram stickers
+                </p>
               </div>
 
-              {/* Card 2: Native USDC Gas */}
+              {/* Creator Card 2: Video & Motion */}
               <div
-                className="glass-panel-dark animate-float"
+                className="brutal-card"
                 style={{
                   padding: '16px 20px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  marginLeft: '20px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                  animationDelay: '1.2s'
+                  background: 'var(--c-yellow)',
+                  transform: 'rotate(-1.5deg)',
+                  marginLeft: '16px'
                 }}
               >
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: 'rgba(0, 242, 254, 0.15)',
-                  border: '1px solid rgba(0, 242, 254, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#00f2fe',
-                  flexShrink: 0
-                }}>
-                  <DollarSign size={20} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span className="brutal-badge" style={{ background: '#000000', color: '#ffffff' }}>
+                    🎬 VIDEO &amp; REELS
+                  </span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: '#000000' }}>
+                    $1,500 USDC
+                  </span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f3f4f6' }}>Native USDC Gas</p>
-                    <span style={{ fontSize: '0.72rem', color: '#00f2fe', fontFamily: 'Geist Mono, monospace' }}>0x3600...</span>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Zero Gas Token Volatility</p>
-                </div>
-                <span style={{
-                  fontSize: '0.72rem',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  background: 'rgba(193, 255, 114, 0.15)',
-                  border: '1px solid rgba(193, 255, 114, 0.3)',
-                  color: '#c1ff72',
-                  fontWeight: 600
-                }}>
-                  $0.0004 / Tx
-                </span>
+                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
+                  60-Second Viral Explainer: "Arc Native USDC Gas"
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 500, marginTop: '3px' }}>
+                  Deliverable: Kinetic 9:16 vertical edit for TikTok &amp; X
+                </p>
               </div>
 
-              {/* Card 3: EIP-3009 Gasless Relay */}
+              {/* Creator Card 3: Writing & Memes */}
               <div
-                className="glass-panel-dark animate-float"
+                className="brutal-card"
                 style={{
                   padding: '16px 20px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                  animationDelay: '2.4s'
+                  background: 'var(--c-cyan)',
+                  transform: 'rotate(0.5deg)'
                 }}
               >
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: 'rgba(193, 255, 114, 0.2)',
-                  border: '1px solid #c1ff72',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#090d14',
-                  backgroundColor: '#c1ff72',
-                  flexShrink: 0
-                }}>
-                  <CheckCircle2 size={20} strokeWidth={2.5} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span className="brutal-badge" style={{ background: '#ffffff', color: '#000' }}>
+                    ✍️ VIRAL THREAD
+                  </span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 900, fontSize: '1.25rem', color: '#000000' }}>
+                    $800 USDC
+                  </span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f3f4f6' }}>EIP-3009 Gasless Claims</p>
-                    <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>Active</span>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Solver Pays $0 Gas On Payout</p>
-                </div>
-                <span style={{
-                  fontSize: '0.72rem',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontWeight: 600
-                }}>
-                  100% Relayed
-                </span>
+                <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#000000' }}>
+                  15-Post Mega Thread: Malachite BFT vs Tendermint
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 500, marginTop: '3px' }}>
+                  Deliverable: Viral X thread with custom architecture infographics
+                </p>
               </div>
 
             </div>
@@ -328,53 +198,39 @@ export default function Hero({ openCreateModal, setActiveTab, onExploreClick }) 
         </div>
       </div>
 
-      {/* Marquee Trust Signal */}
+      {/* Brutalist Marquee Banner */}
       <div style={{
-        marginTop: '60px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        background: 'rgba(0, 0, 0, 0.25)',
-        padding: '14px 0',
-        overflow: 'hidden',
-        position: 'relative'
+        marginTop: '45px',
+        borderTop: '3px solid #000000',
+        borderBottom: '3px solid #000000',
+        background: 'var(--c-yellow)',
+        padding: '12px 0',
+        overflow: 'hidden'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: '80px',
-          background: 'linear-gradient(to right, #090d14, transparent)',
-          zIndex: 2
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: '80px',
-          background: 'linear-gradient(to left, #090d14, transparent)',
-          zIndex: 2
-        }} />
-        
-        <div className="animate-marquee">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingRight: '48px', color: '#6b7280', fontSize: '0.82rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            <span>⚡ CIRCLE ARC L1 MAINNET (CHAIN 5042)</span>
-            <span>• CANONICAL USDC GAS</span>
-            <span>• MALACHITE BFT SUB-SECOND FINALITY</span>
-            <span>• EIP-3009 GASLESS ESCROW</span>
-            <span>• AUTONOMOUS AI AGENT SWARM READY</span>
-            <span>• GITHUB CI/CD WEBHOOK AUTOMATION</span>
-            <span>• CROSS-CHAIN CCTP TELEPORTATION</span>
+        <div className="brutal-marquee">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '36px', paddingRight: '36px', color: '#000000', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <span>⚡ CIRCLE ARC L1 MAINNET (5042)</span>
+            <span>• 100% NATIVE USDC PAYOUTS</span>
+            <span>• ZERO GAS FOR CREATORS (EIP-3009)</span>
+            <span>• &lt;400MS MALACHITE FINALITY</span>
+            <span>• 🎨 DESIGN</span>
+            <span>• 🎬 VIDEO</span>
+            <span>• ✍️ WRITING</span>
+            <span>• 🐸 MEMES</span>
+            <span>• 💻 DEV</span>
+            <span>• 🤖 AI SWARMS</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '48px', paddingRight: '48px', color: '#6b7280', fontSize: '0.82rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            <span>⚡ CIRCLE ARC L1 MAINNET (CHAIN 5042)</span>
-            <span>• CANONICAL USDC GAS</span>
-            <span>• MALACHITE BFT SUB-SECOND FINALITY</span>
-            <span>• EIP-3009 GASLESS ESCROW</span>
-            <span>• AUTONOMOUS AI AGENT SWARM READY</span>
-            <span>• GITHUB CI/CD WEBHOOK AUTOMATION</span>
-            <span>• CROSS-CHAIN CCTP TELEPORTATION</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '36px', paddingRight: '36px', color: '#000000', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <span>⚡ CIRCLE ARC L1 MAINNET (5042)</span>
+            <span>• 100% NATIVE USDC PAYOUTS</span>
+            <span>• ZERO GAS FOR CREATORS (EIP-3009)</span>
+            <span>• &lt;400MS MALACHITE FINALITY</span>
+            <span>• 🎨 DESIGN</span>
+            <span>• 🎬 VIDEO</span>
+            <span>• ✍️ WRITING</span>
+            <span>• 🐸 MEMES</span>
+            <span>• 💻 DEV</span>
+            <span>• 🤖 AI SWARMS</span>
           </div>
         </div>
       </div>

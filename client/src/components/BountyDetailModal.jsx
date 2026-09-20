@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, GitPullRequest, CheckCircle2, Shield, Clock, Bot, ArrowRight, Zap, Copy, Check } from 'lucide-react';
+import { X, ExternalLink, CheckCircle2, Shield, Clock, Bot, ArrowRight, Zap, Copy, Check, Link as LinkIcon, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { truncateAddress } from '../utils/arc';
 
@@ -10,19 +10,20 @@ export default function BountyDetailModal({
   onReleaseBounty,
   wallet
 }) {
-  const [prInput, setPrInput] = useState('');
-  const [solverType, setSolverType] = useState('Human Developer');
+  const [submissionUrl, setSubmissionUrl] = useState('');
+  const [submissionNotes, setSubmissionNotes] = useState('');
+  const [solverType, setSolverType] = useState('Human Creator');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (!bounty) return null;
 
-  const handleSubmitPr = async (e) => {
+  const handleSubmitWork = async (e) => {
     e.preventDefault();
-    if (!prInput) return;
+    if (!submissionUrl) return;
     setIsSubmitting(true);
-    await onSubmitSolution(bounty.id, prInput, wallet.address, solverType);
+    await onSubmitSolution(bounty.id, submissionUrl, wallet.address, solverType);
     setIsSubmitting(false);
   };
 
@@ -31,8 +32,8 @@ export default function BountyDetailModal({
     await onReleaseBounty(bounty.id);
     setIsReleasing(false);
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 140,
+      spread: 90,
       origin: { y: 0.6 }
     });
   };
@@ -48,9 +49,7 @@ export default function BountyDetailModal({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(5, 8, 15, 0.85)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
@@ -60,15 +59,16 @@ export default function BountyDetailModal({
       onClick={onClose}
     >
       <div
-        className="glass-panel-dark animate-fade-in"
+        className="animate-fade-in"
         style={{
           width: '100%',
-          maxWidth: '760px',
-          maxHeight: '90vh',
+          maxWidth: '740px',
+          maxHeight: '92vh',
           overflowY: 'auto',
-          borderRadius: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8)',
+          background: '#ffffff',
+          border: '3px solid #000000',
+          boxShadow: '10px 10px 0px #000000',
+          borderRadius: '12px',
           position: 'relative',
           padding: '32px'
         }}
@@ -78,252 +78,169 @@ export default function BountyDetailModal({
         <button
           id="close-detail-modal-btn"
           onClick={onClose}
+          className="brutal-btn brutal-btn-white"
           style={{
             position: 'absolute',
-            top: '24px',
-            right: '24px',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: 'none',
-            color: '#9ca3af',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'background 0.2s'
+            top: '20px',
+            right: '20px',
+            width: '38px',
+            height: '38px',
+            padding: 0,
+            borderRadius: '50%'
           }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
         >
-          <X size={20} />
+          <X size={20} strokeWidth={3} />
         </button>
 
-        {/* Top Info: Repo & Escrow Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '0.82rem',
-            color: '#9ca3af',
-            fontFamily: 'Geist Mono, monospace',
-            background: 'rgba(255, 255, 255, 0.06)',
-            padding: '4px 10px',
-            borderRadius: '8px'
-          }}>
-            {bounty.repo}
+        {/* Top Stickers */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <span className="brutal-badge" style={{ background: bounty.categoryColor || 'var(--c-pink)', color: '#ffffff' }}>
+            {bounty.categoryName || bounty.category || 'CREATIVE TASK'}
           </span>
-          <a
-            href={bounty.issueUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: '0.8rem',
-              color: '#00f2fe',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              textDecoration: 'none'
-            }}
-          >
-            <span>GitHub Issue</span>
-            <ExternalLink size={13} />
-          </a>
+          <span className="brutal-badge" style={{ background: 'var(--c-yellow)', color: '#000000' }}>
+            📦 {bounty.submissionType || 'Work URL'}
+          </span>
           {bounty.isAiEligible && (
-            <span style={{
-              fontSize: '0.75rem',
-              color: '#c1ff72',
-              background: 'rgba(193, 255, 114, 0.12)',
-              border: '1px solid rgba(193, 255, 114, 0.25)',
-              padding: '3px 8px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              <Bot size={13} />
-              AI-Agent Eligible
+            <span className="brutal-badge" style={{ background: 'var(--c-cyan)', color: '#000000' }}>
+              <Bot size={13} /> AI CREATORS PERMITTED
             </span>
           )}
         </div>
 
         {/* Bounty Title */}
-        <h2 className="font-space" style={{ fontSize: '1.6rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.3, marginBottom: '16px' }}>
+        <h2 className="font-space" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#000000', lineHeight: 1.15, marginBottom: '16px' }}>
           {bounty.title}
         </h2>
 
-        {/* Reward Box */}
+        {/* Escrow Reward Box (Neo-Brutalist) */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(193, 255, 114, 0.08) 0%, rgba(0, 242, 254, 0.05) 100%)',
-          border: '1px solid rgba(193, 255, 114, 0.3)',
-          borderRadius: '16px',
+          background: 'var(--c-lime)',
+          border: '3px solid #000000',
+          boxShadow: '4px 4px 0px #000000',
+          borderRadius: '10px',
           padding: '20px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
-          marginBottom: '24px'
+          marginBottom: '26px'
         }}>
           <div>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Locked in Circle Arc Escrow
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#000000', textTransform: 'uppercase' }}>
+              LOCKED IN CANONICAL ARC ESCROW
             </span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
-              <span className="font-space" style={{ fontSize: '2rem', fontWeight: 800, color: '#c1ff72' }}>
+              <span className="font-space" style={{ fontSize: '2.4rem', fontWeight: 900, color: '#000000' }}>
                 ${bounty.amount.toLocaleString()}
               </span>
-              <span style={{ fontSize: '1rem', color: '#ffffff', fontWeight: 600 }}>USDC</span>
-              <span style={{ fontSize: '0.78rem', color: '#6b7280', fontFamily: 'Geist Mono, monospace' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#000000' }}>USDC</span>
+              <span style={{ fontSize: '0.75rem', color: '#1f2937', fontFamily: 'Geist Mono, monospace', fontWeight: 700 }}>
                 (0x3600...0000)
               </span>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Sponsored by</span>
-            <p style={{ fontSize: '0.9rem', color: '#ffffff', fontWeight: 600 }}>{bounty.maintainerName}</p>
-            <p style={{ fontSize: '0.75rem', color: '#6b7280', fontFamily: 'Geist Mono, monospace' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#000000' }}>SPONSOR GUILD</span>
+            <p style={{ fontSize: '1rem', fontWeight: 900, color: '#000000' }}>{bounty.maintainerName}</p>
+            <p style={{ fontSize: '0.75rem', color: '#4b5563', fontFamily: 'Geist Mono, monospace' }}>
               {truncateAddress(bounty.maintainer)}
             </p>
           </div>
         </div>
 
-        {/* Escrow Timeline */}
+        {/* Escrow Lifecycle */}
         <div style={{ marginBottom: '28px' }}>
-          <h4 style={{ fontSize: '0.85rem', color: '#d1d5db', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '14px' }}>
-            Escrow Settlement Lifecycle
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase', marginBottom: '12px' }}>
+            ESCROW SETTLEMENT LIFECYCLE
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-            {/* Step 1 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             <div style={{
-              padding: '14px',
-              borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.3)'
+              padding: '12px',
+              border: '2.5px solid #000000',
+              borderRadius: '8px',
+              background: '#ffffff',
+              boxShadow: '2px 2px 0px #000000'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>
-                <CheckCircle2 size={16} />
-                <span>1. Funded</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.82rem' }}>
+                <CheckCircle2 size={16} color="#00e676" />
+                <span>1. FUNDED</span>
               </div>
-              <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>
-                USDC locked on Arc Mainnet
+              <p style={{ fontSize: '0.72rem', color: '#4b5563', fontWeight: 600, marginTop: '2px' }}>
+                USDC held on Arc Mainnet
               </p>
             </div>
 
-            {/* Step 2 */}
             <div style={{
-              padding: '14px',
-              borderRadius: '12px',
-              background: bounty.status === 'InReview' || bounty.status === 'Settled'
-                ? 'rgba(234, 179, 8, 0.1)'
-                : 'rgba(255, 255, 255, 0.03)',
-              border: bounty.status === 'InReview' || bounty.status === 'Settled'
-                ? '1px solid rgba(234, 179, 8, 0.3)'
-                : '1px solid rgba(255, 255, 255, 0.08)'
+              padding: '12px',
+              border: '2.5px solid #000000',
+              borderRadius: '8px',
+              background: bounty.status === 'InReview' || bounty.status === 'Settled' ? 'var(--c-yellow)' : '#ffffff',
+              boxShadow: '2px 2px 0px #000000'
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: bounty.status === 'InReview' || bounty.status === 'Settled' ? '#eab308' : '#6b7280',
-                fontSize: '0.8rem',
-                fontWeight: 600
-              }}>
-                <GitPullRequest size={16} />
-                <span>2. Solution</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.82rem' }}>
+                <span>2. DELIVERED</span>
               </div>
-              <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>
-                {bounty.status === 'Open' ? 'Awaiting PR' : 'PR Submitted for Review'}
+              <p style={{ fontSize: '0.72rem', color: '#4b5563', fontWeight: 600, marginTop: '2px' }}>
+                {bounty.status === 'Open' ? 'Awaiting Submission' : 'Work Submitted for Review'}
               </p>
             </div>
 
-            {/* Step 3 */}
             <div style={{
-              padding: '14px',
-              borderRadius: '12px',
-              background: bounty.status === 'Settled'
-                ? 'rgba(193, 255, 114, 0.15)'
-                : 'rgba(255, 255, 255, 0.03)',
-              border: bounty.status === 'Settled'
-                ? '1px solid #c1ff72'
-                : '1px solid rgba(255, 255, 255, 0.08)'
+              padding: '12px',
+              border: '2.5px solid #000000',
+              borderRadius: '8px',
+              background: bounty.status === 'Settled' ? 'var(--c-cyan)' : '#ffffff',
+              boxShadow: '2px 2px 0px #000000'
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: bounty.status === 'Settled' ? '#c1ff72' : '#6b7280',
-                fontSize: '0.8rem',
-                fontWeight: 600
-              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.82rem' }}>
                 <Zap size={16} />
-                <span>3. Disbursed</span>
+                <span>3. DISBURSED</span>
               </div>
-              <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>
-                {bounty.status === 'Settled' ? 'Settled (<400ms)' : 'Upon Maintainer Merge'}
+              <p style={{ fontSize: '0.72rem', color: '#4b5563', fontWeight: 600, marginTop: '2px' }}>
+                {bounty.status === 'Settled' ? 'Settled in <400ms' : 'Upon Sponsor Approval'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Task Specification */}
+        {/* Task Description */}
         <div style={{ marginBottom: '28px' }}>
-          <h4 style={{ fontSize: '0.85rem', color: '#d1d5db', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-            Task Description & Acceptance Criteria
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase', marginBottom: '8px' }}>
+            TASK SPECIFICATION &amp; ACCEPTANCE CRITERIA
           </h4>
           <div style={{
             padding: '18px',
-            borderRadius: '14px',
-            background: 'rgba(0, 0, 0, 0.35)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            fontSize: '0.9rem',
-            lineHeight: 1.6,
-            color: '#d1d5db'
+            border: '2.5px solid #000000',
+            borderRadius: '8px',
+            background: '#f8f8f4',
+            fontSize: '0.95rem',
+            lineHeight: 1.55,
+            color: '#111827',
+            fontWeight: 500
           }}>
             {bounty.description}
           </div>
         </div>
 
-        {/* PR Details if Submitted */}
+        {/* Submitted Work Link */}
         {bounty.prUrl && (
           <div style={{
             marginBottom: '24px',
             padding: '16px',
-            borderRadius: '12px',
-            background: 'rgba(0, 242, 254, 0.05)',
-            border: '1px solid rgba(0, 242, 254, 0.2)'
+            border: '3px solid #000000',
+            boxShadow: '4px 4px 0px #000000',
+            borderRadius: '8px',
+            background: 'var(--c-cyan)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: '#00f2fe', fontWeight: 600 }}>SUBMITTED PULL REQUEST</span>
-                <p style={{ fontSize: '0.88rem', color: '#ffffff', fontWeight: 500, marginTop: '2px' }}>
-                  {bounty.prUrl}
-                </p>
-                <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>
-                  By: {bounty.solverType || 'Contributor'} ({truncateAddress(bounty.solver)})
-                </p>
-              </div>
-              <a
-                href={bounty.prUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  background: 'rgba(0, 242, 254, 0.15)',
-                  color: '#00f2fe',
-                  textDecoration: 'none',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>View PR</span>
-                <ExternalLink size={13} />
-              </a>
-            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#000000' }}>SUBMITTED CREATIVE WORK:</span>
+            <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#000000', marginTop: '2px', wordBreak: 'break-all' }}>
+              {bounty.prUrl}
+            </p>
+            <p style={{ fontSize: '0.78rem', color: '#1f2937', fontWeight: 600, marginTop: '2px' }}>
+              Creator: {bounty.solverType || 'Contributor'} ({truncateAddress(bounty.solver)})
+            </p>
           </div>
         )}
 
@@ -332,178 +249,124 @@ export default function BountyDetailModal({
           <div style={{
             marginBottom: '24px',
             padding: '16px',
-            borderRadius: '12px',
-            background: 'rgba(193, 255, 114, 0.08)',
-            border: '1px solid #c1ff72'
+            border: '3px solid #000000',
+            boxShadow: '4px 4px 0px #000000',
+            borderRadius: '8px',
+            background: 'var(--c-lime)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c1ff72', fontWeight: 700, fontSize: '0.9rem' }}>
-              <Zap size={18} />
-              <span>USDC Escrow Disbursed on Arc Mainnet</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#000000', fontWeight: 900, fontSize: '1rem' }}>
+              <Zap size={20} strokeWidth={3} />
+              <span>USDC ESCROW DISBURSED ON ARC MAINNET</span>
             </div>
-            <p style={{ fontSize: '0.8rem', color: '#d1d5db', marginTop: '6px' }}>
-              Settlement Hash: <code style={{ color: '#c1ff72', fontFamily: 'Geist Mono, monospace' }}>{bounty.settlementTx || '0xarc5042...88ad'}</code>
+            <p style={{ fontSize: '0.82rem', color: '#000000', fontWeight: 600, marginTop: '6px' }}>
+              Transaction Hash: <code style={{ background: '#fff', border: '1px solid #000', padding: '1px 6px', borderRadius: '4px', fontFamily: 'Geist Mono, monospace' }}>{bounty.settlementTx || '0xarc5042...88ad'}</code>
             </p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
                 onClick={() => copyHash(bounty.settlementTx || '0xarc5042...88ad')}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer'
-                }}
+                className="brutal-btn brutal-btn-white"
+                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
               >
-                {copied ? <Check size={12} color="#c1ff72" /> : <Copy size={12} />}
-                <span>{copied ? 'Copied' : 'Copy Hash'}</span>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copied ? 'COPIED' : 'COPY HASH'}</span>
               </button>
               <a
                 href={`https://explorer.arc.io/tx/${bounty.settlementTx || ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  color: '#00f2fe',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  textDecoration: 'none'
-                }}
+                className="brutal-btn brutal-btn-yellow"
+                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
               >
-                <span>View on ArcScan</span>
-                <ExternalLink size={12} />
+                <span>VIEW ON ARCSCAN</span>
+                <ExternalLink size={14} />
               </a>
             </div>
           </div>
         )}
 
-        {/* Action Forms based on Bounty Status */}
+        {/* Submission Form if Open */}
         {bounty.status === 'Open' && (
-          <form onSubmit={handleSubmitPr} style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '20px' }}>
-            <h4 style={{ fontSize: '0.85rem', color: '#ffffff', fontWeight: 600, marginBottom: '10px' }}>
-              Submit Pull Request for Review
+          <form onSubmit={handleSubmitWork} style={{ borderTop: '3px solid #000000', paddingTop: '20px' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase', marginBottom: '12px' }}>
+              SUBMIT YOUR WORK DELIVERABLE
             </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                  Contributor Profile Type
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                  CREATOR TYPE
                 </label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     type="button"
-                    onClick={() => setSolverType('Human Developer')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: solverType === 'Human Developer' ? '#c1ff72' : 'rgba(255, 255, 255, 0.05)',
-                      color: solverType === 'Human Developer' ? '#090d14' : '#9ca3af',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}
+                    onClick={() => setSolverType('Human Creator')}
+                    className={`brutal-btn ${solverType === 'Human Creator' ? 'brutal-btn-lime' : 'brutal-btn-white'}`}
+                    style={{ flex: 1, padding: '8px' }}
                   >
-                    Human Developer
+                    🎨 HUMAN CREATOR
                   </button>
                   <button
                     type="button"
                     onClick={() => setSolverType('Autonomous AI Agent')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: solverType === 'Autonomous AI Agent' ? '#00f2fe' : 'rgba(255, 255, 255, 0.05)',
-                      color: solverType === 'Autonomous AI Agent' ? '#090d14' : '#9ca3af',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}
+                    className={`brutal-btn ${solverType === 'Autonomous AI Agent' ? 'brutal-btn-cyan' : 'brutal-btn-white'}`}
+                    style={{ flex: 1, padding: '8px' }}
                   >
-                    Autonomous AI Agent
+                    🤖 AUTONOMOUS AI AGENT
                   </button>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                  GitHub Pull Request Link
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                  DELIVERABLE URL (Figma, Loom, YouTube, X Thread, GitHub, or Drive) *
                 </label>
                 <input
-                  id="pr-url-input"
+                  id="submission-url-input"
                   type="url"
-                  placeholder="https://github.com/circlefin/arc-consensus/pull/12"
-                  value={prInput}
-                  onChange={(e) => setPrInput(e.target.value)}
+                  placeholder="https://figma.com/... or https://x.com/... or https://loom.com/..."
+                  value={submissionUrl}
+                  onChange={(e) => setSubmissionUrl(e.target.value)}
                   required
                   style={{
                     width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#ffffff',
-                    fontSize: '0.9rem',
+                    padding: '14px',
+                    border: '3px solid #000000',
+                    borderRadius: '8px',
+                    boxShadow: '3px 3px 0px #000000',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
                     outline: 'none'
                   }}
                 />
               </div>
 
               <button
-                id="submit-pr-btn"
+                id="submit-work-btn"
                 type="submit"
-                disabled={isSubmitting || !prInput}
-                className="glass-button"
-                style={{
-                  marginTop: '8px',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: '#c1ff72',
-                  border: 'none',
-                  color: '#090d14',
-                  fontWeight: 700,
-                  fontSize: '0.95rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  opacity: isSubmitting || !prInput ? 0.6 : 1
-                }}
+                disabled={isSubmitting || !submissionUrl}
+                className="brutal-btn brutal-btn-yellow"
+                style={{ width: '100%', padding: '16px', fontSize: '1.05rem', marginTop: '6px' }}
               >
-                <span>{isSubmitting ? 'Verifying on Arc...' : 'Submit PR & Enter Review'}</span>
-                <ArrowRight size={18} />
-                <div className="button-shine" />
+                <span>{isSubmitting ? 'VERIFYING ON ARC...' : 'SUBMIT WORK & ENTER REVIEW'}</span>
+                <ArrowRight size={20} strokeWidth={3} />
               </button>
             </div>
           </form>
         )}
 
-        {/* Maintainer Review & Disburse Button */}
+        {/* Maintainer Review Button */}
         {bounty.status === 'InReview' && (
-          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ borderTop: '3px solid #000000', paddingTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
-                <h4 style={{ fontSize: '0.9rem', color: '#ffffff', fontWeight: 600 }}>
-                  Maintainer Action: Approve & Disburse
+                <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#000000' }}>
+                  SPONSOR ACTION: APPROVE &amp; DISBURSE
                 </h4>
-                <p style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                  Releases ${bounty.amount} USDC from escrow directly to solver with EIP-3009 gasless relayer.
+                <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#4b5563' }}>
+                  Releases ${bounty.amount} USDC from escrow to creator via sub-second Malachite BFT finality.
                 </p>
               </div>
-              <span style={{
-                fontSize: '0.72rem',
-                color: '#10b981',
-                background: 'rgba(16, 185, 129, 0.1)',
-                padding: '4px 8px',
-                borderRadius: '6px'
-              }}>
-                Solver Gas: $0.00
+              <span className="brutal-badge" style={{ background: 'var(--c-lime)', color: '#000' }}>
+                CREATOR GAS: $0.00
               </span>
             </div>
 
@@ -511,25 +374,11 @@ export default function BountyDetailModal({
               id="approve-disburse-btn"
               onClick={handleRelease}
               disabled={isReleasing}
-              className="glass-button"
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #c1ff72 0%, #10b981 100%)',
-                border: 'none',
-                color: '#090d14',
-                fontWeight: 700,
-                fontSize: '0.98rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
+              className="brutal-btn brutal-btn-lime"
+              style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}
             >
-              <Zap size={18} />
-              <span>{isReleasing ? 'Executing Sub-Second Arc Settlement...' : `Approve & Release $${bounty.amount} USDC`}</span>
-              <div className="button-shine" />
+              <Zap size={22} strokeWidth={3} />
+              <span>{isReleasing ? 'SETTLING ON ARC MAINNET...' : `APPROVE & DISBURSE $${bounty.amount} USDC`}</span>
             </button>
           </div>
         )}

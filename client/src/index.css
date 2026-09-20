@@ -1,19 +1,27 @@
-/* ArcBounty Standalone Vanilla CSS Design System */
+/* ArcBounty Neo-Brutalist Design System */
 
 :root {
-  --bg-main: #090d14;
-  --bg-surface: #0f1523;
-  --bg-card: rgba(18, 24, 38, 0.75);
-  --bg-card-hover: rgba(24, 33, 52, 0.85);
-  --lime-accent: #c1ff72;
-  --lime-glow: rgba(193, 255, 114, 0.35);
-  --cyan-accent: #00f2fe;
-  --emerald-accent: #10b981;
-  --text-main: #f9fafb;
-  --text-muted: #9ca3af;
-  --text-subtle: #6b7280;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(193, 255, 114, 0.45);
+  --bg-canvas: #f6f5f0;
+  --bg-dark: #0f1015;
+  --border-thick: 3px solid #000000;
+  --border-medium: 2px solid #000000;
+  --shadow-hard: 5px 5px 0px #000000;
+  --shadow-hard-hover: 8px 8px 0px #000000;
+  --shadow-hard-active: 1px 1px 0px #000000;
+  --shadow-hard-sm: 3px 3px 0px #000000;
+  
+  /* Saturated Neo-Brutalist Palette */
+  --c-lime: #c1ff72;
+  --c-yellow: #ffe600;
+  --c-pink: #ff578a;
+  --c-cyan: #00f0ff;
+  --c-orange: #ff9100;
+  --c-purple: #bb86fc;
+  --c-emerald: #00e676;
+  
+  --text-dark: #000000;
+  --text-light: #ffffff;
+  --text-muted: #4b5563;
 }
 
 * {
@@ -24,176 +32,178 @@
 }
 
 body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
+  background-color: var(--bg-canvas);
+  color: var(--text-dark);
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.45;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
-/* Typography Classes */
-.font-geist { font-family: 'Geist', sans-serif; }
+/* Typography */
 .font-space { font-family: 'Space Grotesk', sans-serif; }
-.font-montserrat { font-family: 'Montserrat', sans-serif; }
+.font-geist { font-family: 'Geist', sans-serif; }
 .font-mono { font-family: 'Geist Mono', monospace; }
 
-/* Grid Background */
-.grid-lines {
+/* Brutalist Dot Pattern Background */
+.brutal-dots {
+  background-size: 24px 24px;
+  background-image: radial-gradient(#000000 1.2px, transparent 1.2px);
+  opacity: 0.12;
+}
+
+.brutal-grid {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
 }
 
-/* Glass Panels */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-panel-dark {
-  background: rgba(15, 21, 34, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-panel-lime {
-  background: rgba(193, 255, 114, 0.05);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(193, 255, 114, 0.25);
-}
-
-/* Spotlight Card (Mouse Tracking) */
-.spotlight-card {
+/* Neo-Brutalist Card Container */
+.brutal-card {
+  background: #ffffff;
+  border: var(--border-thick);
+  border-radius: 10px;
+  box-shadow: var(--shadow-hard);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  overflow: hidden;
-  background: rgba(17, 23, 37, 0.75);
-  border: 1px solid var(--border-subtle);
-  border-radius: 1.25rem;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.spotlight-card:hover {
-  border-color: var(--border-active);
-  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.6), 0 0 24px -6px rgba(193, 255, 114, 0.2);
+.brutal-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-hard-hover);
 }
 
-.spotlight-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(193, 255, 114, 0.14), transparent 40%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.spotlight-card:hover::before {
-  opacity: 1;
-}
-
-/* Specular Glass Button with Light Reflection */
-@property --angle-1 { syntax: "<angle>"; inherits: false; initial-value: -75deg; }
-@property --angle-2 { syntax: "<angle>"; inherits: false; initial-value: -45deg; }
-
-.glass-button {
-  background: linear-gradient(-75deg, rgba(193, 255, 114, 0.15), rgba(255, 255, 255, 0.1), rgba(193, 255, 114, 0.15));
-  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.2), inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.2), 0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.5), 0 0 0.1em 0.25em rgba(193, 255, 114, 0.3) inset;
-  backdrop-filter: blur(8px);
-  transition: all 300ms cubic-bezier(0.25, 1, 0.5, 1);
-  position: relative;
-  overflow: hidden;
+/* Neo-Brutalist Interactive Buttons */
+.brutal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border: var(--border-thick);
+  border-radius: 8px;
+  box-shadow: var(--shadow-hard);
   cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-decoration: none;
 }
 
-.glass-button:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 0 25px rgba(193, 255, 114, 0.4);
+.brutal-btn:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-hard-hover);
 }
 
-.button-shine {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(var(--angle-2), rgba(255, 255, 255, 0) 0%, rgba(193, 255, 114, 0.45) 40% 50%, rgba(255, 255, 255, 0.2) 55%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  background-size: 200% 200%;
-  background-position: 0% 50%;
-  transition: background-position 500ms ease;
+.brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-hard-active);
 }
 
-.glass-button:hover .button-shine {
-  background-position: 100% 50%;
+.brutal-btn-lime {
+  background: var(--c-lime);
+  color: #000000;
 }
 
-/* Animations */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.brutal-btn-yellow {
+  background: var(--c-yellow);
+  color: #000000;
 }
 
-.animate-float {
-  animation: float 5s ease-in-out infinite;
+.brutal-btn-pink {
+  background: var(--c-pink);
+  color: #ffffff;
 }
 
+.brutal-btn-cyan {
+  background: var(--c-cyan);
+  color: #000000;
+}
+
+.brutal-btn-black {
+  background: #000000;
+  color: #ffffff;
+}
+
+.brutal-btn-white {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* Neo-Brutalist Badges & Stickers */
+.brutal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: var(--border-medium);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0px #000000;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sticker-tape {
+  display: inline-block;
+  transform: rotate(-1.5deg);
+  background: var(--c-yellow);
+  border: var(--border-medium);
+  padding: 2px 8px;
+  font-weight: 800;
+  font-size: 0.72rem;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+/* Marquee with solid neo-brutalist border */
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
 }
 
-.animate-marquee {
+.brutal-marquee {
   display: flex;
   width: max-content;
-  animation: marquee 30s linear infinite;
+  animation: marquee 25s linear infinite;
 }
 
-.animate-marquee:hover {
+.brutal-marquee:hover {
   animation-play-state: paused;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.95); }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Layout Utilities */
 .container {
-  max-width: 1440px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
 }
 
 @media (min-width: 1024px) {
   .container {
-    padding-left: 3rem;
-    padding-right: 3rem;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
   }
 }
 
-/* Mobile Bottom Navigation Dock */
+/* Mobile Bottom Navigation Dock (Brutalist style) */
 .mobile-dock {
   display: none;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background: rgba(11, 15, 25, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  height: 68px;
+  background: #ffffff;
+  border-top: var(--border-thick);
+  box-shadow: 0 -4px 0px #000000;
   z-index: 999;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -206,24 +216,42 @@ body {
   }
   
   .mobile-safe-bottom {
-    padding-bottom: 90px !important;
+    padding-bottom: 96px !important;
   }
 }
 
-/* Bottom Sheet & Modal Animations */
+/* Notification Toast (Brutalist) */
+.notification-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: var(--border-thick);
+  box-shadow: 6px 6px 0px #000000;
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-width: 768px) {
+  .notification-toast {
+    bottom: 80px;
+    right: 14px;
+    left: 14px;
+  }
+}
+
+/* Animations */
 @keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes fadeIn {
@@ -232,29 +260,10 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Badge Styles */
-.badge-lime {
-  background: rgba(193, 255, 114, 0.12);
-  color: var(--lime-accent);
-  border: 1px solid rgba(193, 255, 114, 0.3);
-}
-
-.badge-cyan {
-  background: rgba(0, 242, 254, 0.1);
-  color: var(--cyan-accent);
-  border: 1px solid rgba(0, 242, 254, 0.25);
-}
-
-.badge-slate {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-muted);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Responsive Visibility Helpers */
+/* Responsive visibility */
 @media (max-width: 768px) {
   .desktop-only, .desktop-nav {
     display: none !important;
@@ -267,36 +276,22 @@ body {
   }
 }
 
-/* Notification Toast */
-.notification-toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  border-radius: 14px;
-  background: rgba(12, 17, 28, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(193, 255, 114, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(193, 255, 114, 0.2);
-  color: #ffffff;
-  font-size: 0.88rem;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-@media (max-width: 768px) {
-  .notification-toast {
-    bottom: 80px;
-    right: 16px;
-    left: 16px;
-  }
+::-webkit-scrollbar-track {
+  background: #f6f5f0;
+  border-left: 2px solid #000000;
 }
 
-/* Interactive helper */
-button {
-  font-family: inherit;
+::-webkit-scrollbar-thumb {
+  background: var(--c-lime);
+  border: 2px solid #000000;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: var(--c-yellow);
+}

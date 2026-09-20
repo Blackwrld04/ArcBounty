@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, GitPullRequest, PlusCircle, Cpu, Wallet } from 'lucide-react';
+import { Compass, Sparkles, Plus, Cpu, Wallet } from 'lucide-react';
 
 export default function MobileDock({
   activeTab,
@@ -17,41 +17,41 @@ export default function MobileDock({
         style={{
           background: 'transparent',
           border: 'none',
-          color: activeTab === 'explore' ? '#c1ff72' : '#9ca3af',
+          color: activeTab === 'explore' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '4px',
-          fontSize: '0.68rem',
-          fontWeight: 600,
+          gap: '3px',
+          fontSize: '0.7rem',
+          fontWeight: 900,
           cursor: 'pointer',
           flex: 1
         }}
       >
-        <Compass size={20} color={activeTab === 'explore' ? '#c1ff72' : '#9ca3af'} />
-        <span>Explore</span>
+        <Compass size={22} color={activeTab === 'explore' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'explore' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'explore' ? '2px solid #000' : 'none' }}>EXPLORE</span>
       </button>
 
-      {/* 2. Tasks / In Review */}
+      {/* 2. Leaderboard */}
       <button
         id="mobile-dock-tasks-btn"
-        onClick={() => setActiveTab('explore')}
+        onClick={() => setActiveTab('leaderboard')}
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#9ca3af',
+          color: activeTab === 'leaderboard' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '4px',
-          fontSize: '0.68rem',
-          fontWeight: 500,
+          gap: '3px',
+          fontSize: '0.7rem',
+          fontWeight: 900,
           cursor: 'pointer',
           flex: 1
         }}
       >
-        <GitPullRequest size={20} color="#9ca3af" />
-        <span>My Tasks</span>
+        <Sparkles size={22} color={activeTab === 'leaderboard' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'leaderboard' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'leaderboard' ? '2px solid #000' : 'none' }}>RANKS</span>
       </button>
 
       {/* 3. Center Action: Post Bounty */}
@@ -60,22 +60,22 @@ export default function MobileDock({
           id="mobile-dock-create-btn"
           onClick={openCreateModal}
           style={{
-            width: '46px',
-            height: '46px',
+            width: '52px',
+            height: '52px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #c1ff72 0%, #10b981 100%)',
-            border: 'none',
+            background: 'var(--c-yellow)',
+            border: '3px solid #000000',
+            boxShadow: '3px 3px 0px #000000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#090d14',
-            boxShadow: '0 0 16px rgba(193, 255, 114, 0.4)',
-            marginTop: '-18px',
+            color: '#000000',
+            marginTop: '-22px',
             cursor: 'pointer'
           }}
-          title="Post a new bounty"
+          title="Post a creator bounty"
         >
-          <PlusCircle size={26} strokeWidth={2.5} />
+          <Plus size={28} strokeWidth={3.5} />
         </button>
       </div>
 
@@ -86,19 +86,19 @@ export default function MobileDock({
         style={{
           background: 'transparent',
           border: 'none',
-          color: activeTab === 'swarm' ? '#c1ff72' : '#9ca3af',
+          color: activeTab === 'swarm' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '4px',
-          fontSize: '0.68rem',
-          fontWeight: 600,
+          gap: '3px',
+          fontSize: '0.7rem',
+          fontWeight: 900,
           cursor: 'pointer',
           flex: 1
         }}
       >
-        <Cpu size={20} color={activeTab === 'swarm' ? '#c1ff72' : '#9ca3af'} />
-        <span>AI Swarm</span>
+        <Cpu size={22} color={activeTab === 'swarm' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'swarm' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'swarm' ? '2px solid #000' : 'none' }}>SWARMS</span>
       </button>
 
       {/* 5. Wallet */}
@@ -108,19 +108,19 @@ export default function MobileDock({
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#9ca3af',
+          color: '#000000',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '4px',
-          fontSize: '0.68rem',
-          fontWeight: 500,
+          gap: '3px',
+          fontSize: '0.7rem',
+          fontWeight: 900,
           cursor: 'pointer',
           flex: 1
         }}
       >
-        <Wallet size={20} color={wallet.connected ? '#c1ff72' : '#9ca3af'} />
-        <span>Wallet</span>
+        <Wallet size={22} color={wallet.connected ? 'var(--c-lime)' : '#000000'} strokeWidth={2.5} />
+        <span>WALLET</span>
       </button>
     </nav>
   );

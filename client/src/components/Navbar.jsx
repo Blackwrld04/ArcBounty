@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Zap, Wallet, Cpu, ExternalLink, RefreshCw } from 'lucide-react';
+import { Zap, Wallet, Cpu, Plus, Sparkles, Layers } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 
 export default function Navbar({
@@ -12,14 +12,16 @@ export default function Navbar({
   openCreateModal
 }) {
   return (
-    <header className="glass-panel-dark" style={{
+    <header style={{
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       zIndex: 100,
-      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-      height: '72px',
+      background: '#ffffff',
+      borderBottom: '3px solid #000000',
+      boxShadow: '0 4px 0px #000000',
+      height: '74px',
       display: 'flex',
       alignItems: 'center'
     }}>
@@ -30,25 +32,33 @@ export default function Navbar({
         justifyContent: 'space-between'
       }}>
         {/* Brand Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('explore')}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+          onClick={() => setActiveTab('explore')}
+        >
           <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #c1ff72 0%, #00f2fe 100%)',
+            width: '40px',
+            height: '40px',
+            background: 'var(--c-lime)',
+            border: '3px solid #000000',
+            boxShadow: '3px 3px 0px #000000',
+            borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 16px rgba(193, 255, 114, 0.35)'
+            transform: 'rotate(-2deg)'
           }}>
-            <ShieldCheck size={22} color="#090d14" strokeWidth={2.5} />
+            <Zap size={24} color="#000000" strokeWidth={3} />
           </div>
           <div>
-            <span className="font-space" style={{ fontSize: '1.35rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#ffffff' }}>
-              Arc<span style={{ color: '#c1ff72' }}>Bounty</span>
-            </span>
-            <div style={{ fontSize: '0.68rem', color: '#9ca3af', fontFamily: 'Geist Mono, monospace', marginTop: '-3px' }}>
-              Circle Arc L1 · Chain 5042
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#000000' }}>
+                ARC<span style={{ background: 'var(--c-yellow)', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
+              </span>
+              <span className="sticker-tape desktop-only">FOR WEB3 CREATORS</span>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#4b5563', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '-2px' }}>
+              Circle Arc L1 · Chain 5042 · Native USDC
             </div>
           </div>
         </div>
@@ -57,84 +67,46 @@ export default function Navbar({
         <nav style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '24px',
-          fontFamily: 'Geist, sans-serif',
-          fontSize: '0.9rem',
-          fontWeight: 500
+          gap: '12px',
+          fontWeight: 700,
+          fontSize: '0.9rem'
         }} className="desktop-nav">
           <button
             id="nav-explore-btn"
             onClick={() => setActiveTab('explore')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: activeTab === 'explore' ? '#c1ff72' : '#9ca3af',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              borderBottom: activeTab === 'explore' ? '2px solid #c1ff72' : '2px solid transparent',
-              transition: 'all 0.2s'
-            }}
+            className={`brutal-btn ${activeTab === 'explore' ? 'brutal-btn-lime' : 'brutal-btn-white'}`}
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            Bounty Explorer
+            🔥 All Bounties
           </button>
           <button
             id="nav-swarm-btn"
             onClick={() => setActiveTab('swarm')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: activeTab === 'swarm' ? '#c1ff72' : '#9ca3af',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              borderBottom: activeTab === 'swarm' ? '2px solid #c1ff72' : '2px solid transparent',
-              transition: 'all 0.2s'
-            }}
+            className={`brutal-btn ${activeTab === 'swarm' ? 'brutal-btn-cyan' : 'brutal-btn-white'}`}
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            <Cpu size={15} color={activeTab === 'swarm' ? '#c1ff72' : '#9ca3af'} />
-            AI Agent Swarm
-            <span style={{
-              fontSize: '0.65rem',
-              padding: '1px 6px',
-              borderRadius: '999px',
-              background: 'rgba(193, 255, 114, 0.15)',
-              color: '#c1ff72',
-              fontWeight: 600
-            }}>Live</span>
+            <Cpu size={16} />
+            AI & Creator Swarms
           </button>
           <button
             id="nav-leaderboard-btn"
             onClick={() => setActiveTab('leaderboard')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: activeTab === 'leaderboard' ? '#c1ff72' : '#9ca3af',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              borderBottom: activeTab === 'leaderboard' ? '2px solid #c1ff72' : '2px solid transparent',
-              transition: 'all 0.2s'
-            }}
+            className={`brutal-btn ${activeTab === 'leaderboard' ? 'brutal-btn-yellow' : 'brutal-btn-white'}`}
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            Leaderboard
+            🏆 Leaderboard
           </button>
         </nav>
 
         {/* Right Actions: Network badge + Post Bounty CTA + Wallet Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Arc Network Status Chip */}
           <div
             onClick={openWalletModal}
+            className="brutal-badge desktop-only"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
+              background: '#ffffff',
               padding: '6px 12px',
-              borderRadius: '999px',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontSize: '0.78rem',
               cursor: 'pointer'
             }}
             title="Circle Arc L1 Network Status"
@@ -143,14 +115,14 @@ export default function Navbar({
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: '#10b981',
-              boxShadow: '0 0 8px #10b981'
-            }} className="animate-pulse" />
-            <span style={{ color: '#e5e7eb', fontWeight: 500 }} className="desktop-only">
+              backgroundColor: '#00e676',
+              border: '1.5px solid #000'
+            }} />
+            <span style={{ color: '#000000', fontWeight: 800 }}>
               {network.name}
             </span>
-            <span style={{ color: '#00f2fe', fontFamily: 'Geist Mono, monospace', fontSize: '0.72rem' }}>
-              382ms
+            <span style={{ color: '#000000', background: 'var(--c-cyan)', padding: '1px 5px', borderRadius: '4px', border: '1px solid #000', fontSize: '0.7rem' }}>
+              &lt;400ms
             </span>
           </div>
 
@@ -158,55 +130,34 @@ export default function Navbar({
           <button
             id="header-post-bounty-btn"
             onClick={openCreateModal}
-            className="glass-button desktop-only"
-            style={{
-              padding: '8px 18px',
-              borderRadius: '999px',
-              color: '#090d14',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#c1ff72'
-            }}
+            className="brutal-btn brutal-btn-yellow desktop-only"
+            style={{ padding: '9px 18px', fontSize: '0.85rem' }}
           >
-            <span>+ Post Bounty</span>
-            <div className="button-shine" />
+            <Plus size={16} strokeWidth={3} />
+            <span>Post Bounty</span>
           </button>
 
           {/* Wallet Button */}
           <button
             id="header-wallet-btn"
             onClick={openWalletModal}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              borderRadius: '999px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
+            className="brutal-btn brutal-btn-lime"
+            style={{ padding: '9px 16px', fontSize: '0.85rem' }}
           >
-            <Wallet size={16} color="#c1ff72" />
+            <Wallet size={16} strokeWidth={2.5} />
             <span>
               {wallet.connected ? truncateAddress(wallet.address) : 'Connect Wallet'}
             </span>
             {wallet.connected && (
               <span style={{
-                color: '#c1ff72',
-                fontFamily: 'Geist Mono, monospace',
-                fontSize: '0.78rem',
-                borderLeft: '1px solid rgba(255, 255, 255, 0.15)',
-                paddingLeft: '6px'
+                background: '#000000',
+                color: '#ffffff',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                fontFamily: 'Geist Mono, monospace'
               }}>
-                ${wallet.balance.toLocaleString()} USDC
+                ${wallet.balance.toLocaleString()}
               </span>
             )}
           </button>

@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { Search, Filter, Sparkles, Bot } from 'lucide-react';
+import { Search, Filter, Sparkles, Bot, Palette, Video, PenTool, Smile, Zap, Globe } from 'lucide-react';
 import BountyCard from './BountyCard';
+import { CREATOR_CATEGORIES } from '../data/initialBounties';
 
 export default function BountyList({ bounties, onSelectBounty, openCreateModal }) {
+  const [activeCategory, setActiveCategory] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('All');
-  const [filterTag, setFilterTag] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [aiOnly, setAiOnly] = useState(false);
 
   const statusOptions = ['All', 'Open', 'InReview', 'Settled'];
-  const tagOptions = ['All', 'Rust', 'Solidity', 'TypeScript', 'AI Agent', 'Mobile', 'Security'];
 
   const filteredBounties = bounties.filter((b) => {
-    if (filterStatus !== 'All' && b.status.toLowerCase() !== filterStatus.toLowerCase()) {
+    if (activeCategory !== 'ALL' && b.category !== activeCategory) {
       return false;
     }
-    if (filterTag !== 'All' && !b.tags.some((t) => t.toLowerCase() === filterTag.toLowerCase())) {
+    if (filterStatus !== 'All' && b.status.toLowerCase() !== filterStatus.toLowerCase()) {
       return false;
     }
     if (aiOnly && !b.isAiEligible) {
@@ -25,59 +25,78 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
       const q = searchQuery.toLowerCase();
       return (
         b.title.toLowerCase().includes(q) ||
-        b.repo.toLowerCase().includes(q) ||
-        b.description.toLowerCase().includes(q)
+        (b.repo && b.repo.toLowerCase().includes(q)) ||
+        b.description.toLowerCase().includes(q) ||
+        (b.tags && b.tags.some((t) => t.toLowerCase().includes(q)))
       );
     }
     return true;
   });
 
   return (
-    <section id="bounties-section" style={{ padding: '60px 0', position: 'relative' }}>
+    <section id="bounties-section" style={{ padding: '40px 0 80px 0', position: 'relative' }}>
       <div className="container">
         {/* Section Heading */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px', marginBottom: '28px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c1ff72', fontSize: '0.82rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-              <Sparkles size={14} />
-              <span>Verified Escrow Vault</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span className="sticker-tape">CIRCLE ARC L1 · INSTANT ESCROW</span>
             </div>
-            <h2 className="font-space" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
-              Explore Arc Developer Tasks
+            <h2 className="font-space" style={{ fontSize: 'clamp(2rem, 3.5vw, 2.8rem)', fontWeight: 900, color: '#000000', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              ACTIVE CREATOR BOUNTIES
             </h2>
-            <p style={{ color: '#9ca3af', fontSize: '0.95rem', marginTop: '4px' }}>
-              Solve issues, submit PR proofs, and receive instant dollar-denominated USDC.
+            <p style={{ color: '#4b5563', fontSize: '1.05rem', fontWeight: 600, marginTop: '4px' }}>
+              Select your specialty, submit deliverables, and claim dollar-stable USDC payouts.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => setAiOnly(!aiOnly)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 18px',
-                borderRadius: '999px',
-                background: aiOnly ? 'rgba(193, 255, 114, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                border: aiOnly ? '1px solid #c1ff72' : '1px solid rgba(255, 255, 255, 0.1)',
-                color: aiOnly ? '#c1ff72' : '#d1d5db',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              <Bot size={16} />
-              <span>AI Agent Eligible Only</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setAiOnly(!aiOnly)}
+            className={`brutal-btn ${aiOnly ? 'brutal-btn-lime' : 'brutal-btn-white'}`}
+            style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+          >
+            <Bot size={18} />
+            <span>AI AGENT ELIGIBLE ONLY</span>
+          </button>
         </div>
 
-        {/* Controls: Search Bar & Filters */}
-        <div className="glass-panel" style={{
-          padding: '18px 24px',
-          borderRadius: '18px',
+        {/* Creator Category Tabs Bar (Brutalist) */}
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          overflowX: 'auto',
+          paddingBottom: '12px',
+          marginBottom: '20px',
+          scrollbarWidth: 'none'
+        }}>
+          {CREATOR_CATEGORIES.map((cat) => {
+            const isSelected = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                id={`cat-${cat.id.toLowerCase()}`}
+                onClick={() => setActiveCategory(cat.id)}
+                className="brutal-btn"
+                style={{
+                  background: isSelected ? cat.color : '#ffffff',
+                  color: '#000000',
+                  padding: '10px 18px',
+                  fontSize: '0.88rem',
+                  whiteSpace: 'nowrap',
+                  border: '3px solid #000000',
+                  boxShadow: isSelected ? '6px 6px 0px #000000' : '3px 3px 0px #000000',
+                  transform: isSelected ? 'translate(-2px, -2px)' : 'none'
+                }}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search & Status Controls */}
+        <div className="brutal-card" style={{
+          padding: '20px',
           marginBottom: '32px',
           display: 'flex',
           flexDirection: 'column',
@@ -86,37 +105,36 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
           {/* Search Row */}
           <div style={{ position: 'relative', width: '100%' }}>
             <Search
-              size={18}
-              color="#6b7280"
+              size={20}
+              color="#000000"
               style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }}
             />
             <input
               id="bounty-search-input"
               type="text"
-              placeholder="Search by issue title, repository (e.g. circlefin), or keywords..."
+              placeholder="Search by keyword, design style, video type, or repo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '14px 16px 14px 46px',
-                background: 'rgba(0, 0, 0, 0.35)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                color: '#ffffff',
-                fontSize: '0.92rem',
+                padding: '14px 16px 14px 48px',
+                background: '#ffffff',
+                border: '3px solid #000000',
+                borderRadius: '8px',
+                boxShadow: '3px 3px 0px #000000',
+                color: '#000000',
+                fontSize: '1rem',
+                fontWeight: 700,
                 outline: 'none',
                 fontFamily: 'inherit'
               }}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(193, 255, 114, 0.5)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
             />
           </div>
 
-          {/* Filter Pills */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-            {/* Status Pills */}
+          {/* Status Pills */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 600, marginRight: '4px' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#000000', textTransform: 'uppercase' }}>
                 STATUS:
               </span>
               {statusOptions.map((status) => (
@@ -124,60 +142,18 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
                   key={status}
                   id={`filter-status-${status.toLowerCase()}`}
                   onClick={() => setFilterStatus(status)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '999px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    background: filterStatus === status ? '#c1ff72' : 'rgba(255, 255, 255, 0.05)',
-                    color: filterStatus === status ? '#090d14' : '#9ca3af',
-                    border: filterStatus === status ? '1px solid #c1ff72' : '1px solid rgba(255, 255, 255, 0.08)',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`brutal-btn ${filterStatus === status ? 'brutal-btn-yellow' : 'brutal-btn-white'}`}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                 >
-                  {status === 'InReview' ? 'In Review' : status}
+                  {status === 'InReview' ? 'IN REVIEW' : status.toUpperCase()}
                 </button>
               ))}
             </div>
 
-            {/* Tag Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 600, marginRight: '4px' }}>
-                STACK:
-              </span>
-              {tagOptions.map((tag) => (
-                <button
-                  key={tag}
-                  id={`filter-tag-${tag.toLowerCase()}`}
-                  onClick={() => setFilterTag(tag)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    background: filterTag === tag ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                    color: filterTag === tag ? '#00f2fe' : '#9ca3af',
-                    border: filterTag === tag ? '1px solid #00f2fe' : '1px solid rgba(255, 255, 255, 0.06)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#000000' }}>
+              SHOWING <span style={{ background: 'var(--c-lime)', padding: '2px 6px', border: '1.5px solid #000', borderRadius: '4px' }}>{filteredBounties.length}</span> BOUNTIES
             </div>
           </div>
-        </div>
-
-        {/* Results Counter */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', color: '#9ca3af', fontSize: '0.85rem' }}>
-          <span>
-            Showing <strong style={{ color: '#ffffff' }}>{filteredBounties.length}</strong> tasks on Arc L1
-          </span>
-          <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
-            Escrow settled in Canonical USDC (0x3600...0000)
-          </span>
         </div>
 
         {/* Bounty Grid */}
@@ -196,29 +172,22 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
             ))}
           </div>
         ) : (
-          <div className="glass-panel" style={{
+          <div className="brutal-card" style={{
             padding: '60px 20px',
             textAlign: 'center',
-            borderRadius: '20px',
+            background: 'var(--c-yellow)',
             marginTop: '20px'
           }}>
-            <p style={{ fontSize: '1.2rem', color: '#ffffff', fontWeight: 600 }}>No matching bounties found</p>
-            <p style={{ fontSize: '0.9rem', color: '#9ca3af', marginTop: '6px' }}>Try resetting your filter parameters or search query.</p>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#000000' }}>NO MATCHING BOUNTIES FOUND</h3>
+            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1f2937', marginTop: '6px' }}>
+              Try adjusting your category tabs or clearing your search keywords.
+            </p>
             <button
-              onClick={() => { setFilterStatus('All'); setFilterTag('All'); setSearchQuery(''); setAiOnly(false); }}
-              style={{
-                marginTop: '18px',
-                padding: '10px 20px',
-                borderRadius: '999px',
-                background: '#c1ff72',
-                color: '#090d14',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                cursor: 'pointer'
-              }}
+              onClick={() => { setActiveCategory('ALL'); setFilterStatus('All'); setSearchQuery(''); setAiOnly(false); }}
+              className="brutal-btn brutal-btn-black"
+              style={{ marginTop: '18px' }}
             >
-              Reset Filters
+              RESET ALL FILTERS
             </button>
           </div>
         )}
