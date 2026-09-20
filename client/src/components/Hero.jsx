@@ -1,106 +1,214 @@
 import React from 'react';
-import { ArrowRight, Zap, Sparkles, CheckCircle2, ShieldCheck, Bot, Plus } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Layers, Plus, CheckCircle2 } from 'lucide-react';
 
-export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user }) {
+export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user, stats }) {
   return (
-    <section style={{ padding: '48px 0 28px 0', textAlign: 'center' }}>
-      <div className="container" style={{ maxWidth: '860px' }}>
-        {/* Arc L1 Sticker Badge (Neo-Brutalist) */}
-        <div style={{ marginBottom: '22px' }}>
-          <span className="sticker-tape">
-            CIRCLE ARC L1 (CHAIN ID 5042) · NATIVE USDC ESCROW · ZERO-GAS CREATOR SETTLEMENT
-          </span>
-        </div>
-
-        {/* Unique ArcBounty Headline */}
-        <h1 className="font-space" style={{
-          fontSize: 'clamp(2.3rem, 4.6vw, 3.8rem)',
-          fontWeight: 900,
-          color: 'var(--arc-protocol-navy)',
-          letterSpacing: '-0.03em',
-          lineHeight: 1.16,
-          marginBottom: '20px'
-        }}>
-          The Open Bounty Protocol for{' '}
-          <span className="neo-highlight-sky">
-            Web3 Creators
-          </span>
-          <br />
-          Settled in{' '}
-          <span className="neo-highlight-gold">
-            Canonical USDC
-          </span>
-        </h1>
-
-        {/* Unique Value Proposition Write-Up */}
-        <p style={{
-          fontSize: '1.08rem',
-          color: '#334155',
-          lineHeight: 1.6,
-          maxWidth: '680px',
-          margin: '0 auto 28px auto',
-          fontWeight: 600
-        }}>
-          The high-velocity bounty protocol built on Circle's Arc Layer-1. Lock verified escrow, deliver high-impact work in <strong>Content, Design, Development, and All Social</strong> campaigns, and receive instant payouts with sub-second Malachite BFT finality.
-        </p>
-
-        {/* Proof-Point Pills (Clean Neo-Brutalist Badges) */}
+    <section style={{ padding: '32px 0 20px 0' }}>
+      <div className="container">
+        {/* Flagship Hero Grid (Inspired by Superteam Earn & Gibwork) */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          flexWrap: 'wrap',
-          marginBottom: '32px'
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) 340px',
+          gap: '36px',
+          alignItems: 'stretch'
         }}>
-          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
-            <ShieldCheck size={15} color="var(--arc-validator-blue)" />
-            <span>Verifiable On-Chain Escrow</span>
-          </div>
-
-          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
-            <Zap size={15} color="#d97706" />
-            <span>&lt;400ms Settlement Speed</span>
-          </div>
-
-          <div className="clean-badge" style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', fontSize: '0.78rem' }}>
-            <Bot size={15} color="var(--arc-quantum-plum)" />
-            <span>Autonomous AI Swarm Ready</span>
-          </div>
-        </div>
-
-        {/* Neo-Brutalist Call-to-Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <button
-            id="hero-create-bounty-btn"
-            onClick={openCreateModal}
-            className="btn-primary"
-            style={{ padding: '13px 26px', fontSize: '0.96rem' }}
+          {/* Main Feature Banner (Left 70%) */}
+          <div
+            className="clean-card"
+            style={{
+              background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
+              color: '#ffffff',
+              padding: '36px 38px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '260px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
           >
-            <Plus size={18} strokeWidth={2.5} />
-            <span>Post a Bounty</span>
-          </button>
+            <div>
+              {/* Sticker Tape Badge */}
+              <div style={{ marginBottom: '16px' }}>
+                <span className="sticker-tape">
+                  CIRCLE ARC L1 (5042) · NATIVE USDC ESCROW · ZERO-GAS CREATOR SETTLEMENT
+                </span>
+              </div>
 
-          {!user && (
-            <button
-              id="hero-signup-btn"
-              onClick={() => openAuthModal('signup')}
-              className="btn-accent"
-              style={{ padding: '13px 26px', fontSize: '0.96rem' }}
-            >
-              <span>Join as Creator</span>
-              <ArrowRight size={17} />
-            </button>
-          )}
+              {/* Unique Headline */}
+              <h1 className="font-space" style={{
+                fontSize: 'clamp(1.85rem, 3.2vw, 2.6rem)',
+                fontWeight: 900,
+                color: '#ffffff',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.18,
+                marginBottom: '14px'
+              }}>
+                The Open Bounty Protocol for Web3 Creators &amp; Builders
+              </h1>
 
-          <button
-            id="hero-explore-btn"
-            onClick={onExploreClick}
-            className="btn-secondary"
-            style={{ padding: '13px 24px', fontSize: '0.96rem' }}
-          >
-            <span>Browse Opportunities</span>
-          </button>
+              {/* Subheading */}
+              <p style={{
+                fontSize: '0.98rem',
+                color: '#acc6e9',
+                lineHeight: 1.55,
+                maxWidth: '640px',
+                marginBottom: '26px',
+                fontWeight: 500
+              }}>
+                Lock canonical USDC in escrow. Deliver high-impact work in <strong>Content, Design, Development, and All Social</strong> campaigns. Receive instant disbursements with sub-second Malachite BFT finality.
+              </p>
+            </div>
+
+            {/* CTAs & Social Proof */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {!user ? (
+                  <>
+                    <button
+                      id="hero-signup-btn"
+                      onClick={() => openAuthModal('signup')}
+                      className="btn-accent"
+                      style={{ padding: '12px 24px', fontSize: '0.92rem' }}
+                    >
+                      <span>Sign Up as Creator</span>
+                      <ArrowRight size={16} />
+                    </button>
+
+                    <button
+                      onClick={onExploreClick}
+                      className="btn-secondary"
+                      style={{ padding: '12px 20px', fontSize: '0.92rem', background: '#ffffff', color: '#000000' }}
+                    >
+                      <span>Explore Bounties</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      id="hero-create-bounty-btn"
+                      onClick={openCreateModal}
+                      className="btn-accent"
+                      style={{ padding: '12px 24px', fontSize: '0.92rem' }}
+                    >
+                      <Plus size={16} strokeWidth={2.5} />
+                      <span>Post a Bounty</span>
+                    </button>
+
+                    <button
+                      onClick={onExploreClick}
+                      className="btn-secondary"
+                      style={{ padding: '12px 20px', fontSize: '0.92rem', background: '#ffffff', color: '#000000' }}
+                    >
+                      <span>Browse Opportunities</span>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Social Proof (Overlapping Avatars) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} className="desktop-only">
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                    alt="Creator"
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #000000', marginLeft: '0px' }}
+                  />
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+                    alt="Creator"
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #000000', marginLeft: '-8px' }}
+                  />
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
+                    alt="Creator"
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #000000', marginLeft: '-8px' }}
+                  />
+                </div>
+                <span style={{ fontSize: '0.78rem', color: '#acc6e9', fontWeight: 600 }}>
+                  Join 2,400+ Web3 creators on Arc
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Cards (Right 30%, exactly matching Superteam Earn) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', justifyContent: 'space-between' }} className="desktop-only">
+            <div className="clean-card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '8px',
+                background: '#dcfce7',
+                border: '2px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#16a34a',
+                flexShrink: 0
+              }}>
+                <Shield size={20} strokeWidth={2.4} />
+              </div>
+              <div>
+                <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+                  TOTAL VALUE SETTLED
+                </p>
+                <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: '2px 0 0 0' }}>
+                  ${(stats?.totalSettledUsdc || 142800).toLocaleString()} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="clean-card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '8px',
+                background: '#e0f2fe',
+                border: '2px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--arc-validator-blue)',
+                flexShrink: 0
+              }}>
+                <Layers size={20} strokeWidth={2.4} />
+              </div>
+              <div>
+                <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+                  ACTIVE OPPORTUNITIES
+                </p>
+                <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: '2px 0 0 0' }}>
+                  {stats?.activeBountiesCount || 164} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Bounties</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="clean-card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '8px',
+                background: 'var(--arc-token-sand)',
+                border: '2px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#000000',
+                flexShrink: 0
+              }}>
+                <Zap size={20} strokeWidth={2.4} />
+              </div>
+              <div>
+                <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+                  DETERMINISTIC FINALITY
+                </p>
+                <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: '2px 0 0 0' }}>
+                  &lt;400ms <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Malachite BFT</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

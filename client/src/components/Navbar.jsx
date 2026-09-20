@@ -80,32 +80,80 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Center: Search Bar (Gibwork / Superteam style) */}
-        <div style={{ flex: 1, maxWidth: '460px', position: 'relative' }} className="desktop-only">
-          <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            placeholder="Search bounties, creators, tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 14px 8px 38px',
-              borderRadius: '9999px',
-              border: '1px solid #e2e8f0',
-              background: '#f8fafc',
-              fontSize: '0.88rem',
-              color: '#0f172a',
-              outline: 'none',
-              transition: 'all 0.15s ease'
-            }}
-          />
+        {/* Center: Navigation Links & Search Bar (Superteam Earn style) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flex: 1, maxWidth: '540px', marginLeft: '12px' }} className="desktop-only">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setActiveView('explore')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: activeView === 'explore' ? 'var(--arc-protocol-navy)' : '#64748b',
+                fontWeight: activeView === 'explore' ? 800 : 600,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                padding: '4px 0',
+                borderBottom: activeView === 'explore' ? '2px solid var(--arc-protocol-navy)' : '2px solid transparent'
+              }}
+            >
+              Bounties
+            </button>
+            <button
+              onClick={() => setActiveView('leaderboard')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: activeView === 'leaderboard' ? 'var(--arc-protocol-navy)' : '#64748b',
+                fontWeight: activeView === 'leaderboard' ? 800 : 600,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                padding: '4px 0',
+                borderBottom: activeView === 'leaderboard' ? '2px solid var(--arc-protocol-navy)' : '2px solid transparent'
+              }}
+            >
+              Leaderboard
+            </button>
+            <a
+              href="https://arc.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#64748b',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                textDecoration: 'none'
+              }}
+            >
+              Arc Docs ↗
+            </a>
+          </div>
+
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Search bounties, creators, tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '7px 12px 7px 34px',
+                borderRadius: '8px',
+                border: '1.5px solid #000000',
+                background: '#ffffff',
+                fontSize: '0.84rem',
+                color: '#0f172a',
+                outline: 'none',
+                fontWeight: 600
+              }}
+            />
+          </div>
         </div>
 
         {/* Right: Actions depending on Auth State */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {!user ? (
-            /* Logged Out Header */
+            /* Logged Out Header (Guest User Experience) */
             <>
               <button
                 onClick={() => openAuthModal('signup')}
@@ -114,9 +162,9 @@ export default function Navbar({
                   border: 'none',
                   color: '#475569',
                   fontSize: '0.88rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  padding: '6px 12px'
+                  padding: '6px 10px'
                 }}
                 className="desktop-only"
               >
@@ -124,26 +172,31 @@ export default function Navbar({
               </button>
 
               <button
+                id="navbar-login-btn"
                 onClick={() => openAuthModal('login')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#0f172a',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: '6px 12px'
-                }}
+                className="btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.86rem' }}
               >
                 Log In
               </button>
 
               <button
+                id="navbar-signup-btn"
                 onClick={() => openAuthModal('signup')}
                 className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '0.88rem' }}
+                style={{ padding: '8px 18px', fontSize: '0.86rem' }}
               >
                 Sign Up
+              </button>
+
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="btn-secondary desktop-only"
+                style={{ padding: '8px 14px', fontSize: '0.84rem', gap: '6px' }}
+                title="Connect Web3 Wallet"
+              >
+                <Wallet size={15} />
+                <span>Connect Wallet</span>
               </button>
             </>
           ) : (

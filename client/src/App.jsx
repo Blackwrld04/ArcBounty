@@ -17,27 +17,46 @@ import { Zap, CheckCircle2, ExternalLink, X } from 'lucide-react';
 export default function App() {
   const [network, setNetwork] = useState(ARC_MAINNET);
 
-  // Authenticated user state (Default logged in as Olajide from screenshot)
-  const [user, setUser] = useState({
-    name: 'Olajide Abdulquadri',
-    username: 'olajide-amaranth-18',
-    email: 'olajideabdulquadri22@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-    address: '0x461cd48D95993242bB04774cc68042795586BbAd',
-    balance: 10000,
-    type: 'verified'
+  // Authenticated user state: default to null (Guest / new visitor mode)
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('arcbounty_session_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
-  const [wallet, setWallet] = useState({
-    connected: true,
-    address: '0x461cd48D95993242bB04774cc68042795586BbAd',
-    balance: 10000,
-    type: 'simulated'
+  const [wallet, setWallet] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('arcbounty_session_user');
+      if (savedUser) {
+        const u = JSON.parse(savedUser);
+        return {
+          connected: true,
+          address: u.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
+          balance: u.balance || 10000,
+          type: 'simulated'
+        };
+      }
+    } catch (e) {}
+    return {
+      connected: false,
+      address: null,
+      balance: 0,
+      type: null
+    };
   });
 
   const [bounties, setBounties] = useState(() => {
-    const saved = localStorage.getItem('arcbounty_clean_items_v1');
-    return saved ? JSON.parse(saved) : INITIAL_BOUNTIES;
+    try {
+      const saved = localStorage.getItem('arcbounty_items_v4');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_BOUNTIES;
   });
 
   const [stats, setStats] = useState({
@@ -68,7 +87,7 @@ export default function App() {
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('arcbounty_clean_items_v1', JSON.stringify(bounties));
+    localStorage.setItem('arcbounty_items_v4', JSON.stringify(bounties));
   }, [bounties]);
 
   // Handle posting a new bounty
@@ -148,15 +167,28 @@ export default function App() {
     setUser(userData);
     setWallet({
       connected: true,
-      address: userData.address,
+      address: userData.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
       balance: userData.balance || 10000,
-      type: userData.type
+      type: userData.type || 'simulated'
     });
-    showToast(`Welcome back, ${userData.name}!`);
+    try {
+      localStorage.setItem('arcbounty_session_user', JSON.stringify(userData));
+    } catch (e) {}
+    showToast(`Welcome, ${userData.name}!`);
   };
 
   const handleLogout = () => {
     setUser(null);
+    setWallet({
+      connected: false,
+      address: null,
+      balance: 0,
+      type: null
+    });
+    try {
+      localStorage.removeItem('arcbounty_session_user');
+    } catch (e) {}
+    setActiveView('explore');
     showToast('Logged out successfully.');
   };
 
@@ -198,6 +230,7 @@ export default function App() {
               }}
               openAuthModal={handleOpenAuth}
               user={user}
+              stats={stats}
             />
 
             <div id="bounties-feed">
@@ -284,6 +317,7 @@ export default function App() {
           onReleaseBounty={handleReleaseBounty}
           wallet={wallet}
           user={user}
+          openAuthModal={handleOpenAuth}
         />
       )}
 

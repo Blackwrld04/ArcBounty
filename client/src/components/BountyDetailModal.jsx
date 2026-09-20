@@ -24,7 +24,8 @@ export default function BountyDetailModal({
   onSubmitSolution,
   onReleaseBounty,
   wallet,
-  user
+  user,
+  openAuthModal
 }) {
   const [submissionUrl, setSubmissionUrl] = useState('');
   const [solverType, setSolverType] = useState('Human Creator');
@@ -329,103 +330,142 @@ export default function BountyDetailModal({
           </div>
         )}
 
-        {/* Submission Form (If open) */}
+        {/* Submission Form / Guest Action (If open) */}
         {bounty.status === 'Open' && (
-          <form onSubmit={handleSubmitWork} style={{ borderTop: '2px solid #000000', paddingTop: '22px' }}>
+          <div style={{ borderTop: '2px solid #000000', paddingTop: '22px' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#000000', marginBottom: '14px' }}>
               Submit Your Deliverable
             </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
-                  CREATOR TYPE
-                </label>
-                <div style={{ display: 'flex', gap: '10px' }}>
+            {!user ? (
+              <div style={{
+                background: 'var(--arc-static-ether)',
+                border: '2px solid #000000',
+                boxShadow: '2.5px 2.5px 0px #000000',
+                borderRadius: '10px',
+                padding: '24px',
+                textAlign: 'center'
+              }}>
+                <p style={{ fontSize: '1rem', fontWeight: 800, color: '#000000', marginBottom: '6px' }}>
+                  Sign in or create an account to submit work
+                </p>
+                <p style={{ fontSize: '0.82rem', color: '#4b5563', marginBottom: '18px', maxWidth: '440px', margin: '0 auto 18px auto', fontWeight: 500 }}>
+                  Join thousands of creators earning canonical USDC on Circle Arc. Submit your deliverable and get paid with zero gas fees.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    onClick={() => setSolverType('Human Creator')}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: '2px solid #000000',
-                      background: solverType === 'Human Creator' ? 'var(--arc-sky-sync)' : '#ffffff',
-                      boxShadow: solverType === 'Human Creator' ? '2.5px 2.5px 0px #000000' : 'none',
-                      fontWeight: 800,
-                      fontSize: '0.84rem',
-                      color: '#000000',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
+                    onClick={() => { onClose(); openAuthModal && openAuthModal('signup'); }}
+                    className="btn-accent"
+                    style={{ padding: '10px 22px', fontSize: '0.88rem' }}
                   >
-                    <User size={15} strokeWidth={2.2} />
-                    <span>Human Creator</span>
+                    <span>Sign Up to Submit</span>
+                    <ArrowRight size={15} />
                   </button>
-
                   <button
                     type="button"
-                    onClick={() => setSolverType('Autonomous AI Agent')}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: '2px solid #000000',
-                      background: solverType === 'Autonomous AI Agent' ? 'var(--arc-token-sand)' : '#ffffff',
-                      boxShadow: solverType === 'Autonomous AI Agent' ? '2.5px 2.5px 0px #000000' : 'none',
-                      fontWeight: 800,
-                      fontSize: '0.84rem',
-                      color: '#000000',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
+                    onClick={() => { onClose(); openAuthModal && openAuthModal('login'); }}
+                    className="btn-secondary"
+                    style={{ padding: '10px 20px', fontSize: '0.88rem' }}
                   >
-                    <Bot size={15} strokeWidth={2.2} />
-                    <span>Autonomous AI Agent</span>
+                    <span>Log In</span>
                   </button>
                 </div>
               </div>
+            ) : (
+              <form onSubmit={handleSubmitWork}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                      CREATOR TYPE
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSolverType('Human Creator')}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          background: solverType === 'Human Creator' ? 'var(--arc-sky-sync)' : '#ffffff',
+                          boxShadow: solverType === 'Human Creator' ? '2.5px 2.5px 0px #000000' : 'none',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          color: '#000000',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <User size={15} strokeWidth={2.2} />
+                        <span>Human Creator</span>
+                      </button>
 
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
-                  DELIVERABLE URL (Figma, Loom, YouTube, X Thread, GitHub, or Drive) *
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://figma.com/... or https://x.com/... or https://github.com/..."
-                  value={submissionUrl}
-                  onChange={(e) => setSubmissionUrl(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.92rem',
-                    outline: 'none',
-                    fontWeight: 600
-                  }}
-                />
-              </div>
+                      <button
+                        type="button"
+                        onClick={() => setSolverType('Autonomous AI Agent')}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          background: solverType === 'Autonomous AI Agent' ? 'var(--arc-token-sand)' : '#ffffff',
+                          boxShadow: solverType === 'Autonomous AI Agent' ? '2.5px 2.5px 0px #000000' : 'none',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          color: '#000000',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Bot size={15} strokeWidth={2.2} />
+                        <span>Autonomous AI Agent</span>
+                      </button>
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting || !submissionUrl}
-                className="btn-accent"
-                style={{ width: '100%', padding: '14px', fontSize: '0.95rem' }}
-              >
-                <span>{isSubmitting ? 'Verifying on Arc...' : 'Submit Work for Review'}</span>
-                <ArrowRight size={18} />
-              </button>
-            </div>
-          </form>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                      DELIVERABLE URL (Figma, Loom, YouTube, X Thread, GitHub, or Drive) *
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://figma.com/... or https://x.com/... or https://github.com/..."
+                      value={submissionUrl}
+                      onChange={(e) => setSubmissionUrl(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '2px solid #000000',
+                        boxShadow: '2px 2px 0px #000000',
+                        fontSize: '0.92rem',
+                        outline: 'none',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !submissionUrl}
+                    className="btn-accent"
+                    style={{ width: '100%', padding: '14px', fontSize: '0.95rem' }}
+                  >
+                    <span>{isSubmitting ? 'Verifying on Arc...' : 'Submit Work for Review'}</span>
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         )}
 
         {/* Sponsor Review & Release Button */}
