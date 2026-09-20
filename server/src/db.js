@@ -33,6 +33,10 @@ db.exec(`
     role TEXT DEFAULT 'creator',
     discipline TEXT DEFAULT 'Design',
     bio TEXT,
+    telegram TEXT,
+    discord TEXT,
+    x TEXT,
+    github TEXT,
     created_at INTEGER NOT NULL
   );
 
@@ -54,6 +58,12 @@ db.exec(`
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
 `);
+
+// Gracefully add social columns if migrating existing users table
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN discord TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN x TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN github TEXT;`); } catch (e) {}
 
 console.log(`[Database] SQLite initialized at: ${dbPath}`);
 
@@ -223,3 +233,56 @@ export function getUserByToken(token) {
   `);
   return stmt.get(token, now);
 }
+
+/**
+ * Connect or disconnect a social platform for a user
+ * platforms supported: 'telegram', 'discord', 'x', 'github'
+ */
+export function updateUserSocial(userId, platform, handle) {
+  const allowed = ['telegram', 'discord', 'x', 'github'];
+  if (!allowed.includes(platform)) {
+    throw new Error(`Unsupported platform: ${platform}`);
+  }
+
+  const cleanHandle = handle ? handle.trim().replace(/^@/, '') : null;
+  const stmt = db.prepare(`UPDATE users SET ${platform} = ? WHERE id = ?`);
+  stmt.run(cleanHandle, userId);
+
+  return getUserById(userId);
+}
+
+/**
+ * Connect or update wallet address for a user
+ */
+export function updateUserWallet(userId, walletAddress) {
+  if (!walletAddress || !walletAddress.startsWith('0x')) {
+    throw new Error('Valid EVM wallet address required');
+  }
+
+  const stmt = db.prepare(`UPDATE users SET wallet_address = ? WHERE id = ?`);
+  stmt.run(walletAddress.toLowerCase(), userId);
+
+  return getUserById(userId);
+}
+
+/**
+ * Update general creator profile
+ */
+export function updateUserProfile(userId, { name, username, bio, discipline, avatar }) {
+  const user = getUserById(userId);
+  if (!user) throw new Error('User not found');
+
+  const updatedName = name !== undefined ? name.trim() : user.name;
+  const updatedUsername = username !== undefined ? username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') : user.username;
+  const updatedBio = bio !== undefined ? bio.trim() : user.bio;
+  const updatedDiscipline = discipline !== undefined ? discipline : user.discipline;
+  const updatedAvatar = avatar !== undefined ? avatar : user.avatar;
+
+  const stmt = db.prepare(`
+    UPDATE users SET name = ?, username = ?, bio = ?, discipline = ?, avatar = ? WHERE id = ?
+  `);
+  stmt.run(updatedName, updatedUsername, updatedBio, updatedDiscipline, updatedAvatar, userId);
+
+  return getUserById(userId);
+}
+

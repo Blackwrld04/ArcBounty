@@ -5,6 +5,7 @@ import BountyList from './components/BountyList';
 import BountyDetailModal from './components/BountyDetailModal';
 import CreateBountyModal from './components/CreateBountyModal';
 import AuthModal from './components/AuthModal';
+import ConnectWalletModal from './components/ConnectWalletModal';
 import WalletDrawer from './components/WalletDrawer';
 import UserProfile from './components/UserProfile';
 import AccountSettings from './components/AccountSettings';
@@ -73,6 +74,7 @@ export default function App() {
   // Modals & Drawers state
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [connectWalletModalOpen, setConnectWalletModalOpen] = useState(false);
   const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedBounty, setSelectedBounty] = useState(null);
@@ -83,6 +85,18 @@ export default function App() {
     setTimeout(() => {
       setToast(null);
     }, 4500);
+  };
+
+  const handleWalletConnected = (newWallet, updatedUser, token) => {
+    setWallet(newWallet);
+    if (updatedUser) {
+      setUser(updatedUser);
+      localStorage.setItem('arcbounty_session_user', JSON.stringify(updatedUser));
+    }
+    if (token) {
+      localStorage.setItem('arcbounty_session_token', token);
+    }
+    showToast(`Wallet connected! Address: ${newWallet.address.slice(0, 6)}...${newWallet.address.slice(-4)}`);
   };
 
   // Sync to local storage
@@ -244,6 +258,7 @@ export default function App() {
         setActiveView={setActiveView}
         openAuthModal={handleOpenAuth}
         openWalletDrawer={() => setWalletDrawerOpen(true)}
+        openConnectWalletModal={() => setConnectWalletModalOpen(true)}
         openCreateModal={() => {
           if (!user) {
             handleOpenAuth('signup');
@@ -298,12 +313,14 @@ export default function App() {
             bounties={bounties}
             onBackToFeed={() => setActiveView('explore')}
             onSelectBounty={(bounty) => setSelectedBounty(bounty)}
+            onOpenSettings={() => setActiveView('account')}
           />
         )}
 
         {(activeView === 'account' || activeView === 'account-referrals') && user && (
           <AccountSettings
             user={user}
+            setUser={setUser}
             wallet={wallet}
             setWallet={setWallet}
             initialTab={activeView === 'account-referrals' ? 'referrals' : 'account'}
@@ -331,6 +348,15 @@ export default function App() {
         wallet={wallet}
         setWallet={setWallet}
         network={network}
+      />
+
+      {/* Dedicated Web3 Connect Wallet Modal */}
+      <ConnectWalletModal
+        isOpen={connectWalletModalOpen}
+        onClose={() => setConnectWalletModalOpen(false)}
+        user={user}
+        wallet={wallet}
+        onWalletConnected={handleWalletConnected}
       />
 
       {/* Split Login & Sign Up Modal (Gibwork style) */}

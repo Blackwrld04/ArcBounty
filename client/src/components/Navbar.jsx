@@ -10,6 +10,7 @@ export default function Navbar({
   setActiveView,
   openAuthModal,
   openWalletDrawer,
+  openConnectWalletModal,
   openCreateModal,
   onLogout,
   searchQuery,
@@ -190,7 +191,7 @@ export default function Navbar({
               </button>
 
               <button
-                onClick={() => openAuthModal('signup')}
+                onClick={openConnectWalletModal}
                 className="btn-secondary desktop-only"
                 style={{ padding: '8px 14px', fontSize: '0.84rem', gap: '6px' }}
                 title="Connect Web3 Wallet"

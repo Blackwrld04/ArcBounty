@@ -5,10 +5,34 @@ import {
   getUserByEmail,
   createUser,
   createSession,
-  getUserByToken
+  getUserByToken,
+  updateUserSocial,
+  updateUserWallet,
+  updateUserProfile
 } from '../db.js';
 
 export const authRouter = Router();
+
+function formatUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    username: user.username,
+    avatar: user.avatar,
+    address: user.wallet_address,
+    balance: user.usdc_balance,
+    role: user.role,
+    discipline: user.discipline,
+    bio: user.bio,
+    telegram: user.telegram,
+    discord: user.discord,
+    x: user.x,
+    github: user.github,
+    provider: user.provider
+  };
+}
 
 /**
  * POST /api/auth/send-code
@@ -95,18 +119,7 @@ authRouter.post('/verify-code', (req, res) => {
 
     return res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-        avatar: user.avatar,
-        address: user.wallet_address,
-        balance: user.usdc_balance,
-        role: user.role,
-        discipline: user.discipline,
-        provider: user.provider
-      },
+      user: formatUser(user),
       token
     });
   } catch (err) {
@@ -144,18 +157,7 @@ authRouter.post('/google', (req, res) => {
 
     return res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-        avatar: user.avatar,
-        address: user.wallet_address,
-        balance: user.usdc_balance,
-        role: user.role,
-        discipline: user.discipline,
-        provider: 'google'
-      },
+      user: formatUser(user),
       token
     });
   } catch (err) {
@@ -195,18 +197,7 @@ authRouter.post('/wallet', (req, res) => {
 
     return res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-        avatar: user.avatar,
-        address: user.wallet_address,
-        balance: user.usdc_balance,
-        role: user.role,
-        discipline: user.discipline,
-        provider: 'wallet'
-      },
+      user: formatUser(user),
       token
     });
   } catch (err) {
@@ -235,20 +226,66 @@ authRouter.get('/me', (req, res) => {
 
     return res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-        avatar: user.avatar,
-        address: user.wallet_address,
-        balance: user.usdc_balance,
-        role: user.role,
-        discipline: user.discipline,
-        provider: user.provider
-      }
+      user: formatUser(user)
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Failed to authenticate user' });
+  }
+});
+
+/**
+ * POST /api/auth/social-connect
+ * Links or unlinks Telegram, Discord, X, or GitHub
+ */
+authRouter.post('/social-connect', (req, res) => {
+  try {
+    const { userId, platform, handle, action = 'connect' } = req.body;
+    if (!userId || !platform) {
+      return res.status(400).json({ success: false, error: 'User ID and platform are required' });
+    }
+
+    const updatedUser = updateUserSocial(userId, platform, action === 'disconnect' ? null : handle);
+    return res.json({ success: true, user: formatUser(updatedUser) });
+  } catch (err) {
+    console.error('[Auth Error] social-connect failed:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update social connection' });
+  }
+});
+
+/**
+ * POST /api/auth/connect-wallet
+ * Connects or switches EVM wallet address for user
+ */
+authRouter.post('/connect-wallet', (req, res) => {
+  try {
+    const { userId, address } = req.body;
+    if (!userId || !address) {
+      return res.status(400).json({ success: false, error: 'User ID and address are required' });
+    }
+
+    const updatedUser = updateUserWallet(userId, address);
+    return res.json({ success: true, user: formatUser(updatedUser) });
+  } catch (err) {
+    console.error('[Auth Error] connect-wallet failed:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to connect wallet' });
+  }
+});
+
+/**
+ * POST /api/auth/update-profile
+ * Updates creator profile details
+ */
+authRouter.post('/update-profile', (req, res) => {
+  try {
+    const { userId, name, username, bio, discipline, avatar } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'User ID is required' });
+    }
+
+    const updatedUser = updateUserProfile(userId, { name, username, bio, discipline, avatar });
+    return res.json({ success: true, user: formatUser(updatedUser) });
+  } catch (err) {
+    console.error('[Auth Error] update-profile failed:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update profile' });
   }
 });
