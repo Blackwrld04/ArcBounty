@@ -7,13 +7,13 @@ export default function MetricsStrip({ stats }) {
       label: 'TOTAL VALUE IN ESCROW',
       value: `$${(stats?.tvlUsdc || 28450).toLocaleString()} USDC`,
       detail: 'Locked in Arc Canonical USDC',
-      bg: 'var(--c-lime)',
+      bg: 'var(--arc-sky-sync)',
       icon: <Shield size={20} strokeWidth={2.5} />
     },
     {
       label: 'COMPLETED CREATOR PAYOUTS',
       value: `$${(stats?.totalSettledUsdc || 142800).toLocaleString()}`,
-      detail: '164 Bounties Disbursed',
+      detail: '164 Bounties Disbursed on Arc',
       bg: '#ffffff',
       icon: <CheckCircle size={20} strokeWidth={2.5} />
     },
@@ -21,14 +21,14 @@ export default function MetricsStrip({ stats }) {
       label: 'SETTLEMENT LATENCY',
       value: `${stats?.avgSettlementTimeMs || 384}ms`,
       detail: 'Deterministic Malachite Finality',
-      bg: 'var(--c-yellow)',
+      bg: 'var(--arc-token-sand)',
       icon: <Clock size={20} strokeWidth={2.5} />
     },
     {
       label: 'CREATOR CATEGORIES',
       value: '6 ACTIVE',
       detail: 'Design, Video, Threads, Memes, Dev',
-      bg: 'var(--c-cyan)',
+      bg: 'var(--arc-blockstream-gold)',
       icon: <Sparkles size={20} strokeWidth={2.5} />
     }
   ];
@@ -58,7 +58,7 @@ export default function MetricsStrip({ stats }) {
                   {item.label}
                 </span>
                 <div style={{
-                  background: '#000000',
+                  background: 'var(--arc-protocol-navy)',
                   color: '#ffffff',
                   padding: '4px',
                   borderRadius: '6px',
@@ -71,10 +71,10 @@ export default function MetricsStrip({ stats }) {
               </div>
 
               <div style={{ marginTop: '14px' }}>
-                <p className="font-space" style={{ fontSize: '1.9rem', fontWeight: 900, color: '#000000', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                <p className="font-space" style={{ fontSize: '1.9rem', fontWeight: 900, color: 'var(--arc-protocol-navy)', letterSpacing: '-0.02em', lineHeight: 1 }}>
                   {item.value}
                 </p>
-                <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1f2937', marginTop: '6px' }}>
+                <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1f2937', marginTop: '6px' }}>
                   {item.detail}
                 </p>
               </div>

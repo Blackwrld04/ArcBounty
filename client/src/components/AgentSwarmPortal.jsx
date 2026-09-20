@@ -98,10 +98,10 @@ export default function AgentSwarmPortal() {
           <div className="brutal-card" style={{ padding: '28px', background: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <span className="brutal-badge" style={{ background: 'var(--c-cyan)', color: '#000' }}>
+                <span className="brutal-badge" style={{ background: 'var(--arc-sky-sync)', color: '#000000' }}>
                   <Zap size={14} strokeWidth={3} /> LIVE SWARM SIMULATOR
                 </span>
-                <span className="brutal-badge" style={{ background: isRunning ? 'var(--c-yellow)' : 'var(--c-lime)', color: '#000' }}>
+                <span className="brutal-badge" style={{ background: isRunning ? 'var(--arc-token-sand)' : 'var(--arc-sky-sync)', color: '#000000' }}>
                   {isRunning ? 'AGENT WORKING...' : 'STANDBY'}
                 </span>
               </div>
@@ -128,7 +128,7 @@ export default function AgentSwarmPortal() {
                       padding: '10px 12px',
                       border: '2px solid #000000',
                       borderRadius: '6px',
-                      background: activeStep >= step.id ? 'var(--c-lime)' : '#ffffff',
+                      background: activeStep >= step.id ? 'var(--arc-token-sand)' : '#ffffff',
                       boxShadow: activeStep >= step.id ? '3px 3px 0px #000' : 'none',
                       fontWeight: 800,
                       fontSize: '0.85rem',
@@ -145,7 +145,7 @@ export default function AgentSwarmPortal() {
               id="run-agent-simulation-btn"
               onClick={runSimulation}
               disabled={isRunning}
-              className="brutal-btn brutal-btn-yellow"
+              className="brutal-btn brutal-btn-sand"
               style={{ width: '100%', padding: '16px', fontSize: '1.05rem' }}
             >
               <Play size={18} fill="#000" />
@@ -156,10 +156,10 @@ export default function AgentSwarmPortal() {
           {/* Terminal Logs */}
           <div className="brutal-card" style={{ padding: '24px', background: '#000000', color: '#ffffff', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '2px solid #333', marginBottom: '14px' }}>
-              <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '0.82rem', color: 'var(--c-lime)', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: '0.82rem', color: 'var(--arc-token-sand)', fontWeight: 700 }}>
                 ⚡ arc_agent_stream.log
               </span>
-              <span className="brutal-badge" style={{ background: 'var(--c-yellow)', color: '#000' }}>
+              <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000' }}>
                 MALACHITE BFT &lt;400MS
               </span>
             </div>
@@ -182,8 +182,8 @@ export default function AgentSwarmPortal() {
               ) : (
                 logs.map((log) => (
                   <div key={log.id} style={{ display: 'flex', gap: '10px' }}>
-                    <span style={{ color: 'var(--c-lime)' }}>+{log.time}</span>
-                    <span style={{ color: log.id === 6 ? 'var(--c-cyan)' : '#ffffff' }}>{log.text}</span>
+                    <span style={{ color: 'var(--arc-token-sand)' }}>+{log.time}</span>
+                    <span style={{ color: log.id === 6 ? 'var(--arc-sky-sync)' : '#ffffff' }}>{log.text}</span>
                   </div>
                 ))
               )}
@@ -214,7 +214,7 @@ export default function AgentSwarmPortal() {
 
           <pre style={{
             background: '#000000',
-            color: 'var(--c-lime)',
+            color: 'var(--arc-token-sand)',
             padding: '18px',
             border: '3px solid #000000',
             borderRadius: '8px',

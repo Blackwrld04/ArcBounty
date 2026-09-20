@@ -218,7 +218,7 @@ export default function App() {
             width: '28px',
             height: '28px',
             borderRadius: '6px',
-            background: 'var(--c-lime)',
+            background: 'var(--arc-sky-sync)',
             border: '2px solid #000',
             display: 'flex',
             alignItems: 'center',
@@ -273,17 +273,17 @@ export default function App() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '6px',
-                  background: 'var(--c-lime)',
+                  background: 'var(--arc-validator-blue)',
                   border: '3px solid #000',
                   boxShadow: '2px 2px 0px #000',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Zap size={22} color="#000000" strokeWidth={3} />
+                  <Zap size={22} color="#ffffff" strokeWidth={3} />
                 </div>
-                <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000' }}>
-                  ARC<span style={{ background: 'var(--c-yellow)', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
+                <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--arc-protocol-navy)' }}>
+                  ARC<span style={{ background: 'var(--arc-token-sand)', color: '#000', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
                 </span>
               </div>
               <p style={{ color: '#1f2937', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.6 }}>

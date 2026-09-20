@@ -112,7 +112,7 @@ export default function WalletModal({
               onClick={() => setNetwork(ARC_MAINNET)}
               className="brutal-btn"
               style={{
-                background: network.id === 5042 ? 'var(--c-lime)' : '#ffffff',
+                background: network.id === 5042 ? 'var(--arc-sky-sync)' : '#ffffff',
                 color: '#000000',
                 padding: '12px',
                 textAlign: 'left',
@@ -127,7 +127,7 @@ export default function WalletModal({
               onClick={() => setNetwork(ARC_TESTNET)}
               className="brutal-btn"
               style={{
-                background: network.id === 5042002 ? 'var(--c-cyan)' : '#ffffff',
+                background: network.id === 5042002 ? 'var(--arc-token-sand)' : '#ffffff',
                 color: '#000000',
                 padding: '12px',
                 textAlign: 'left',
@@ -142,7 +142,7 @@ export default function WalletModal({
 
         {/* Current Balance Box */}
         <div style={{
-          background: 'var(--c-yellow)',
+          background: 'var(--arc-token-sand)',
           border: '3px solid #000000',
           boxShadow: '4px 4px 0px #000000',
           borderRadius: '8px',
@@ -183,7 +183,7 @@ export default function WalletModal({
           <button
             id="connect-browser-wallet-btn"
             onClick={handleConnectBrowserWallet}
-            className="brutal-btn brutal-btn-lime"
+            className="brutal-btn brutal-btn-sky"
             style={{ width: '100%', padding: '14px', fontSize: '0.95rem' }}
           >
             <Zap size={18} strokeWidth={3} />

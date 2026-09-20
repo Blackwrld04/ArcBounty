@@ -94,14 +94,14 @@ export default function BountyDetailModal({
 
         {/* Top Stickers */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <span className="brutal-badge" style={{ background: bounty.categoryColor || 'var(--c-pink)', color: '#ffffff' }}>
+          <span className="brutal-badge" style={{ background: bounty.categoryColor || 'var(--arc-quantum-plum)', color: '#ffffff' }}>
             {bounty.categoryName || bounty.category || 'CREATIVE TASK'}
           </span>
-          <span className="brutal-badge" style={{ background: 'var(--c-yellow)', color: '#000000' }}>
+          <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000000' }}>
             📦 {bounty.submissionType || 'Work URL'}
           </span>
           {bounty.isAiEligible && (
-            <span className="brutal-badge" style={{ background: 'var(--c-cyan)', color: '#000000' }}>
+            <span className="brutal-badge" style={{ background: 'var(--arc-sky-sync)', color: '#000000' }}>
               <Bot size={13} /> AI CREATORS PERMITTED
             </span>
           )}
@@ -112,9 +112,9 @@ export default function BountyDetailModal({
           {bounty.title}
         </h2>
 
-        {/* Escrow Reward Box (Neo-Brutalist) */}
+        {/* Escrow Reward Box (Neo-Brutalist in Arc Sky Sync) */}
         <div style={{
-          background: 'var(--c-lime)',
+          background: 'var(--arc-sky-sync)',
           border: '3px solid #000000',
           boxShadow: '4px 4px 0px #000000',
           borderRadius: '10px',
@@ -176,7 +176,7 @@ export default function BountyDetailModal({
               padding: '12px',
               border: '2.5px solid #000000',
               borderRadius: '8px',
-              background: bounty.status === 'InReview' || bounty.status === 'Settled' ? 'var(--c-yellow)' : '#ffffff',
+              background: bounty.status === 'InReview' || bounty.status === 'Settled' ? 'var(--arc-token-sand)' : '#ffffff',
               boxShadow: '2px 2px 0px #000000'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.82rem' }}>
@@ -191,7 +191,7 @@ export default function BountyDetailModal({
               padding: '12px',
               border: '2.5px solid #000000',
               borderRadius: '8px',
-              background: bounty.status === 'Settled' ? 'var(--c-cyan)' : '#ffffff',
+              background: bounty.status === 'Settled' ? 'var(--arc-sky-sync)' : '#ffffff',
               boxShadow: '2px 2px 0px #000000'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 900, fontSize: '0.82rem' }}>
@@ -232,7 +232,7 @@ export default function BountyDetailModal({
             border: '3px solid #000000',
             boxShadow: '4px 4px 0px #000000',
             borderRadius: '8px',
-            background: 'var(--c-cyan)'
+            background: 'var(--arc-sky-light)'
           }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#000000' }}>SUBMITTED CREATIVE WORK:</span>
             <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#000000', marginTop: '2px', wordBreak: 'break-all' }}>
@@ -252,7 +252,7 @@ export default function BountyDetailModal({
             border: '3px solid #000000',
             boxShadow: '4px 4px 0px #000000',
             borderRadius: '8px',
-            background: 'var(--c-lime)'
+            background: 'var(--arc-sky-sync)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#000000', fontWeight: 900, fontSize: '1rem' }}>
               <Zap size={20} strokeWidth={3} />
@@ -274,7 +274,7 @@ export default function BountyDetailModal({
                 href={`https://explorer.arc.io/tx/${bounty.settlementTx || ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="brutal-btn brutal-btn-yellow"
+                className="brutal-btn brutal-btn-sand"
                 style={{ padding: '6px 12px', fontSize: '0.78rem' }}
               >
                 <span>VIEW ON ARCSCAN</span>
@@ -299,7 +299,7 @@ export default function BountyDetailModal({
                   <button
                     type="button"
                     onClick={() => setSolverType('Human Creator')}
-                    className={`brutal-btn ${solverType === 'Human Creator' ? 'brutal-btn-lime' : 'brutal-btn-white'}`}
+                    className={`brutal-btn ${solverType === 'Human Creator' ? 'brutal-btn-sky' : 'brutal-btn-white'}`}
                     style={{ flex: 1, padding: '8px' }}
                   >
                     🎨 HUMAN CREATOR
@@ -307,7 +307,7 @@ export default function BountyDetailModal({
                   <button
                     type="button"
                     onClick={() => setSolverType('Autonomous AI Agent')}
-                    className={`brutal-btn ${solverType === 'Autonomous AI Agent' ? 'brutal-btn-cyan' : 'brutal-btn-white'}`}
+                    className={`brutal-btn ${solverType === 'Autonomous AI Agent' ? 'brutal-btn-plum' : 'brutal-btn-white'}`}
                     style={{ flex: 1, padding: '8px' }}
                   >
                     🤖 AUTONOMOUS AI AGENT
@@ -343,7 +343,7 @@ export default function BountyDetailModal({
                 id="submit-work-btn"
                 type="submit"
                 disabled={isSubmitting || !submissionUrl}
-                className="brutal-btn brutal-btn-yellow"
+                className="brutal-btn brutal-btn-sand"
                 style={{ width: '100%', padding: '16px', fontSize: '1.05rem', marginTop: '6px' }}
               >
                 <span>{isSubmitting ? 'VERIFYING ON ARC...' : 'SUBMIT WORK & ENTER REVIEW'}</span>
@@ -365,7 +365,7 @@ export default function BountyDetailModal({
                   Releases ${bounty.amount} USDC from escrow to creator via sub-second Malachite BFT finality.
                 </p>
               </div>
-              <span className="brutal-badge" style={{ background: 'var(--c-lime)', color: '#000' }}>
+              <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000' }}>
                 CREATOR GAS: $0.00
               </span>
             </div>
@@ -374,7 +374,7 @@ export default function BountyDetailModal({
               id="approve-disburse-btn"
               onClick={handleRelease}
               disabled={isReleasing}
-              className="brutal-btn brutal-btn-lime"
+              className="brutal-btn brutal-btn-gold"
               style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}
             >
               <Zap size={22} strokeWidth={3} />

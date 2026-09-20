@@ -63,7 +63,7 @@ export default function MobileDock({
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: 'var(--c-yellow)',
+            background: 'var(--arc-token-sand)',
             border: '3px solid #000000',
             boxShadow: '3px 3px 0px #000000',
             display: 'flex',
@@ -119,7 +119,7 @@ export default function MobileDock({
           flex: 1
         }}
       >
-        <Wallet size={22} color={wallet.connected ? 'var(--c-lime)' : '#000000'} strokeWidth={2.5} />
+        <Wallet size={22} color={wallet.connected ? 'var(--arc-validator-blue)' : '#000000'} strokeWidth={2.5} />
         <span>WALLET</span>
       </button>
     </nav>

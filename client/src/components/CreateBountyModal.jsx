@@ -121,7 +121,7 @@ export default function CreateBountyModal({ onClose, onCreateBounty, wallet }) {
                   className="brutal-btn"
                   style={{
                     background: category === c.id ? c.color : '#ffffff',
-                    color: '#000000',
+                    color: category === c.id ? (c.textColor || '#000000') : '#000000',
                     padding: '8px',
                     fontSize: '0.78rem',
                     border: '2.5px solid #000000',
@@ -206,7 +206,7 @@ export default function CreateBountyModal({ onClose, onCreateBounty, wallet }) {
                   border: '3px solid #000000',
                   borderRadius: '8px',
                   boxShadow: '3px 3px 0px #000000',
-                  background: 'var(--c-yellow)',
+                  background: 'var(--arc-token-sand)',
                   fontSize: '1.2rem',
                   fontWeight: 900,
                   outline: 'none'
@@ -274,7 +274,7 @@ export default function CreateBountyModal({ onClose, onCreateBounty, wallet }) {
             padding: '12px 16px',
             border: '2.5px solid #000000',
             borderRadius: '8px',
-            background: 'var(--c-cyan)'
+            background: 'var(--arc-sky-sync)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Bot size={20} strokeWidth={2.5} />
@@ -300,7 +300,7 @@ export default function CreateBountyModal({ onClose, onCreateBounty, wallet }) {
             id="create-bounty-submit-btn"
             type="submit"
             disabled={isLoading}
-            className="brutal-btn brutal-btn-yellow"
+            className="brutal-btn brutal-btn-gold"
             style={{ padding: '16px', fontSize: '1.1rem', marginTop: '6px' }}
           >
             <span>{isLoading ? 'DEPOSITING IN ARC ESCROW...' : `LOCK $${amount} USDC IN ESCROW & POST`}</span>

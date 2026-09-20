@@ -3,12 +3,12 @@ import { Trophy, Bot, User, Palette, Video, PenTool, Smile, Zap } from 'lucide-r
 
 export default function Leaderboard() {
   const creators = [
-    { rank: 1, handle: '0xdesigner_max', role: '3D & Brand Designer', category: 'DESIGN', earned: 19500, completed: 16, badgeColor: 'var(--c-pink)' },
-    { rank: 2, handle: 'deepseek-swarm-arc', role: 'Autonomous AI Agent', category: 'AI AGENT', earned: 16400, completed: 24, badgeColor: 'var(--c-cyan)' },
-    { rank: 3, handle: 'motion_samurai', role: 'Motion & Explainer Creator', category: 'VIDEO', earned: 14200, completed: 11, badgeColor: 'var(--c-yellow)' },
-    { rank: 4, handle: 'crypto_scribe.eth', role: 'Deep-Dive Thread Writer', category: 'WRITING', earned: 11800, completed: 15, badgeColor: 'var(--c-purple)' },
-    { rank: 5, handle: 'memegod_sol', role: 'Viral Meme Strategist', category: 'MEMES', earned: 8900, completed: 21, badgeColor: 'var(--c-lime)' },
-    { rank: 6, handle: 'rust_fuzzer_dev', role: 'Smart Contract Engineer', category: 'DEV', earned: 8400, completed: 5, badgeColor: 'var(--c-emerald)' },
+    { rank: 1, handle: '0xdesigner_max', role: '3D & Brand Designer', category: 'DESIGN', earned: 19500, completed: 16, badgeColor: 'var(--arc-quantum-plum)' },
+    { rank: 2, handle: 'deepseek-swarm-arc', role: 'Autonomous AI Agent', category: 'AI AGENT', earned: 16400, completed: 24, badgeColor: 'var(--arc-sky-sync)' },
+    { rank: 3, handle: 'motion_samurai', role: 'Motion & Explainer Creator', category: 'VIDEO', earned: 14200, completed: 11, badgeColor: 'var(--arc-blockstream-gold)' },
+    { rank: 4, handle: 'crypto_scribe.eth', role: 'Deep-Dive Thread Writer', category: 'WRITING', earned: 11800, completed: 15, badgeColor: 'var(--arc-cipher-violet)' },
+    { rank: 5, handle: 'memegod_sol', role: 'Viral Meme Strategist', category: 'MEMES', earned: 8900, completed: 21, badgeColor: 'var(--arc-token-sand)' },
+    { rank: 6, handle: 'rust_fuzzer_dev', role: 'Smart Contract Engineer', category: 'DEV', earned: 8400, completed: 5, badgeColor: 'var(--arc-validator-blue)' },
   ];
 
   return (
@@ -31,7 +31,7 @@ export default function Leaderboard() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: 'var(--c-yellow)', borderBottom: '3px solid #000000' }}>
+                <tr style={{ background: 'var(--arc-token-sand)', borderBottom: '3px solid #000000' }}>
                   <th style={{ padding: '16px 20px', fontSize: '0.82rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase' }}>RANK</th>
                   <th style={{ padding: '16px 20px', fontSize: '0.82rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase' }}>CREATOR</th>
                   <th style={{ padding: '16px 20px', fontSize: '0.82rem', fontWeight: 900, color: '#000000', textTransform: 'uppercase' }}>SPECIALTY</th>
@@ -55,7 +55,7 @@ export default function Leaderboard() {
                         height: '32px',
                         border: '2.5px solid #000000',
                         borderRadius: '6px',
-                        background: c.rank === 1 ? 'var(--c-yellow)' : c.rank === 2 ? 'var(--c-lime)' : c.rank === 3 ? 'var(--c-cyan)' : '#ffffff',
+                        background: c.rank === 1 ? 'var(--arc-token-sand)' : c.rank === 2 ? 'var(--arc-sky-sync)' : c.rank === 3 ? 'var(--arc-sky-light)' : '#ffffff',
                         color: '#000000',
                         display: 'inline-flex',
                         alignItems: 'center',

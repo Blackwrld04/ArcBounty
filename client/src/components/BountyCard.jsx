@@ -4,13 +4,13 @@ import { ArrowUpRight, Bot, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 export default function BountyCard({ bounty, onSelect }) {
   const getCategoryColor = (cat) => {
     switch (cat) {
-      case 'DESIGN': return 'var(--c-pink)';
-      case 'VIDEO': return 'var(--c-yellow)';
-      case 'WRITING': return 'var(--c-purple)';
-      case 'MEMES': return 'var(--c-cyan)';
-      case 'DEV': return 'var(--c-emerald)';
-      case 'TRANSLATION': return 'var(--c-orange)';
-      default: return 'var(--c-lime)';
+      case 'DESIGN': return 'var(--arc-quantum-plum)';
+      case 'VIDEO': return 'var(--arc-blockstream-gold)';
+      case 'WRITING': return 'var(--arc-sky-sync)';
+      case 'MEMES': return 'var(--arc-token-sand)';
+      case 'DEV': return 'var(--arc-validator-blue)';
+      case 'TRANSLATION': return 'var(--arc-miner-clay)';
+      default: return 'var(--arc-sky-sync)';
     }
   };
 
@@ -18,19 +18,19 @@ export default function BountyCard({ bounty, onSelect }) {
     switch (status) {
       case 'Open':
         return (
-          <span className="brutal-badge" style={{ background: 'var(--c-lime)', color: '#000' }}>
+          <span className="brutal-badge" style={{ background: 'var(--arc-sky-sync)', color: '#000000' }}>
             🟢 OPEN FOR SUBMISSIONS
           </span>
         );
       case 'InReview':
         return (
-          <span className="brutal-badge" style={{ background: 'var(--c-yellow)', color: '#000' }}>
+          <span className="brutal-badge" style={{ background: 'var(--arc-token-sand)', color: '#000000' }}>
             ⏳ SUBMISSION IN REVIEW
           </span>
         );
       case 'Settled':
         return (
-          <span className="brutal-badge" style={{ background: 'var(--c-cyan)', color: '#000' }}>
+          <span className="brutal-badge" style={{ background: 'var(--arc-sky-light)', color: '#000000' }}>
             ✅ BOUNTY PAID &amp; SETTLED
           </span>
         );
@@ -156,7 +156,7 @@ export default function BountyCard({ bounty, onSelect }) {
             <span className="font-space" style={{ fontSize: '1.65rem', fontWeight: 900, color: '#000000' }}>
               ${bounty.amount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 800, background: 'var(--c-yellow)', padding: '1px 5px', border: '1px solid #000', borderRadius: '4px' }}>
+            <span style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 800, background: 'var(--arc-token-sand)', padding: '1px 5px', border: '1px solid #000', borderRadius: '4px' }}>
               USDC
             </span>
           </div>
@@ -164,7 +164,7 @@ export default function BountyCard({ bounty, onSelect }) {
 
         {/* Action Button */}
         <button
-          className="brutal-btn brutal-btn-yellow"
+          className="brutal-btn brutal-btn-sand"
           style={{ padding: '8px 14px', fontSize: '0.82rem' }}
         >
           <span>SUBMIT WORK</span>

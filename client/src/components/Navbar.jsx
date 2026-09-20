@@ -31,7 +31,7 @@ export default function Navbar({
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Brand Logo */}
+        {/* Brand Logo with Arc.io Brand Colors */}
         <div
           style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
           onClick={() => setActiveTab('explore')}
@@ -39,7 +39,7 @@ export default function Navbar({
           <div style={{
             width: '40px',
             height: '40px',
-            background: 'var(--c-lime)',
+            background: 'var(--arc-validator-blue)',
             border: '3px solid #000000',
             boxShadow: '3px 3px 0px #000000',
             borderRadius: '6px',
@@ -48,17 +48,17 @@ export default function Navbar({
             justifyContent: 'center',
             transform: 'rotate(-2deg)'
           }}>
-            <Zap size={24} color="#000000" strokeWidth={3} />
+            <Zap size={24} color="#ffffff" strokeWidth={3} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#000000' }}>
-                ARC<span style={{ background: 'var(--c-yellow)', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
+              <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
+                ARC<span style={{ background: 'var(--arc-token-sand)', color: '#000', padding: '0 4px', border: '2px solid #000', borderRadius: '4px', marginLeft: '2px' }}>BOUNTY</span>
               </span>
-              <span className="sticker-tape desktop-only">FOR WEB3 CREATORS</span>
+              <span className="sticker-tape desktop-only">ARC.IO NATIVE</span>
             </div>
-            <div style={{ fontSize: '0.68rem', color: '#4b5563', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '-2px' }}>
-              Circle Arc L1 · Chain 5042 · Native USDC
+            <div style={{ fontSize: '0.68rem', color: 'var(--arc-validator-blue)', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '-2px' }}>
+              Circle Arc Platform · Chain 5042 · Canonical USDC
             </div>
           </div>
         </div>
@@ -68,30 +68,30 @@ export default function Navbar({
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          fontWeight: 700,
+          fontWeight: 800,
           fontSize: '0.9rem'
         }} className="desktop-nav">
           <button
             id="nav-explore-btn"
             onClick={() => setActiveTab('explore')}
-            className={`brutal-btn ${activeTab === 'explore' ? 'brutal-btn-lime' : 'brutal-btn-white'}`}
+            className={`brutal-btn ${activeTab === 'explore' ? 'brutal-btn-sky' : 'brutal-btn-white'}`}
             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            🔥 All Bounties
+            ⚡ All Bounties
           </button>
           <button
             id="nav-swarm-btn"
             onClick={() => setActiveTab('swarm')}
-            className={`brutal-btn ${activeTab === 'swarm' ? 'brutal-btn-cyan' : 'brutal-btn-white'}`}
+            className={`brutal-btn ${activeTab === 'swarm' ? 'brutal-btn-gold' : 'brutal-btn-white'}`}
             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
-            <Cpu size={16} />
-            AI & Creator Swarms
+            <Cpu size={16} strokeWidth={2.5} />
+            AI &amp; Agent Swarms
           </button>
           <button
             id="nav-leaderboard-btn"
             onClick={() => setActiveTab('leaderboard')}
-            className={`brutal-btn ${activeTab === 'leaderboard' ? 'brutal-btn-yellow' : 'brutal-btn-white'}`}
+            className={`brutal-btn ${activeTab === 'leaderboard' ? 'brutal-btn-sand' : 'brutal-btn-white'}`}
             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
           >
             🏆 Leaderboard
@@ -118,10 +118,10 @@ export default function Navbar({
               backgroundColor: '#00e676',
               border: '1.5px solid #000'
             }} />
-            <span style={{ color: '#000000', fontWeight: 800 }}>
+            <span style={{ color: 'var(--arc-protocol-navy)', fontWeight: 900 }}>
               {network.name}
             </span>
-            <span style={{ color: '#000000', background: 'var(--c-cyan)', padding: '1px 5px', borderRadius: '4px', border: '1px solid #000', fontSize: '0.7rem' }}>
+            <span style={{ color: '#000000', background: 'var(--arc-sky-sync)', padding: '1px 6px', borderRadius: '4px', border: '1px solid #000', fontSize: '0.7rem' }}>
               &lt;400ms
             </span>
           </div>
@@ -130,10 +130,10 @@ export default function Navbar({
           <button
             id="header-post-bounty-btn"
             onClick={openCreateModal}
-            className="brutal-btn brutal-btn-yellow desktop-only"
+            className="brutal-btn brutal-btn-gold desktop-only"
             style={{ padding: '9px 18px', fontSize: '0.85rem' }}
           >
-            <Plus size={16} strokeWidth={3} />
+            <Plus size={16} strokeWidth={3.5} />
             <span>Post Bounty</span>
           </button>
 
@@ -141,7 +141,7 @@ export default function Navbar({
           <button
             id="header-wallet-btn"
             onClick={openWalletModal}
-            className="brutal-btn brutal-btn-lime"
+            className="brutal-btn brutal-btn-sky"
             style={{ padding: '9px 16px', fontSize: '0.85rem' }}
           >
             <Wallet size={16} strokeWidth={2.5} />
@@ -150,7 +150,7 @@ export default function Navbar({
             </span>
             {wallet.connected && (
               <span style={{
-                background: '#000000',
+                background: 'var(--arc-protocol-navy)',
                 color: '#ffffff',
                 padding: '2px 6px',
                 borderRadius: '4px',

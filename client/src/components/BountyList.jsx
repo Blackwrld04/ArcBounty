@@ -142,7 +142,7 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
                   key={status}
                   id={`filter-status-${status.toLowerCase()}`}
                   onClick={() => setFilterStatus(status)}
-                  className={`brutal-btn ${filterStatus === status ? 'brutal-btn-yellow' : 'brutal-btn-white'}`}
+                  className={`brutal-btn ${filterStatus === status ? 'brutal-btn-sand' : 'brutal-btn-white'}`}
                   style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                 >
                   {status === 'InReview' ? 'IN REVIEW' : status.toUpperCase()}
@@ -151,7 +151,7 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
             </div>
 
             <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#000000' }}>
-              SHOWING <span style={{ background: 'var(--c-lime)', padding: '2px 6px', border: '1.5px solid #000', borderRadius: '4px' }}>{filteredBounties.length}</span> BOUNTIES
+              SHOWING <span style={{ background: 'var(--arc-sky-sync)', padding: '2px 6px', border: '1.5px solid #000', borderRadius: '4px' }}>{filteredBounties.length}</span> BOUNTIES
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
           <div className="brutal-card" style={{
             padding: '60px 20px',
             textAlign: 'center',
-            background: 'var(--c-yellow)',
+            background: 'var(--arc-token-sand)',
             marginTop: '20px'
           }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#000000' }}>NO MATCHING BOUNTIES FOUND</h3>
@@ -184,7 +184,7 @@ export default function BountyList({ bounties, onSelectBounty, openCreateModal }
             </p>
             <button
               onClick={() => { setActiveCategory('ALL'); setFilterStatus('All'); setSearchQuery(''); setAiOnly(false); }}
-              className="brutal-btn brutal-btn-black"
+              className="brutal-btn brutal-btn-navy"
               style={{ marginTop: '18px' }}
             >
               RESET ALL FILTERS

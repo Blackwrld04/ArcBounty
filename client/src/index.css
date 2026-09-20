@@ -1,27 +1,46 @@
-/* ArcBounty Neo-Brutalist Design System */
+/* ArcBounty Neo-Brutalist Design System — Powered by Circle Arc (arc.io) */
 
 :root {
-  --bg-canvas: #f6f5f0;
-  --bg-dark: #0f1015;
+  /* Official Circle Arc (arc.io) Color Palette */
+  --arc-validator-blue: #2f578c;
+  --arc-protocol-navy: #1b3158;
+  --arc-sky-sync: #acc6e9;
+  --arc-sky-light: #cdddf2;
+  --arc-static-ether: #e8eff5;
+  --arc-blockstream-gold: #e9a13f;
+  --arc-token-sand: #ffcc6f;
+  --arc-cipher-violet: #412c5c;
+  --arc-quantum-plum: #664c88;
+  --arc-consensus-mauve: #908290;
+  --arc-hash-cloud: #ddd6dd;
+  --arc-miner-clay: #c0827a;
+  --arc-burnt-block: #702718;
+  --arc-usdc-blue: #2775ca;
+
+  /* Arc Brand Aliases for Component Palette */
+  --c-lime: var(--arc-sky-sync);
+  --c-yellow: var(--arc-token-sand);
+  --c-cyan: var(--arc-sky-light);
+  --c-pink: var(--arc-quantum-plum);
+  --c-purple: var(--arc-cipher-violet);
+  --c-emerald: var(--arc-validator-blue);
+  --c-orange: var(--arc-blockstream-gold);
+
+  /* Canvas & Text */
+  --bg-canvas: #eef3f8;
+  --bg-card: #ffffff;
+  --text-dark: #0f172a;
+  --text-muted: #475569;
+  --text-light: #ffffff;
+
+  /* Neo-Brutalist Architecture */
   --border-thick: 3px solid #000000;
-  --border-medium: 2px solid #000000;
+  --border-medium: 2.5px solid #000000;
+  --border-subtle: 1.5px solid #000000;
   --shadow-hard: 5px 5px 0px #000000;
   --shadow-hard-hover: 8px 8px 0px #000000;
   --shadow-hard-active: 1px 1px 0px #000000;
   --shadow-hard-sm: 3px 3px 0px #000000;
-  
-  /* Saturated Neo-Brutalist Palette */
-  --c-lime: #c1ff72;
-  --c-yellow: #ffe600;
-  --c-pink: #ff578a;
-  --c-cyan: #00f0ff;
-  --c-orange: #ff9100;
-  --c-purple: #bb86fc;
-  --c-emerald: #00e676;
-  
-  --text-dark: #000000;
-  --text-light: #ffffff;
-  --text-muted: #4b5563;
 }
 
 * {
@@ -45,23 +64,23 @@ body {
 .font-geist { font-family: 'Geist', sans-serif; }
 .font-mono { font-family: 'Geist Mono', monospace; }
 
-/* Brutalist Dot Pattern Background */
+/* Brutalist Dot Pattern (Arc Navy Toned) */
 .brutal-dots {
   background-size: 24px 24px;
-  background-image: radial-gradient(#000000 1.2px, transparent 1.2px);
-  opacity: 0.12;
+  background-image: radial-gradient(#1b3158 1.4px, transparent 1.4px);
+  opacity: 0.15;
 }
 
 .brutal-grid {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+    linear-gradient(to right, rgba(27, 49, 88, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(27, 49, 88, 0.08) 1px, transparent 1px);
 }
 
 /* Neo-Brutalist Card Container */
 .brutal-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border: var(--border-thick);
   border-radius: 10px;
   box-shadow: var(--shadow-hard);
@@ -74,16 +93,16 @@ body {
   box-shadow: var(--shadow-hard-hover);
 }
 
-/* Neo-Brutalist Interactive Buttons */
+/* Neo-Brutalist Buttons */
 .brutal-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 12px 22px;
   font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   border: var(--border-thick);
@@ -105,28 +124,34 @@ body {
   box-shadow: var(--shadow-hard-active);
 }
 
-.brutal-btn-lime {
-  background: var(--c-lime);
+/* Arc Themed Button Colorways */
+.brutal-btn-sky {
+  background: var(--arc-sky-sync);
   color: #000000;
 }
 
-.brutal-btn-yellow {
-  background: var(--c-yellow);
+.brutal-btn-gold {
+  background: var(--arc-blockstream-gold);
   color: #000000;
 }
 
-.brutal-btn-pink {
-  background: var(--c-pink);
+.brutal-btn-sand {
+  background: var(--arc-token-sand);
+  color: #000000;
+}
+
+.brutal-btn-navy {
+  background: var(--arc-protocol-navy);
   color: #ffffff;
 }
 
-.brutal-btn-cyan {
-  background: var(--c-cyan);
-  color: #000000;
+.brutal-btn-blue {
+  background: var(--arc-validator-blue);
+  color: #ffffff;
 }
 
-.brutal-btn-black {
-  background: #000000;
+.brutal-btn-plum {
+  background: var(--arc-quantum-plum);
   color: #ffffff;
 }
 
@@ -135,17 +160,38 @@ body {
   color: #000000;
 }
 
-/* Neo-Brutalist Badges & Stickers */
+.brutal-btn-black {
+  background: var(--arc-protocol-navy);
+  color: #ffffff;
+}
+
+/* Button class aliases mapped to Arc tokens */
+.brutal-btn-yellow {
+  background: var(--arc-token-sand);
+  color: #000000;
+}
+
+.brutal-btn-lime {
+  background: var(--arc-sky-sync);
+  color: #000000;
+}
+
+.brutal-btn-cyan {
+  background: var(--arc-sky-light);
+  color: #000000;
+}
+
+/* Neo-Brutalist Badges & Arc Stickers */
 .brutal-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 4px 10px;
   border: var(--border-medium);
   border-radius: 6px;
   box-shadow: 2px 2px 0px #000000;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -153,15 +199,18 @@ body {
 .sticker-tape {
   display: inline-block;
   transform: rotate(-1.5deg);
-  background: var(--c-yellow);
+  background: var(--arc-token-sand);
   border: var(--border-medium);
-  padding: 2px 8px;
-  font-weight: 800;
+  padding: 3px 10px;
+  font-weight: 900;
   font-size: 0.72rem;
-  box-shadow: 2px 2px 0px #000000;
+  color: #000000;
+  box-shadow: 2.5px 2.5px 0px #000000;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-/* Marquee with solid neo-brutalist border */
+/* Arc Marquee Banner */
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
@@ -170,7 +219,7 @@ body {
 .brutal-marquee {
   display: flex;
   width: max-content;
-  animation: marquee 25s linear infinite;
+  animation: marquee 26s linear infinite;
 }
 
 .brutal-marquee:hover {
@@ -193,7 +242,7 @@ body {
   }
 }
 
-/* Mobile Bottom Navigation Dock (Brutalist style) */
+/* Mobile Bottom Navigation Dock (Arc Brutalist) */
 .mobile-dock {
   display: none;
   position: fixed;
@@ -220,7 +269,7 @@ body {
   }
 }
 
-/* Notification Toast (Brutalist) */
+/* Notification Toast (Arc Neo-Brutalist) */
 .notification-toast {
   position: fixed;
   bottom: 24px;
@@ -229,14 +278,14 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 16px 22px;
   border-radius: 10px;
   background: #ffffff;
   border: var(--border-thick);
   box-shadow: 6px 6px 0px #000000;
   color: #000000;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -283,15 +332,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f6f5f0;
+  background: var(--bg-canvas);
   border-left: 2px solid #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--c-lime);
+  background: var(--arc-validator-blue);
   border: 2px solid #000000;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--c-yellow);
+  background: var(--arc-blockstream-gold);
 }
