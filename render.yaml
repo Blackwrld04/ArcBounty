@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: arcbounty-facilitator
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4050"
+      - key: ARC_RPC_URL
+        value: https://rpc.mainnet.arc.io
+      - key: ARC_CHAIN_ID
+        value: "5042"
+      - key: FACILITATOR_PRIVATE_KEY
+        sync: false
+      - key: ESCROW_CONTRACT_ADDRESS
+        value: "0x8b415aE3956992b0cbC6C78c485A4d099F6331cE"

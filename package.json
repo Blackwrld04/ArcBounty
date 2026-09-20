@@ -1,0 +1,14 @@
+{
+  "name": "arcbounty-root",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "ArcBounty — Decentralized Developer & AI Agent Bounty Platform on Circle Arc",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
+    "preview": "npm run preview --prefix client",
+    "server": "npm run dev --prefix server",
+    "test": "npm test --prefix server"
+  }
+}
