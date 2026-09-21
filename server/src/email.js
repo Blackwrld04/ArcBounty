@@ -106,50 +106,118 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
     ? 'Verify your ArcBounty Creator Account'
     : 'Your ArcBounty Verification Code';
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; margin: 0; padding: 24px; }
-          .card { max-width: 520px; margin: 0 auto; background: #ffffff; border: 2.5px solid #000000; box-shadow: 4px 4px 0px #000000; border-radius: 12px; overflow: hidden; }
-          .header { background: #1b3158; color: #ffffff; padding: 24px; text-align: center; }
-          .brand { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
-          .content { padding: 32px 28px; }
-          .code-box { background: #fffae6; border: 2px solid #000000; box-shadow: 3px 3px 0px #000000; border-radius: 8px; padding: 18px; text-align: center; margin: 24px 0; }
-          .otp { font-family: monospace; font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #0f172a; }
-          .footer { font-size: 12px; color: #64748b; padding: 16px 28px; border-top: 1px solid #e2e8f0; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="header">
-            <div class="brand">Arc<span style="color: #ffcc6f;">Bounty</span></div>
-            <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">Circle Arc Protocol (Chain ID 5042)</div>
-          </div>
-          <div class="content">
-            <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 0;">
-              ${type === 'signup' ? 'Welcome to ArcBounty!' : 'Sign In Verification Code'}
-            </h2>
-            <p style="font-size: 14px; color: #475569; line-height: 1.5;">
-              Use the single-use 6-digit verification code below to complete your ${type === 'signup' ? 'account registration' : 'sign in'} on ArcBounty.
-            </p>
-            
-            <div class="code-box">
-              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px;">VERIFICATION CODE</div>
-              <div class="otp">${code}</div>
-              <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Valid for 10 minutes</div>
-            </div>
+  const digits = String(code).split('');
+  const digitCells = digits.map(d => `
+    <td align="center" valign="middle" style="width: 44px; height: 54px; background-color: #1a2b47; border: 2px solid #ffcc6f; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Courier New', monospace; font-size: 28px; font-weight: 900; color: #ffffff; text-align: center;">
+      ${d}
+    </td>
+  `).join('<td width="8" style="width: 8px; font-size: 0; line-height: 0;">&nbsp;</td>');
 
-            <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
-              If you did not request this verification code, please disregard this email. Never share this code with anyone.
-            </p>
-          </div>
-          <div class="footer">
-            Circle Arc L1 · Canonical USDC · Zero-gas Creator Capital Engine
-          </div>
+  const htmlContent = `
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; width: 100% !important; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <!-- Hidden Preheader Preview Text -->
+        <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0b111e; opacity: 0; mso-hide: all;">
+          Your ArcBounty verification code is ${code}. Valid for 10 minutes on Circle Arc.
         </div>
+
+        <!-- Master Wrapper -->
+        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0b111e; padding: 32px 12px;">
+          <tr>
+            <td align="center">
+              
+              <!-- Card Container -->
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: #111c30; border: 2.5px solid #2f578c; border-radius: 12px; overflow: hidden; box-shadow: 4px 4px 0px #050911;">
+                
+                <!-- Brand Header -->
+                <tr>
+                  <td align="center" style="background-color: #1b3158; padding: 26px 20px; border-bottom: 2.5px solid #2f578c;">
+                    <div style="font-size: 24px; font-weight: 900; letter-spacing: -0.02em; color: #ffffff; margin-bottom: 6px;">
+                      Arc<span style="color: #ffcc6f;">Bounty</span>
+                    </div>
+                    <div style="display: inline-block; background-color: #0d1a2d; color: #acc6e9; border: 1.5px solid #2f578c; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;">
+                      Circle Arc L1 &bull; Chain ID 5042
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Content Area -->
+                <tr>
+                  <td style="padding: 32px 28px; background-color: #111c30;">
+                    
+                    <h1 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
+                      ${type === 'signup' ? 'Verify your Creator Account' : 'Sign In Verification Code'}
+                    </h1>
+                    
+                    <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+                      Use the single-use 6-digit verification code below to complete your ${type === 'signup' ? 'account registration' : 'sign in'} on <strong>ArcBounty</strong>:
+                    </p>
+
+                    <!-- Code Box -->
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0a1322; border: 2px solid #2f578c; border-radius: 10px; padding: 22px 14px; margin-bottom: 24px;">
+                      <tr>
+                        <td align="center">
+                          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: #ffcc6f; text-transform: uppercase; margin-bottom: 14px;">
+                            SINGLE-USE VERIFICATION CODE
+                          </div>
+                          
+                          <!-- Digits Table -->
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+                            <tr>
+                              ${digitCells}
+                            </tr>
+                          </table>
+
+                          <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-top: 14px;">
+                            Valid for 10 minutes &bull; Single authorization
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Security Alert -->
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #16243d; border-left: 4px solid #e9a13f; border-radius: 4px; padding: 12px 14px; margin-bottom: 20px;">
+                      <tr>
+                        <td style="font-size: 12px; line-height: 1.5; color: #cbd5e1;">
+                          <strong style="color: #ffcc6f;">Security Notice:</strong> Never share this code with anyone. ArcBounty team members will never ask for your verification code or private keys.
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #64748b;">
+                      If you did not request this verification code, please ignore this email. Your account remains secure.
+                    </p>
+
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td align="center" style="background-color: #0b1424; padding: 18px 24px; border-top: 1.5px solid #1e3352; font-size: 12px; line-height: 1.5; color: #64748b;">
+                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">
+                      Circle Arc L1 &bull; Canonical USDC &bull; Zero-gas Creator Capital Engine
+                    </div>
+                    <div>
+                      Dispatched securely to <span style="color: #acc6e9;">${toEmail}</span>
+                    </div>
+                  </td>
+                </tr>
+
+              </table>
+              <!-- End Card Container -->
+
+            </td>
+          </tr>
+        </table>
+        <!-- End Master Wrapper -->
       </body>
     </html>
   `;
@@ -160,7 +228,7 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
     from: sender,
     to: toEmail,
     subject,
-    text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes.`,
+    text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`,
     html: htmlContent
   });
 
