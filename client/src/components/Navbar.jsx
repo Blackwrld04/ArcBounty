@@ -127,6 +127,30 @@ export default function Navbar({
             >
               Arc Docs ↗
             </a>
+
+            {user?.isAdmin && (
+              <button
+                id="navbar-admin-btn"
+                onClick={() => setActiveView('admin')}
+                style={{
+                  background: activeView === 'admin' ? '#1b3158' : '#fffae6',
+                  color: activeView === 'admin' ? '#ffffff' : '#0f172a',
+                  border: '1.5px solid #000000',
+                  boxShadow: activeView === 'admin' ? 'none' : '2px 2px 0px #000000',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <Shield size={13} color={activeView === 'admin' ? '#ffcc6f' : '#b45309'} />
+                <span>Admin Portal</span>
+              </button>
+            )}
           </div>
 
           <div style={{ flex: 1, position: 'relative' }}>
@@ -339,6 +363,32 @@ export default function Navbar({
 
                     {/* Menu Items */}
                     <div style={{ padding: '6px 0' }}>
+                      {user?.isAdmin && (
+                        <button
+                          onClick={() => { setActiveView('admin'); setDropdownOpen(false); }}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '8px 12px',
+                            background: '#fffae6',
+                            border: '1.5px solid #000000',
+                            boxShadow: '1.5px 1.5px 0px #000000',
+                            borderRadius: '8px',
+                            fontSize: '0.82rem',
+                            fontWeight: 900,
+                            color: '#0f172a',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            cursor: 'pointer',
+                            marginBottom: '6px'
+                          }}
+                        >
+                          <Shield size={15} color="#b45309" />
+                          <span>Admin Portal &amp; Payouts</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => { setActiveView('profile'); setDropdownOpen(false); }}
                         style={{

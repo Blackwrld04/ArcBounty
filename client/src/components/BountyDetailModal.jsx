@@ -28,6 +28,8 @@ export default function BountyDetailModal({
   openAuthModal
 }) {
   const [submissionUrl, setSubmissionUrl] = useState('');
+  const [payoutWallet, setPayoutWallet] = useState(wallet.address || user?.address || '');
+  const [notes, setNotes] = useState('');
   const [solverType, setSolverType] = useState('Human Creator');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
@@ -39,7 +41,7 @@ export default function BountyDetailModal({
     e.preventDefault();
     if (!submissionUrl) return;
     setIsSubmitting(true);
-    await onSubmitSolution(bounty.id, submissionUrl, wallet.address, solverType);
+    await onSubmitSolution(bounty.id, submissionUrl, payoutWallet || wallet.address || user?.address, solverType, notes);
     setIsSubmitting(false);
   };
 
@@ -449,6 +451,52 @@ export default function BountyDetailModal({
                         fontSize: '0.92rem',
                         outline: 'none',
                         fontWeight: 600
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                      YOUR PAYOUT WALLET ADDRESS (Circle Arc L1) *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="0x..."
+                      value={payoutWallet}
+                      onChange={(e) => setPayoutWallet(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '2px solid #000000',
+                        boxShadow: '2px 2px 0px #000000',
+                        fontSize: '0.92rem',
+                        outline: 'none',
+                        fontFamily: 'monospace',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
+                      SUBMISSION NOTES / PROOF DETAILS
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Explain how your deliverable satisfies the bounty acceptance criteria..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '2px solid #000000',
+                        boxShadow: '2px 2px 0px #000000',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        fontFamily: 'inherit'
                       }}
                     />
                   </div>

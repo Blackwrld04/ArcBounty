@@ -20,6 +20,7 @@ export const authRouter = Router();
 
 function formatUser(user) {
   if (!user) return null;
+  const isAdmin = Boolean(user.is_admin);
   return {
     id: user.id,
     email: user.email,
@@ -28,7 +29,8 @@ function formatUser(user) {
     avatar: user.avatar,
     address: user.wallet_address,
     balance: user.usdc_balance,
-    role: user.role,
+    role: isAdmin ? 'admin' : (user.role || 'creator'),
+    isAdmin,
     discipline: user.discipline,
     bio: user.bio,
     telegram: user.telegram,

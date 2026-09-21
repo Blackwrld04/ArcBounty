@@ -1,0 +1,107 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  getAllBounties,
+  getBountyById,
+  createBountyRecord,
+  createBountySubmission,
+  getBountySubmissions,
+  disburseBountyReward,
+  getAdminOverviewStats,
+  isAdminUser,
+  createUser,
+  createSession
+} from '../src/db.js';
+
+test('ArcBounty Escrow Payments & Admin Distribution Tests', async (t) => {
+  let createdBounty = null;
+  let testSubmission = null;
+
+  await t.test('verifies admin authorization for configured admin emails', () => {
+    assert.equal(isAdminUser('jasminee0904@gmail.com'), true);
+    assert.equal(isAdminUser('olajideabdulquadri97@gmail.com'), true);
+    assert.equal(isAdminUser('olajideabdulquadri22@gmail.com'), true);
+    assert.equal(isAdminUser('random_stranger@example.com'), false);
+    assert.equal(isAdminUser(''), false);
+  });
+
+  await t.test('creates bounty with designated escrow wallet and deposit metadata', () => {
+    const escrowAddr = '0x38bEc58406E9b7941F48cCe61aE2d1847137f884';
+    const mockTx = '0xdep1234567890abcdef1234567890abcdef12';
+
+    createdBounty = createBountyRecord({
+      title: 'Build Decentralized File Verification on Arc',
+      category: 'DEV',
+      categoryName: 'Code & Apps',
+      amount: 1750,
+      description: 'Implement zero-knowledge hash verification on Circle Arc L1.',
+      escrowWallet: escrowAddr,
+      depositTx: mockTx,
+      maintainer: '0x1111111111111111111111111111111111111111',
+      maintainerName: 'Arc Security Guild',
+      deadlineDays: 7
+    });
+
+    assert.ok(createdBounty.id);
+    assert.equal(createdBounty.title, 'Build Decentralized File Verification on Arc');
+    assert.equal(createdBounty.amount, 1750);
+    assert.equal(createdBounty.escrowWallet, escrowAddr);
+    assert.equal(createdBounty.depositTx, mockTx);
+    assert.equal(createdBounty.status, 'Open');
+    assert.equal(createdBounty.paymentStatus, 'funded');
+  });
+
+  await t.test('allows multiple creators to participate in a challenge', () => {
+    const creatorWallet = '0x2222222222222222222222222222222222222222';
+    testSubmission = createBountySubmission({
+      bountyId: createdBounty.id,
+      creatorName: 'Amina Dev',
+      creatorEmail: 'amina@arc.builders',
+      walletAddress: creatorWallet,
+      submissionUrl: 'https://github.com/amina-dev/arc-zk-verify',
+      notes: 'Completed full verification smart contract and benchmark suite on Arc Testnet.'
+    });
+
+    assert.ok(testSubmission.id.startsWith('sub_'));
+    assert.equal(testSubmission.bountyId, createdBounty.id);
+    assert.equal(testSubmission.walletAddress, creatorWallet.toLowerCase());
+
+    const submissions = getBountySubmissions(createdBounty.id);
+    assert.ok(submissions.length >= 1);
+    assert.equal(submissions[0].submission_url, 'https://github.com/amina-dev/arc-zk-verify');
+
+    // Bounty status should automatically transition to InReview
+    const updated = getBountyById(createdBounty.id);
+    assert.equal(updated.status, 'InReview');
+  });
+
+  await t.test('admin disburses USDC reward from escrow to the creator', () => {
+    const disbResult = disburseBountyReward({
+      bountyId: createdBounty.id,
+      submissionId: testSubmission.id,
+      adminEmail: 'jasminee0904@gmail.com',
+      customAmount: 1750
+    });
+
+    assert.equal(disbResult.success, true);
+    assert.equal(disbResult.amount, 1750);
+    assert.ok(disbResult.txHash.startsWith('0xarc'));
+    assert.equal(disbResult.recipient, '0x2222222222222222222222222222222222222222');
+
+    // Bounty should now be Settled
+    const settledBounty = getBountyById(createdBounty.id);
+    assert.equal(settledBounty.status, 'Settled');
+    assert.equal(settledBounty.paymentStatus, 'settled');
+    assert.equal(settledBounty.solver, '0x2222222222222222222222222222222222222222');
+    assert.ok(settledBounty.settlementTx);
+  });
+
+  await t.test('admin overview stats aggregates platform metrics accurately', () => {
+    const stats = getAdminOverviewStats();
+    assert.ok(stats.totalBounties >= 1);
+    assert.ok(stats.totalEscrowedUsdc > 0);
+    assert.ok(stats.totalSubmissions >= 1);
+    assert.ok(stats.totalDistributedUsdc >= 1750);
+    assert.equal(stats.escrowWallet, '0x38bEc58406E9b7941F48cCe61aE2d1847137f884');
+  });
+});

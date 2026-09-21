@@ -11,6 +11,7 @@ import UserProfile from './components/UserProfile';
 import AccountSettings from './components/AccountSettings';
 import AgentSwarmPortal from './components/AgentSwarmPortal';
 import Leaderboard from './components/Leaderboard';
+import AdminDashboard from './components/AdminDashboard';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
 import { Zap, CheckCircle2, ExternalLink, X } from 'lucide-react';
@@ -99,13 +100,52 @@ export default function App() {
     showToast(`Wallet connected! Address: ${newWallet.address.slice(0, 6)}...${newWallet.address.slice(-4)}`);
   };
 
+  // Fetch live bounties from SQLite database
+  const loadBounties = async () => {
+    try {
+      const res = await fetch('http://localhost:4050/api/bounties');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.bounties) && data.bounties.length > 0) {
+        setBounties(data.bounties);
+      }
+    } catch (e) {
+      console.warn('[App] SQLite bounties sync fallback:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadBounties();
+  }, []);
+
   // Sync to local storage
   useEffect(() => {
     localStorage.setItem('arcbounty_items_v4', JSON.stringify(bounties));
   }, [bounties]);
 
-  // Handle posting a new bounty
+  // Handle posting a new bounty with Escrow deposit
   const handleCreateBounty = async (newBountyData) => {
+    try {
+      const token = localStorage.getItem('arcbounty_session_token');
+      const res = await fetch('http://localhost:4050/api/bounties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(newBountyData)
+      });
+      const data = await res.json();
+      if (data.success && data.bounty) {
+        setBounties((prev) => [data.bounty, ...prev]);
+        setCreateModalOpen(false);
+        showToast(`Bounty created! $${newBountyData.amount.toLocaleString()} USDC locked in Circle Arc Escrow.`);
+        return;
+      }
+    } catch (e) {
+      console.warn('Backend create bounty failed:', e);
+    }
+
+    // Local state fallback
     const newBounty = {
       id: `bounty-arc-${Date.now().toString().slice(-4)}`,
       bountyId: `0x${Date.now().toString(16).padStart(64, '0')}`,
@@ -120,16 +160,40 @@ export default function App() {
     };
 
     setBounties([newBounty, ...bounties]);
-    setWallet((prev) => ({
-      ...prev,
-      balance: Math.max(0, prev.balance - newBountyData.amount)
-    }));
     setCreateModalOpen(false);
     showToast(`Bounty created! $${newBountyData.amount.toLocaleString()} USDC locked in Circle Arc Escrow.`);
   };
 
   // Handle solver deliverable submission
-  const handleSubmitSolution = async (bountyId, submissionUrl, solverAddress, solverType) => {
+  const handleSubmitSolution = async (bountyId, submissionUrl, solverAddress, solverType, notes) => {
+    try {
+      const token = localStorage.getItem('arcbounty_session_token');
+      const res = await fetch(`http://localhost:4050/api/bounties/${bountyId}/participate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          submissionUrl,
+          walletAddress: solverAddress || user?.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
+          solverType: solverType || 'Human Creator',
+          notes,
+          creatorName: user?.name,
+          creatorEmail: user?.email
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.bounty) {
+        setBounties((prev) => prev.map((b) => (b.id === bountyId ? data.bounty : b)));
+        setSelectedBounty(data.bounty);
+        showToast('Work submitted! Challenge maintainer & Admin review initiated on Arc.');
+        return;
+      }
+    } catch (e) {
+      console.warn('Backend participate failed:', e);
+    }
+
     setBounties((prev) =>
       prev.map((b) => {
         if (b.id === bountyId) {
@@ -337,6 +401,16 @@ export default function App() {
         {activeView === 'leaderboard' && (
           <div style={{ paddingTop: '20px' }}>
             <Leaderboard />
+          </div>
+        )}
+
+        {activeView === 'admin' && (
+          <div style={{ paddingTop: '10px' }}>
+            <AdminDashboard
+              user={user}
+              wallet={wallet}
+              onBackToExplore={() => setActiveView('explore')}
+            />
           </div>
         )}
       </main>

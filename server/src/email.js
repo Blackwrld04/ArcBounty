@@ -249,3 +249,94 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
     previewUrl: previewUrl || null
   };
 }
+
+/**
+ * Send real notification email when admin distributes USDC bounty reward to creator
+ */
+export async function sendRewardDisbursedEmail({ toEmail, creatorName, bountyTitle, amount, txHash, walletAddress }) {
+  if (!toEmail) return null;
+  try {
+    const mailer = await getTransporter();
+    const subject = `USDC Disbursed: $${amount} for "${bountyTitle}" on Circle Arc`;
+
+    const htmlContent = `
+      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="color-scheme" content="light dark" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin: 0; padding: 0; width: 100% !important; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0b111e; opacity: 0;">
+            Congratulations! $${amount} USDC has been disbursed to your wallet for "${bountyTitle}".
+          </div>
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0b111e; padding: 32px 12px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: #111c30; border: 2.5px solid #2f578c; border-radius: 12px; overflow: hidden;">
+                  <tr>
+                    <td align="center" style="background-color: #1b3158; padding: 26px 20px; border-bottom: 2.5px solid #2f578c;">
+                      <div style="font-size: 24px; font-weight: 900; color: #ffffff; margin-bottom: 6px;">
+                        Arc<span style="color: #ffcc6f;">Bounty</span>
+                      </div>
+                      <div style="display: inline-block; background-color: #0d1a2d; color: #acc6e9; border: 1.5px solid #2f578c; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                        Settlement Confirmed &bull; Chain ID 5042
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 32px 28px; background-color: #111c30;">
+                      <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #ffffff;">
+                        Bounty Prize Disbursed!
+                      </h1>
+                      <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+                        Hello <strong>${creatorName || 'Creator'}</strong>, your submission for <strong>${bountyTitle}</strong> was reviewed and selected as the winner. The prize reward has been disbursed from the platform escrow to your Circle Arc wallet!
+                      </p>
+                      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0a1322; border: 2px solid #ffcc6f; border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center;">
+                        <tr>
+                          <td>
+                            <div style="font-size: 11px; font-weight: 800; color: #ffcc6f; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">AMOUNT DISBURSED</div>
+                            <div style="font-size: 34px; font-weight: 900; color: #10b981; font-family: monospace;">$${amount} USDC</div>
+                            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Recipient: <span style="color: #ffffff; font-family: monospace;">${walletAddress || 'Your Connected Wallet'}</span></div>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; word-break: break-all;">Tx Hash: <span style="color: #acc6e9; font-family: monospace;">${txHash}</span></div>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="background-color: #16243d; border-left: 4px solid #10b981; padding: 12px 14px; border-radius: 4px; font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">
+                        Finalized on Circle Arc L1 with sub-second deterministic finality.
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="background-color: #0b1424; padding: 18px 24px; border-top: 1.5px solid #1e3352; font-size: 12px; color: #64748b;">
+                      Circle Arc L1 &bull; Canonical USDC &bull; Zero-gas Creator Capital Engine
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Security" <security@arcbounty.io>');
+
+    const info = await mailer.sendMail({
+      from: sender,
+      to: toEmail,
+      subject,
+      text: `Your ArcBounty prize of $${amount} USDC for "${bountyTitle}" has been disbursed to ${walletAddress}. Settlement Tx: ${txHash}`,
+      html: htmlContent
+    });
+
+    console.log(`[Disbursement Email] Notification sent to ${toEmail} for bounty "${bountyTitle}" ($${amount} USDC)`);
+    return info;
+  } catch (err) {
+    console.warn(`[Disbursement Email] Failed to send email to ${toEmail}:`, err.message);
+    return null;
+  }
+}
+
