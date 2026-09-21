@@ -1602,7 +1602,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           {/* ========================================================= */}
           {/* ALTERNATIVE LOGIN / SIGN IN WITH WALLET OR GOOGLE        */}
           {/* ========================================================= */}
-          {step === 'input' && (
+          {step === 'input' && (mode === 'login' || signupSlide === 1) && (
             <div>
               <div
                 style={{
