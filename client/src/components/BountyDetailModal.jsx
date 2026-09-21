@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Shield,
   Clock,
-  Bot,
   ArrowRight,
   Zap,
   Copy,
@@ -30,7 +29,6 @@ export default function BountyDetailModal({
   const [submissionUrl, setSubmissionUrl] = useState('');
   const [payoutWallet, setPayoutWallet] = useState(wallet.address || user?.address || '');
   const [notes, setNotes] = useState('');
-  const [solverType, setSolverType] = useState('Human Creator');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -41,7 +39,7 @@ export default function BountyDetailModal({
     e.preventDefault();
     if (!submissionUrl) return;
     setIsSubmitting(true);
-    await onSubmitSolution(bounty.id, submissionUrl, payoutWallet || wallet.address || user?.address, solverType, notes);
+    await onSubmitSolution(bounty.id, submissionUrl, payoutWallet || wallet.address || user?.address, 'Human Creator', notes);
     setIsSubmitting(false);
   };
 
@@ -116,7 +114,7 @@ export default function BountyDetailModal({
             fontWeight: 800,
             textTransform: 'uppercase'
           }}>
-            {bounty.categoryName || bounty.category || 'CREATIVE TASK'}
+            {bounty.categoryName || (bounty.category === 'CREATIVE' ? 'CONTENT' : bounty.category) || 'CONTENT'}
           </span>
           <span style={{
             background: '#ffffff',
@@ -134,24 +132,6 @@ export default function BountyDetailModal({
             <Package size={13} strokeWidth={2.2} />
             <span>{bounty.submissionType || 'Work Deliverable'}</span>
           </span>
-          {bounty.isAiEligible && (
-            <span style={{
-              background: 'var(--arc-token-sand)',
-              color: '#000000',
-              border: '1.5px solid #000000',
-              boxShadow: '1.5px 1.5px 0px #000000',
-              padding: '3px 10px',
-              borderRadius: '6px',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}>
-              <Bot size={13} strokeWidth={2.2} />
-              <span>AI Swarm Permitted</span>
-            </span>
-          )}
         </div>
 
         {/* Title */}
@@ -377,61 +357,6 @@ export default function BountyDetailModal({
             ) : (
               <form onSubmit={handleSubmitWork}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
-                      CREATOR TYPE
-                    </label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSolverType('Human Creator')}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: '8px',
-                          border: '2px solid #000000',
-                          background: solverType === 'Human Creator' ? 'var(--arc-sky-sync)' : '#ffffff',
-                          boxShadow: solverType === 'Human Creator' ? '2.5px 2.5px 0px #000000' : 'none',
-                          fontWeight: 800,
-                          fontSize: '0.84rem',
-                          color: '#000000',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <User size={15} strokeWidth={2.2} />
-                        <span>Human Creator</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setSolverType('Autonomous AI Agent')}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: '8px',
-                          border: '2px solid #000000',
-                          background: solverType === 'Autonomous AI Agent' ? 'var(--arc-token-sand)' : '#ffffff',
-                          boxShadow: solverType === 'Autonomous AI Agent' ? '2.5px 2.5px 0px #000000' : 'none',
-                          fontWeight: 800,
-                          fontSize: '0.84rem',
-                          color: '#000000',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <Bot size={15} strokeWidth={2.2} />
-                        <span>Autonomous AI Agent</span>
-                      </button>
-                    </div>
-                  </div>
-
                   <div>
                     <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#000000', display: 'block', marginBottom: '6px' }}>
                       DELIVERABLE URL (Figma, Loom, YouTube, X Thread, GitHub, or Drive) *

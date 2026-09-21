@@ -5,6 +5,7 @@ import {
   createVerificationCode,
   verifyCode,
   getUserByEmail,
+  getUserByUsername,
   createUser,
   createSession,
   getUserByToken,
@@ -13,7 +14,10 @@ import {
   updateUserProfile,
   createWalletChallenge,
   verifyWalletChallenge,
-  getUserByWalletAddress
+  getUserByWalletAddress,
+  hashPassword,
+  verifyPassword,
+  updateUserPassword
 } from '../db.js';
 
 export const authRouter = Router();
@@ -42,8 +46,131 @@ function formatUser(user) {
 }
 
 /**
+ * POST /api/auth/login
+ * Standard credential authentication: Email (or Username) + Password
+ */
+authRouter.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter your email/username and password.'
+      });
+    }
+
+    const identifier = email.trim().toLowerCase();
+    const user = getUserByEmail(identifier) || getUserByUsername(identifier);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password. Please check your credentials.'
+      });
+    }
+
+    // Check if user has a password configured
+    if (!user.password_hash) {
+      // Legacy user without password: set their password to what was provided
+      updateUserPassword(user.id, password);
+    } else {
+      const isValid = verifyPassword(password, user.password_hash);
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid email or password. Please check your credentials.'
+        });
+      }
+    }
+
+    // Generate persistent session
+    const { token } = createSession(user.id);
+
+    return res.json({
+      success: true,
+      message: 'Logged in successfully',
+      user: formatUser(user),
+      token
+    });
+  } catch (err) {
+    console.error('[Auth Error] login failed:', err);
+    return res.status(500).json({ success: false, error: 'Internal authentication error' });
+  }
+});
+
+/**
+ * POST /api/auth/signup
+ * Standard registration: validates fields, hashes password, and dispatches 6-digit email OTP
+ */
+authRouter.post('/signup', async (req, res) => {
+  try {
+    const { name, username, email, password, discipline } = req.body;
+
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      return res.status(400).json({ success: false, error: 'Please enter a valid email address.' });
+    }
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const cleanUsername = (username || normalizedEmail.split('@')[0])
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '');
+
+    // Check if email already registered
+    const existingUser = getUserByEmail(normalizedEmail);
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        error: 'An account with this email already exists. Please log in.'
+      });
+    }
+
+    // Check if username already taken
+    const existingUsername = getUserByUsername(cleanUsername);
+    if (existingUsername) {
+      return res.status(409).json({
+        success: false,
+        error: `Username @${cleanUsername} is already taken. Please choose another handle.`
+      });
+    }
+
+    // Securely hash password
+    const passwordHash = hashPassword(password);
+
+    // Save pending registration data in verification_codes
+    const pendingData = {
+      name: (name || cleanUsername).trim(),
+      username: cleanUsername,
+      discipline: discipline || 'Content',
+      passwordHash
+    };
+
+    const { code, expiresAt } = createVerificationCode(normalizedEmail, 'signup', pendingData);
+
+    // Dispatch real email via Gmail SMTP
+    const emailResult = await sendVerificationEmail(normalizedEmail, code, 'signup');
+
+    return res.json({
+      success: true,
+      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}`,
+      email: normalizedEmail,
+      previewUrl: emailResult.previewUrl || null,
+      expiresAt
+    });
+  } catch (err) {
+    console.error('[Auth Error] signup failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to initiate signup process' });
+  }
+});
+
+/**
  * POST /api/auth/send-code
- * Sends a real 6-digit verification OTP to the user's email via nodemailer
+ * Sends a 6-digit verification OTP for passwordless login or password reset
  */
 authRouter.post('/send-code', async (req, res) => {
   try {
@@ -61,16 +188,7 @@ authRouter.post('/send-code', async (req, res) => {
       return res.status(404).json({
         success: false,
         userExists: false,
-        error: 'No account found with this email. Please switch to Sign Up.'
-      });
-    }
-
-    // If signup mode and account already exists, inform user
-    if (type === 'signup' && existingUser) {
-      return res.status(409).json({
-        success: false,
-        userExists: true,
-        error: 'An account already exists with this email. Please switch to Log In.'
+        error: 'No account found with this email. Please create an account first.'
       });
     }
 
@@ -80,7 +198,6 @@ authRouter.post('/send-code', async (req, res) => {
     // Dispatch real email via nodemailer
     const emailResult = await sendVerificationEmail(normalizedEmail, code, type);
 
-    // Security: devCode is NEVER returned to the client in production verification!
     return res.json({
       success: true,
       message: `A 6-digit verification code has been dispatched to ${normalizedEmail}`,
@@ -97,11 +214,11 @@ authRouter.post('/send-code', async (req, res) => {
 
 /**
  * POST /api/auth/verify-code
- * Verifies the 6-digit code and logs in or creates the creator account
+ * Verifies 6-digit OTP code, creates or activates account with hashed password, and logs in
  */
 authRouter.post('/verify-code', (req, res) => {
   try {
-    const { email, code, name, username, discipline } = req.body;
+    const { email, code, name, username, discipline, password } = req.body;
 
     if (!email || !code) {
       return res.status(400).json({ success: false, error: 'Email and 6-digit code are required' });
@@ -109,20 +226,30 @@ authRouter.post('/verify-code', (req, res) => {
 
     const verification = verifyCode(email, code);
     if (!verification.valid) {
-      return res.status(400).json({ success: false, error: verification.error || 'Invalid verification code' });
+      return res.status(400).json({ success: false, error: verification.error || 'Invalid or expired verification code' });
     }
 
     let user = getUserByEmail(email);
 
-    // If user does not exist yet, create account
+    // If user does not exist yet, finalize registration with pending data
     if (!user) {
+      const pending = verification.pendingData || {};
+      const finalName = pending.name || name || email.split('@')[0];
+      const finalUsername = pending.username || username || email.split('@')[0];
+      const finalDiscipline = pending.discipline || discipline || 'Content';
+      const finalPasswordHash = pending.passwordHash || (password ? hashPassword(password) : null);
+
       user = createUser({
         email,
-        name: name || email.split('@')[0],
-        username: username || email.split('@')[0],
+        name: finalName,
+        username: finalUsername,
         provider: 'email',
-        discipline: discipline || 'Design'
+        discipline: finalDiscipline,
+        passwordHash: finalPasswordHash
       });
+    } else if (password) {
+      // If user exists and provided a password (e.g. password reset flow)
+      updateUserPassword(user.id, password);
     }
 
     // Create persistent session
@@ -130,6 +257,7 @@ authRouter.post('/verify-code', (req, res) => {
 
     return res.json({
       success: true,
+      message: 'Email verified successfully! Welcome to ArcBounty.',
       user: formatUser(user),
       token
     });
@@ -137,6 +265,12 @@ authRouter.post('/verify-code', (req, res) => {
     console.error('[Auth Error] verify-code failed:', err);
     return res.status(500).json({ success: false, error: 'Failed to verify code' });
   }
+});
+
+// Alias for verify-code
+authRouter.post('/verify-signup', (req, res, next) => {
+  req.url = '/verify-code';
+  authRouter.handle(req, res, next);
 });
 
 /**

@@ -149,7 +149,6 @@ export default function BountyList({
             <SidebarWidgets
               stats={stats}
               onOpenCreate={openCreateModal}
-              onOpenSwarm={() => setActiveTab && setActiveTab('swarm')}
             />
           </div>
         </div>

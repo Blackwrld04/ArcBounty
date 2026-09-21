@@ -16,25 +16,42 @@ import {
   FileText,
   Share2,
   Layers,
-  ChevronRight,
   ExternalLink,
-  Lock
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const API_BASE = 'http://localhost:4050/api/auth';
 
 const DISCIPLINES = [
-  { id: 'Design', label: 'Design', icon: Palette, desc: 'UI/UX, 3D, Brand, Motion' },
-  { id: 'Content', label: 'Content', icon: FileText, desc: 'Articles, Video, Audio, Docs' },
-  { id: 'Development', label: 'Development', icon: Code2, desc: 'Smart Contracts, Frontends, Bots' },
-  { id: 'All Social', label: 'All Social', icon: Share2, desc: 'Twitter/X, Telegram, Discord, Virality' },
-  { id: 'Other', label: 'Other', icon: Layers, desc: 'Operations, Research, Community' }
+  { id: 'Design', label: 'Design', icon: Palette },
+  { id: 'Content', label: 'Content', icon: FileText },
+  { id: 'Development', label: 'Dev', icon: Code2 },
+  { id: 'All Social', label: 'Social', icon: Share2 },
+  { id: 'Other', label: 'Other', icon: Layers }
 ];
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
-  const [step, setStep] = useState('input'); // 'input', 'otp', 'profile', 'google_auth', 'wallet_auth'
+  const [step, setStep] = useState('input'); // 'input', 'otp', 'google_auth'
+  const [loginWithOtp, setLoginWithOtp] = useState(false); // toggle passwordless login
+
+  // Credentials
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Signup Profile
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [discipline, setDiscipline] = useState('Content');
+
+  // OTP Verification
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [emailPreviewUrl, setEmailPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,23 +59,26 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
   const [successMessage, setSuccessMessage] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Profile fields for new signups
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [discipline, setDiscipline] = useState('Design');
-
-  // Google Email input
+  // Google Sign-In Simulation
   const [googleEmail, setGoogleEmail] = useState('');
   const [googleName, setGoogleName] = useState('');
 
   const otpInputsRef = useRef([]);
 
-  // Reset state when opened
+  // Reset state when opened or mode changed
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
       setStep('input');
+      setLoginWithOtp(false);
       setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setName('');
+      setUsername('');
+      setDiscipline('Content');
       setOtp(['', '', '', '', '', '']);
       setEmailPreviewUrl(null);
       setErrorMessage('');
@@ -113,8 +133,127 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Step 1: Send real verification code to email
-  const handleSendCode = async (e) => {
+  // Standard Password Login
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setErrorMessage('Please enter your email or username.');
+      return;
+    }
+    if (!password) {
+      setErrorMessage('Please enter your password.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || 'Invalid credentials. Please check your email and password.');
+        setIsLoading(false);
+        return;
+      }
+
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+
+      onLoginSuccess(data.user, data.token);
+      onClose();
+    } catch (err) {
+      console.error('Password login error:', err);
+      setErrorMessage('Network error connecting to Arc authentication service.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Standard Registration Flow: validates inputs, hashes password, and dispatches 6-digit OTP to Gmail
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    const cleanName = name.trim();
+    const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      setErrorMessage('Please enter your full name.');
+      return;
+    }
+    if (!cleanUsername || cleanUsername.length < 3) {
+      setErrorMessage('Please choose a handle with at least 3 characters.');
+      return;
+    }
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+    if (!password || password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: cleanName,
+          username: cleanUsername,
+          email: cleanEmail,
+          password,
+          discipline
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || 'Failed to initialize account registration.');
+        setIsLoading(false);
+        return;
+      }
+
+      setSuccessMessage(`A 6-digit verification code has been dispatched to ${cleanEmail}`);
+      if (data.previewUrl) {
+        setEmailPreviewUrl(data.previewUrl);
+      }
+      setResendCooldown(45);
+      setStep('otp');
+      setTimeout(() => {
+        otpInputsRef.current[0]?.focus();
+      }, 100);
+    } catch (err) {
+      console.error('Signup error:', err);
+      setErrorMessage('Network error connecting to Arc authentication service.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Passwordless Email OTP Login Request
+  const handleSendOtpCode = async (e) => {
     if (e) e.preventDefault();
     if (!email || !email.includes('@')) {
       setErrorMessage('Please enter a valid email address');
@@ -129,7 +268,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       const res = await fetch(`${API_BASE}/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), type: mode })
+        body: JSON.stringify({ email: email.trim(), type: 'login' })
       });
 
       const data = await res.json();
@@ -140,7 +279,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         return;
       }
 
-      setSuccessMessage(`A 6-digit verification code was sent to ${data.email}`);
+      setSuccessMessage(`A 6-digit sign in code was sent to ${data.email}`);
       if (data.previewUrl) {
         setEmailPreviewUrl(data.previewUrl);
       }
@@ -150,14 +289,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         otpInputsRef.current[0]?.focus();
       }, 100);
     } catch (err) {
-      console.error('Send code error:', err);
+      console.error('Send OTP error:', err);
       setErrorMessage('Network error connecting to Arc authentication service.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 2: Verify real 6-digit OTP code against SQLite
+  // Verify OTP (Works for both signup activation and passwordless login)
   const handleVerifyOtp = async (e) => {
     if (e) e.preventDefault();
     const codeString = otp.join('');
@@ -167,19 +306,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       return;
     }
 
-    // If new signup, gather profile info before finalizing
-    if (mode === 'signup' && (!name || !username)) {
-      setName(email.split('@')[0]);
-      setUsername(email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''));
-      setStep('profile');
-      return;
-    }
-
-    await submitVerification(codeString);
-  };
-
-  // Submit verification to backend SQLite
-  const submitVerification = async (codeString) => {
     setIsLoading(true);
     setErrorMessage('');
 
@@ -188,11 +314,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email.trim(),
-          code: codeString || otp.join(''),
+          email: email.trim().toLowerCase(),
+          code: codeString,
           name: name.trim() || email.split('@')[0],
           username: username.trim() || email.split('@')[0],
-          discipline: discipline
+          discipline: discipline,
+          password: password || undefined
         })
       });
 
@@ -204,6 +331,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         return;
       }
 
+      confetti({
+        particleCount: 140,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+
       onLoginSuccess(data.user, data.token);
       onClose();
     } catch (err) {
@@ -214,49 +347,35 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Step 3: Profile submit for signups
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || !username.trim()) {
-      setErrorMessage('Please complete your name and handle');
-      return;
-    }
-    await submitVerification(otp.join(''));
-  };
-
-  // Step 4: Cryptographic Web3 Wallet Verification (SIWE)
+  // Cryptographic Web3 Wallet Verification (SIWE)
   const handleCryptographicWalletAuth = async () => {
     setIsLoading(true);
     setErrorMessage('');
 
     if (typeof window === 'undefined' || !window.ethereum) {
-      setErrorMessage('No Web3 wallet extension found. Please install Rabby Wallet or MetaMask in your browser.');
+      setErrorMessage('No Web3 wallet extension found. Please install Rabby Wallet or MetaMask.');
       setIsLoading(false);
       return;
     }
 
     try {
-      // 1. Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (!accounts || !accounts[0]) {
         throw new Error('No accounts selected in Web3 wallet.');
       }
       const address = accounts[0];
 
-      // 2. Fetch single-use cryptographic challenge nonce from server
       const nonceRes = await fetch(`${API_BASE}/wallet-nonce?address=${address}`);
       const challengeData = await nonceRes.json();
       if (!challengeData.success) {
         throw new Error(challengeData.error || 'Failed to generate cryptographic challenge');
       }
 
-      // 3. Prompt user's wallet for cryptographic personal_sign signature
       const signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [challengeData.message, address]
       });
 
-      // 4. Submit signature for cryptographic verification on server
       const verifyRes = await fetch(`${API_BASE}/wallet-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -267,26 +386,32 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         })
       });
 
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok || !verifyData.success) {
-        throw new Error(verifyData.error || 'Cryptographic signature verification failed');
+      const authData = await verifyRes.json();
+      if (!verifyRes.ok || !authData.success) {
+        throw new Error(authData.error || 'Cryptographic signature verification failed.');
       }
 
-      onLoginSuccess(verifyData.user, verifyData.token);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      onLoginSuccess(authData.user, authData.token);
       onClose();
     } catch (err) {
-      console.error('Cryptographic wallet auth error:', err);
-      setErrorMessage(err.message || 'Cryptographic wallet authentication cancelled or rejected');
+      console.error('Wallet auth error:', err);
+      setErrorMessage(err.message || 'Web3 wallet signature cancelled or failed.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 5: Real Google Sign In Flow
+  // Google Auth Simulation
   const handleGoogleSubmit = async (e) => {
     e.preventDefault();
     if (!googleEmail || !googleEmail.includes('@')) {
-      setErrorMessage('Please enter a valid Google email address');
+      setErrorMessage('Please enter a valid Google email.');
       return;
     }
 
@@ -294,7 +419,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     setErrorMessage('');
 
     try {
-      const res = await fetch(`${API_BASE}/google`, {
+      const res = await fetch(`${API_BASE}/google-callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -310,6 +435,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         setIsLoading(false);
         return;
       }
+
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
 
       onLoginSuccess(data.user, data.token);
       onClose();
@@ -327,7 +458,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         className="clean-card"
         style={{
           width: '100%',
-          maxWidth: '820px',
+          maxWidth: '840px',
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
@@ -335,7 +466,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           border: '2.5px solid #000000',
           boxShadow: '6px 6px 0px #000000',
           position: 'relative',
-          minHeight: '520px',
+          maxHeight: '92vh',
           background: '#ffffff'
         }}
         onClick={(e) => e.stopPropagation()}
@@ -367,10 +498,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         {/* Brand Left Panel (Circle Arc Dark Navy) */}
         <div
           style={{
-            width: '38%',
+            width: '36%',
             background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
             color: '#ffffff',
-            padding: '36px 28px',
+            padding: '32px 24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -402,26 +533,26 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
               </span>
             </div>
 
-            <h3 className="font-space" style={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '14px' }}>
+            <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '14px' }}>
               The Capital Engine for Web3 Creators
             </h3>
 
-            <p style={{ fontSize: '0.84rem', opacity: 0.9, lineHeight: 1.5, marginBottom: '22px' }}>
-              Real verification with genuine email codes, persistent database profiles, and cryptographic Web3 signatures.
+            <p style={{ fontSize: '0.82rem', opacity: 0.9, lineHeight: 1.5, marginBottom: '22px' }}>
+              Industry-standard password security, genuine Gmail inbox verification, and instant USDC settlement on Circle Arc.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.78rem' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>Single-use 6-digit OTP verification sent directly to your inbox.</span>
+                <span>Secure password hashing using Node scrypt cryptography.</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>EIP-4361 cryptographic personal_sign verification for Web3 wallets.</span>
+                <span>Single-use 6-digit OTP codes sent to your genuine Gmail inbox.</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>Zero creator gas via Circle Arc L1 canonical USDC escrow.</span>
+                <span>Cryptographic Web3 wallet sign-in via EIP-4361 standard.</span>
               </div>
             </div>
           </div>
@@ -449,10 +580,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 justifyContent: 'center'
               }}
             >
-              <Palette size={18} color="#000000" strokeWidth={2.4} />
+              <Lock size={18} color="#000000" strokeWidth={2.4} />
             </div>
             <div>
-              <p style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>Verified Creator Guild</p>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>Verified Creator Auth</p>
               <p style={{ fontSize: '0.7rem', opacity: 0.85, margin: 0, color: '#acc6e9' }}>Circle Arc Protocol (5042)</p>
             </div>
           </div>
@@ -462,10 +593,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         <div
           style={{
             flex: 1,
-            padding: '36px 32px',
+            padding: '32px 28px',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center'
+            overflowY: 'auto',
+            maxHeight: '92vh'
           }}
         >
           {/* Error Banner */}
@@ -487,7 +619,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 gap: '8px'
               }}
             >
-              <span>{errorMessage}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={16} color="#991b1b" />
+                <span>{errorMessage}</span>
+              </div>
               <button
                 onClick={() => setErrorMessage('')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -521,11 +656,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
 
           {/* ========================================================= */}
-          {/* STEP 1: INITIAL EMAIL & AUTH METHODS                      */}
+          {/* STEP 1: LOGIN OR SIGNUP FORM                              */}
           {/* ========================================================= */}
           {step === 'input' && (
             <div>
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '18px' }}>
                 {/* Tab Switcher: Login vs Sign Up */}
                 <div
                   style={{
@@ -583,65 +718,480 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   </button>
                 </div>
 
-                <h3 className="font-space" style={{ fontSize: '1.5rem', fontWeight: 900, color: '#000000', margin: 0 }}>
+                <h3 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: 0 }}>
                   {mode === 'login' ? 'Welcome Back' : 'Create Creator Account'}
                 </h3>
-                <p style={{ fontSize: '0.86rem', color: '#4b5563', marginTop: '4px', fontWeight: 500 }}>
+                <p style={{ fontSize: '0.84rem', color: '#4b5563', marginTop: '4px', fontWeight: 500 }}>
                   {mode === 'login'
-                    ? 'Enter your registered email to receive your sign in code'
-                    : 'Join ArcBounty with email verification or Web3 cryptographic signature'}
+                    ? 'Enter your account credentials to access your bounties and earnings.'
+                    : 'Set up your credentials and verify your email to start earning.'}
                 </p>
               </div>
 
-              {/* Email Form */}
-              <form onSubmit={handleSendCode} style={{ marginBottom: '16px' }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
-                    Email Address
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <Mail
-                      size={18}
-                      color="#64748b"
-                      style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
-                    />
-                    <input
-                      type="email"
-                      placeholder="your.name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px 14px 12px 38px',
-                        borderRadius: '8px',
-                        border: '2px solid #000000',
-                        boxShadow: '2px 2px 0px #000000',
-                        fontSize: '0.92rem',
-                        fontWeight: 600,
-                        outline: 'none',
-                        background: '#ffffff'
-                      }}
-                    />
+              {/* ---------------------------------------------------- */}
+              {/* LOGIN FORM                                           */}
+              {/* ---------------------------------------------------- */}
+              {mode === 'login' && !loginWithOtp && (
+                <form onSubmit={handlePasswordLogin} style={{ marginBottom: '16px' }}>
+                  {/* Email / Username */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
+                      Email Address or Username
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail
+                        size={17}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="your.email@gmail.com or @handle"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px 11px 38px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          outline: 'none',
+                          background: '#ffffff'
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    fontSize: '0.92rem',
-                    justifyContent: 'center',
-                    cursor: isLoading ? 'wait' : 'pointer'
-                  }}
-                >
-                  <span>{isLoading ? 'Dispatching Verification Email...' : 'Send Verification Code'}</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
+                  {/* Password */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoginWithOtp(true);
+                          setErrorMessage('');
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2f578c',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Forgot password? Sign in with email code
+                      </button>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                      <Lock
+                        size={17}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '11px 40px 11px 38px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          outline: 'none',
+                          background: '#ffffff'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#64748b'
+                        }}
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '0.92rem',
+                      justifyContent: 'center',
+                      cursor: isLoading ? 'wait' : 'pointer'
+                    }}
+                  >
+                    <span>{isLoading ? 'Verifying Credentials...' : 'Log In to ArcBounty'}</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+
+              {/* ---------------------------------------------------- */}
+              {/* PASSWORDLESS OTP LOGIN FORM (FALLBACK)               */}
+              {/* ---------------------------------------------------- */}
+              {mode === 'login' && loginWithOtp && (
+                <form onSubmit={handleSendOtpCode} style={{ marginBottom: '16px' }}>
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
+                        Email Address for Verification Code
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoginWithOtp(false);
+                          setErrorMessage('');
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2f578c',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Use password instead
+                      </button>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <Mail
+                        size={17}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type="email"
+                        placeholder="your.email@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px 11px 38px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          outline: 'none',
+                          background: '#ffffff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '0.92rem',
+                      justifyContent: 'center',
+                      cursor: isLoading ? 'wait' : 'pointer'
+                    }}
+                  >
+                    <span>{isLoading ? 'Dispatching Verification Email...' : 'Send Sign-In Code to Gmail'}</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+
+              {/* ---------------------------------------------------- */}
+              {/* SIGN UP FORM (FULL REGISTRATION WITH PASSWORD)       */}
+              {/* ---------------------------------------------------- */}
+              {mode === 'signup' && (
+                <form onSubmit={handleSignupSubmit} style={{ marginBottom: '16px' }}>
+                  {/* Name & Username in 2 columns */}
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                        Full Name *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <User
+                          size={16}
+                          color="#64748b"
+                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="e.g. Satoshi Nakamoto"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px 10px 32px',
+                            borderRadius: '6px',
+                            border: '2px solid #000000',
+                            boxShadow: '2px 2px 0px #000000',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                        Handle (@) *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <AtSign
+                          size={15}
+                          color="#64748b"
+                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="satoshi"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px 10px 30px',
+                            borderRadius: '6px',
+                            border: '2px solid #000000',
+                            boxShadow: '2px 2px 0px #000000',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                      Email Address *
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail
+                        size={16}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type="email"
+                        placeholder="your.email@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px 10px 32px',
+                          borderRadius: '6px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.86rem',
+                          fontWeight: 600,
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Discipline Selection */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
+                      Primary Specialty
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+                      {DISCIPLINES.map((item) => {
+                        const Icon = item.icon;
+                        const isSelected = discipline === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setDiscipline(item.id)}
+                            style={{
+                              padding: '6px 4px',
+                              borderRadius: '6px',
+                              border: isSelected ? '2px solid #000000' : '1.5px solid #cbd5e1',
+                              background: isSelected ? '#fffae6' : '#ffffff',
+                              boxShadow: isSelected ? '2px 2px 0px #000000' : 'none',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '3px',
+                              cursor: 'pointer',
+                              transition: 'all 0.1s ease'
+                            }}
+                          >
+                            <Icon size={14} color={isSelected ? '#000000' : '#64748b'} strokeWidth={2.2} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#000000' : '#475569' }}>
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Password & Confirm Password in 2 columns */}
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                        Password (min 8 chars) *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock
+                          size={15}
+                          color="#64748b"
+                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={8}
+                          style={{
+                            width: '100%',
+                            padding: '10px 32px 10px 30px',
+                            borderRadius: '6px',
+                            border: '2px solid #000000',
+                            boxShadow: '2px 2px 0px #000000',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            padding: 0
+                          }}
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                        Confirm Password *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock
+                          size={15}
+                          color="#64748b"
+                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        />
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Confirm"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          minLength={8}
+                          style={{
+                            width: '100%',
+                            padding: '10px 32px 10px 30px',
+                            borderRadius: '6px',
+                            border: '2px solid #000000',
+                            boxShadow: '2px 2px 0px #000000',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            padding: 0
+                          }}
+                        >
+                          {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Password validation indicators */}
+                  <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', fontSize: '0.72rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: password.length >= 8 ? '#166534' : '#64748b' }}>
+                      <Check size={12} strokeWidth={3} />
+                      <span>At least 8 characters</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: password && password === confirmPassword ? '#166534' : '#64748b' }}>
+                      <Check size={12} strokeWidth={3} />
+                      <span>Passwords match</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '0.92rem',
+                      justifyContent: 'center',
+                      cursor: isLoading ? 'wait' : 'pointer'
+                    }}
+                  >
+                    <span>{isLoading ? 'Creating Account & Sending Code...' : 'Create Account & Verify Email'}</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
 
               {/* Divider */}
               <div
@@ -657,25 +1207,24 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 }}
               >
                 <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                <span>OR VERIFY WITH</span>
+                <span>OR CONTINUE WITH</span>
                 <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
               </div>
 
               {/* Web3 & Google Verification */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Cryptographic Web3 Wallet Verification */}
                 <button
                   type="button"
                   onClick={handleCryptographicWalletAuth}
                   disabled={isLoading}
                   style={{
                     width: '100%',
-                    padding: '11px 14px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
                     background: '#acc6e9',
                     border: '2px solid #000000',
                     boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.88rem',
+                    fontSize: '0.86rem',
                     fontWeight: 800,
                     color: '#1b3158',
                     display: 'flex',
@@ -687,10 +1236,9 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   }}
                 >
                   <Wallet size={16} />
-                  <span>Sign In with Web3 Wallet (Cryptographic SIWE)</span>
+                  <span>Sign In with Web3 Wallet (EIP-4361 SIWE)</span>
                 </button>
 
-                {/* Google Sign In */}
                 <button
                   type="button"
                   onClick={() => {
@@ -704,7 +1252,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     background: '#ffffff',
                     border: '2px solid #000000',
                     boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.88rem',
+                    fontSize: '0.86rem',
                     fontWeight: 700,
                     color: '#000000',
                     display: 'flex',
@@ -737,7 +1285,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 </button>
               </div>
 
-              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '16px', margin: '16px 0 0 0' }}>
+              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '14px', margin: '14px 0 0 0' }}>
                 Protected by Circle Arc Protocol cryptographic authentication.
               </p>
             </div>
@@ -765,7 +1313,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <KeyRound size={16} color="#000000" />
                   </div>
                   <h3 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: 0 }}>
-                    Enter Verification Code
+                    Check Your Gmail Inbox
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.86rem', color: '#4b5563', margin: 0, fontWeight: 500 }}>
@@ -786,12 +1334,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                       textDecoration: 'underline'
                     }}
                   >
-                    Change
+                    Edit email
                   </button>
                 </p>
               </div>
 
-              {/* Real Email Inbox / Preview Dispatch Notice */}
+              {/* Dispatched Preview Notice */}
               {emailPreviewUrl && (
                 <div
                   style={{
@@ -872,7 +1420,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     cursor: otp.join('').length === 6 && !isLoading ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  <span>{isLoading ? 'Verifying Code...' : 'Verify Code & Sign In'}</span>
+                  <span>{isLoading ? 'Verifying Code...' : 'Verify Code & Access Account'}</span>
                   <ArrowRight size={16} />
                 </button>
               </form>
@@ -887,7 +1435,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 ) : (
                   <button
                     type="button"
-                    onClick={handleSendCode}
+                    onClick={mode === 'signup' ? handleSignupSubmit : handleSendOtpCode}
                     disabled={isLoading}
                     style={{
                       background: 'none',
@@ -910,148 +1458,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
 
           {/* ========================================================= */}
-          {/* STEP 3: CREATOR PROFILE SETUP (NEW SIGNUPS)               */}
-          {/* ========================================================= */}
-          {step === 'profile' && (
-            <div>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '6px',
-                      background: '#acc6e9',
-                      border: '1.5px solid #000000',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <User size={16} color="#1b3158" />
-                  </div>
-                  <h3 className="font-space" style={{ fontSize: '1.4rem', fontWeight: 900, color: '#000000', margin: 0 }}>
-                    Set Up Creator Profile
-                  </h3>
-                </div>
-                <p style={{ fontSize: '0.84rem', color: '#4b5563', margin: 0 }}>
-                  Email verified! Choose your public handle and primary creative discipline on Arc.
-                </p>
-              </div>
-
-              <form onSubmit={handleProfileSubmit}>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
-                      Display Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Alex Rivera"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        border: '2px solid #000000',
-                        boxShadow: '2px 2px 0px #000000',
-                        fontSize: '0.88rem',
-                        fontWeight: 600,
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
-                      Creator Handle (@)
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <AtSign
-                        size={15}
-                        color="#64748b"
-                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
-                      />
-                      <input
-                        type="text"
-                        placeholder="handle"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                        required
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px 10px 30px',
-                          borderRadius: '6px',
-                          border: '2px solid #000000',
-                          boxShadow: '2px 2px 0px #000000',
-                          fontSize: '0.88rem',
-                          fontWeight: 600,
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
-                    Primary Creative Discipline
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    {DISCIPLINES.map((item) => {
-                      const Icon = item.icon;
-                      const isSelected = discipline === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setDiscipline(item.id)}
-                          style={{
-                            padding: '8px 6px',
-                            borderRadius: '6px',
-                            border: isSelected ? '2px solid #000000' : '1.5px solid #cbd5e1',
-                            background: isSelected ? '#fffae6' : '#ffffff',
-                            boxShadow: isSelected ? '2px 2px 0px #000000' : 'none',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '4px',
-                            cursor: 'pointer',
-                            transition: 'all 0.1s ease'
-                          }}
-                        >
-                          <Icon size={16} color={isSelected ? '#000000' : '#64748b'} strokeWidth={2.4} />
-                          <span style={{ fontSize: '0.74rem', fontWeight: 800, color: isSelected ? '#000000' : '#475569' }}>
-                            {item.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn-primary"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    fontSize: '0.92rem',
-                    justifyContent: 'center',
-                    cursor: isLoading ? 'wait' : 'pointer'
-                  }}
-                >
-                  <span>{isLoading ? 'Creating Creator Account...' : 'Complete Profile & Launch'}</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* ========================================================= */}
-          {/* STEP 4: GOOGLE AUTHENTICATION                             */}
+          {/* STEP 3: GOOGLE AUTHENTICATION                             */}
           {/* ========================================================= */}
           {step === 'google_auth' && (
             <div>

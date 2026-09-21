@@ -29,7 +29,7 @@ export const INITIAL_BOUNTIES = [
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
     deadline: Date.now() + 86400000 * 10,
-    isAiEligible: true,
+    isAiEligible: false,
     description: 'Create an iconic 3D mascot embodying Arc L1 institutional foundation and sub-second speed. Deliverable: Blender GLTF + 15 expressive Telegram & Discord stickers.'
   },
   {
@@ -53,7 +53,7 @@ export const INITIAL_BOUNTIES = [
     prUrl: null,
     createdAt: Date.now() - 86400000 * 2,
     deadline: Date.now() + 86400000 * 8,
-    isAiEligible: true,
+    isAiEligible: false,
     description: 'High-octane, fast-paced video showing the pain of fluctuating gas fees on legacy chains vs instant sub-second USDC gas on Circle Arc. High-quality kinetic typography and sound design.'
   },
   {
@@ -77,7 +77,7 @@ export const INITIAL_BOUNTIES = [
     prUrl: 'https://x.com/crypto_analyst/status/18389102938102',
     createdAt: Date.now() - 86400000 * 3,
     deadline: Date.now() + 86400000 * 4,
-    isAiEligible: true,
+    isAiEligible: false,
     description: 'Break down Circle Arc consensus algorithm for both retail and developer audiences. Must include visual diagrams explaining 380ms deterministic finality and institutional validator sets.'
   },
   {
@@ -101,7 +101,7 @@ export const INITIAL_BOUNTIES = [
     prUrl: 'https://x.com/memegod_sol/status/1838192830192',
     createdAt: Date.now() - 86400000 * 5,
     deadline: Date.now() - 86400000 * 1,
-    isAiEligible: true,
+    isAiEligible: false,
     description: 'Create 5 top-tier, viral-ready memes contrasting user pain on high gas fee networks with the effortless $0.0004 USDC gas experience on Arc. Winner receives instant USDC.'
   },
   {
@@ -125,7 +125,7 @@ export const INITIAL_BOUNTIES = [
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
     deadline: Date.now() + 86400000 * 14,
-    isAiEligible: true,
+    isAiEligible: false,
     description: 'Create an embeddable React & Vanilla JS widget that lets users teleport USDC from Solana or Base directly into Arc Mainnet in 1 click, auto-funding their checkout.'
   },
   {

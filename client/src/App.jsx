@@ -9,7 +9,6 @@ import ConnectWalletModal from './components/ConnectWalletModal';
 import WalletDrawer from './components/WalletDrawer';
 import UserProfile from './components/UserProfile';
 import AccountSettings from './components/AccountSettings';
-import AgentSwarmPortal from './components/AgentSwarmPortal';
 import Leaderboard from './components/Leaderboard';
 import AdminDashboard from './components/AdminDashboard';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
@@ -68,7 +67,7 @@ export default function App() {
     activeBountiesCount: 164
   });
 
-  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'swarm', 'leaderboard', 'admin'
+  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
   const getInitialView = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
@@ -436,11 +435,6 @@ export default function App() {
           />
         )}
 
-        {activeView === 'swarm' && (
-          <div style={{ paddingTop: '20px' }}>
-            <AgentSwarmPortal />
-          </div>
-        )}
 
         {activeView === 'leaderboard' && (
           <div style={{ paddingTop: '20px' }}>
@@ -573,9 +567,6 @@ export default function App() {
           <div style={{ display: 'flex', gap: '24px', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>
             <button onClick={() => setActiveView('explore')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
               Bounties
-            </button>
-            <button onClick={() => setActiveView('swarm')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-              AI Swarms
             </button>
             <button onClick={() => setActiveView('leaderboard')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
               Leaderboard

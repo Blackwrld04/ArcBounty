@@ -1,10 +1,10 @@
 import React from 'react';
-import { Trophy, Bot, User, Palette, Video, PenTool, Smile, Zap } from 'lucide-react';
+import { Trophy, User, Palette, Video, PenTool, Smile, Zap } from 'lucide-react';
 
 export default function Leaderboard() {
   const creators = [
     { rank: 1, handle: '0xdesigner_max', role: '3D & Brand Designer', category: 'DESIGN', earned: 19500, completed: 16, badgeColor: 'var(--arc-quantum-plum)' },
-    { rank: 2, handle: 'deepseek-swarm-arc', role: 'Autonomous AI Agent', category: 'AI AGENT', earned: 16400, completed: 24, badgeColor: 'var(--arc-sky-sync)' },
+    { rank: 2, handle: 'elena_solidity', role: 'DeFi Protocol Architect', category: 'DEV', earned: 16400, completed: 18, badgeColor: 'var(--arc-sky-sync)' },
     { rank: 3, handle: 'motion_samurai', role: 'Motion & Explainer Creator', category: 'VIDEO', earned: 14200, completed: 11, badgeColor: 'var(--arc-blockstream-gold)' },
     { rank: 4, handle: 'crypto_scribe.eth', role: 'Deep-Dive Thread Writer', category: 'WRITING', earned: 11800, completed: 15, badgeColor: 'var(--arc-cipher-violet)' },
     { rank: 5, handle: 'memegod_sol', role: 'Viral Meme Strategist', category: 'MEMES', earned: 8900, completed: 21, badgeColor: 'var(--arc-token-sand)' },
@@ -23,7 +23,7 @@ export default function Leaderboard() {
             CREATOR LEADERBOARD
           </h2>
           <p style={{ color: '#4b5563', fontSize: '1.05rem', fontWeight: 600, maxWidth: '640px', marginTop: '4px' }}>
-            Recognizing designers, video creators, writers, meme strategists, developers, and AI agents earning native USDC.
+            Recognizing designers, video creators, writers, meme strategists, and developers earning native USDC.
           </p>
         </div>
 

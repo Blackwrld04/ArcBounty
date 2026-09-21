@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import crypto from 'node:crypto';
+import crypto, { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,12 +31,13 @@ db.exec(`
     usdc_balance REAL DEFAULT 1000.0,
     provider TEXT DEFAULT 'email',
     role TEXT DEFAULT 'creator',
-    discipline TEXT DEFAULT 'Design',
+    discipline TEXT DEFAULT 'Content',
     bio TEXT,
     telegram TEXT,
     discord TEXT,
     x TEXT,
     github TEXT,
+    password_hash TEXT,
     created_at INTEGER NOT NULL
   );
 
@@ -45,6 +46,7 @@ db.exec(`
     email TEXT NOT NULL,
     code TEXT NOT NULL,
     type TEXT NOT NULL,
+    pending_data TEXT,
     expires_at INTEGER NOT NULL,
     used INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL
@@ -89,7 +91,7 @@ db.exec(`
     solver TEXT,
     solver_type TEXT,
     pr_url TEXT,
-    is_ai_eligible INTEGER DEFAULT 1,
+    is_ai_eligible INTEGER DEFAULT 0,
     description TEXT,
     created_at INTEGER NOT NULL,
     deadline INTEGER NOT NULL,
@@ -129,13 +131,50 @@ db.exec(`
   );
 `);
 
-// Gracefully add social columns if migrating existing users table
+// Gracefully add social and password columns if migrating existing table
 try { db.exec(`ALTER TABLE users ADD COLUMN telegram TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN discord TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN x TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN github TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN password_hash TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE verification_codes ADD COLUMN pending_data TEXT;`); } catch (e) {}
 
 console.log(`[Database] SQLite initialized at: ${dbPath}`);
+
+/**
+ * Hash password securely using Node's scrypt
+ */
+export function hashPassword(password) {
+  if (!password) return null;
+  const salt = randomBytes(16).toString('hex');
+  const hash = scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+/**
+ * Verify password against stored scrypt hash
+ */
+export function verifyPassword(password, storedHash) {
+  if (!password || !storedHash || !storedHash.includes(':')) return false;
+  try {
+    const [salt, originalHash] = storedHash.split(':');
+    const hashBuffer = Buffer.from(scryptSync(password, salt, 64).toString('hex'), 'hex');
+    const originalBuffer = Buffer.from(originalHash, 'hex');
+    if (hashBuffer.length !== originalBuffer.length) return false;
+    return timingSafeEqual(hashBuffer, originalBuffer);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Update a user's password in the database
+ */
+export function updateUserPassword(userId, newPassword) {
+  const hash = hashPassword(newPassword);
+  db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hash, userId);
+  return true;
+}
 
 /**
  * Generate an Arc L1 simulation address
@@ -147,7 +186,7 @@ function generateArcAddress() {
 /**
  * Generate a 6-digit numeric OTP verification code
  */
-export function createVerificationCode(email, type = 'login') {
+export function createVerificationCode(email, type = 'login', pendingData = null) {
   const normalizedEmail = email.trim().toLowerCase();
   
   // Invalidate any existing unused codes for this email
@@ -160,12 +199,13 @@ export function createVerificationCode(email, type = 'login') {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const now = Date.now();
   const expiresAt = now + 10 * 60 * 1000; // 10 minutes expiry
+  const serializedPending = pendingData ? (typeof pendingData === 'string' ? pendingData : JSON.stringify(pendingData)) : null;
 
   const insertStmt = db.prepare(`
-    INSERT INTO verification_codes (email, code, type, expires_at, used, created_at)
-    VALUES (?, ?, ?, ?, 0, ?)
+    INSERT INTO verification_codes (email, code, type, pending_data, expires_at, used, created_at)
+    VALUES (?, ?, ?, ?, ?, 0, ?)
   `);
-  insertStmt.run(normalizedEmail, code, type, expiresAt, now);
+  insertStmt.run(normalizedEmail, code, type, serializedPending, expiresAt, now);
 
   console.log(`[Auth Service] Verification code generated for ${normalizedEmail}: [${code}] (Type: ${type})`);
 
@@ -195,7 +235,16 @@ export function verifyCode(email, code) {
   const updateStmt = db.prepare(`UPDATE verification_codes SET used = 1 WHERE id = ?`);
   updateStmt.run(record.id);
 
-  return { valid: true, type: record.type };
+  let pendingData = null;
+  if (record.pending_data) {
+    try {
+      pendingData = JSON.parse(record.pending_data);
+    } catch (e) {
+      pendingData = record.pending_data;
+    }
+  }
+
+  return { valid: true, type: record.type, pendingData };
 }
 
 /**
@@ -263,7 +312,16 @@ export function getUserById(id) {
 /**
  * Create a new user in SQLite
  */
-export function createUser({ email, name, username, avatar, provider = 'email', discipline = 'Design' }) {
+export function createUser({
+  email,
+  name,
+  username,
+  avatar,
+  provider = 'email',
+  discipline = 'Content',
+  password = null,
+  passwordHash = null
+}) {
   const normalizedEmail = email.trim().toLowerCase();
   let cleanUsername = (username || normalizedEmail.split('@')[0])
     .toLowerCase()
@@ -286,10 +344,11 @@ export function createUser({ email, name, username, avatar, provider = 'email', 
   const defaultAvatar = avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`;
   const now = Date.now();
   const initialBalance = 1000.0; // 1,000 USDC welcoming grant
+  const finalPasswordHash = passwordHash || (password ? hashPassword(password) : null);
 
   const insertStmt = db.prepare(`
-    INSERT INTO users (id, email, name, username, avatar, wallet_address, usdc_balance, provider, role, discipline, bio, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creator', ?, 'Web3 Creator on Circle Arc L1', ?)
+    INSERT INTO users (id, email, name, username, avatar, wallet_address, usdc_balance, provider, role, discipline, bio, password_hash, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creator', ?, 'Web3 Creator on Circle Arc L1', ?, ?)
   `);
 
   insertStmt.run(
@@ -302,6 +361,7 @@ export function createUser({ email, name, username, avatar, provider = 'email', 
     initialBalance,
     provider,
     discipline,
+    finalPasswordHash,
     now
   );
 
@@ -669,9 +729,16 @@ export function seedInitialBountiesIfEmpty() {
 }
 
 // Auto seed bounties if table is empty
-seedInitialBountiesIfEmpty();
+try {
+  seedInitialBountiesIfEmpty();
+} catch (e) {
+  console.warn('[Database] Seed check warning:', e.message);
+}
 
-function parseBountyRecord(row) {
+/**
+ * Helper to parse a bounty database row into application format
+ */
+export function parseBountyRecord(row) {
   if (!row) return null;
   let parsedTags = [];
   try {
@@ -687,13 +754,23 @@ function parseBountyRecord(row) {
     submissionsCount = subCount ? subCount.count : 0;
   } catch (e) {}
 
+  let category = (row.category || 'CONTENT').toUpperCase();
+  let categoryName = row.category_name;
+  if (category === 'CREATIVE' || category === 'VIDEO' || category === 'WRITING') {
+    category = 'CONTENT';
+    categoryName = 'Content';
+  } else if (category === 'MEMES') {
+    category = 'SOCIAL';
+    categoryName = 'All Social';
+  }
+
   return {
     id: row.id,
     bountyId: row.bounty_id,
     title: row.title,
-    category: row.category,
-    categoryName: row.category_name,
-    categoryColor: row.category_color,
+    category,
+    categoryName: categoryName || 'Content',
+    categoryColor: row.category_color || '#e9a13f',
     submissionType: row.submission_type,
     issueUrl: row.issue_url,
     amount: row.amount,
@@ -708,7 +785,7 @@ function parseBountyRecord(row) {
     solver: row.solver,
     solverType: row.solver_type,
     prUrl: row.pr_url,
-    isAiEligible: Boolean(row.is_ai_eligible),
+    isAiEligible: false,
     description: row.description,
     createdAt: row.created_at,
     deadline: row.deadline,
@@ -722,7 +799,7 @@ function parseBountyRecord(row) {
  * Get all bounties with optional filtering
  */
 export function getAllBounties(filters = {}) {
-  const { status, category, search, aiOnly } = filters;
+  const { status, category, search } = filters;
   let query = `SELECT * FROM bounties WHERE 1=1`;
   const params = [];
 
@@ -732,12 +809,12 @@ export function getAllBounties(filters = {}) {
   }
 
   if (category && category !== 'ALL') {
-    query += ` AND category = ?`;
-    params.push(category);
-  }
-
-  if (aiOnly === 'true' || aiOnly === true) {
-    query += ` AND is_ai_eligible = 1`;
+    if (category === 'CONTENT' || category === 'CREATIVE') {
+      query += ` AND category IN ('CONTENT', 'CREATIVE', 'VIDEO', 'WRITING')`;
+    } else {
+      query += ` AND category = ?`;
+      params.push(category);
+    }
   }
 
   if (search) {
@@ -780,7 +857,12 @@ export function createBountyRecord(data) {
   const now = Date.now();
   const deadlineDays = parseInt(data.deadlineDays || '14', 10);
   const deadline = now + deadlineDays * 86400000;
-  const tagsJson = JSON.stringify(Array.isArray(data.tags) ? data.tags : [data.category || 'Creator', 'Arc', 'USDC']);
+  let category = (data.category || 'CONTENT').toUpperCase();
+  if (category === 'CREATIVE' || category === 'VIDEO' || category === 'WRITING') {
+    category = 'CONTENT';
+  }
+  const categoryName = data.categoryName || (category === 'CONTENT' ? 'Content' : data.category);
+  const tagsJson = JSON.stringify(Array.isArray(data.tags) ? data.tags : [category, 'Arc', 'USDC']);
 
   const stmt = db.prepare(`
     INSERT INTO bounties (
@@ -793,7 +875,7 @@ export function createBountyRecord(data) {
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, 'Open', ?,
       ?, ?, ?, ?, ?,
-      NULL, NULL, NULL, ?, ?, ?,
+      NULL, NULL, NULL, 0, ?, ?,
       ?
     )
   `);
@@ -802,12 +884,12 @@ export function createBountyRecord(data) {
     id,
     bountyId,
     data.title,
-    data.category || 'DESIGN',
-    data.categoryName || 'Design',
-    data.categoryColor || '#ff578a',
+    category,
+    categoryName,
+    data.categoryColor || '#e9a13f',
     data.submissionType || 'Deliverable URL',
     data.issueUrl || `https://arcbounty.io/task/${id}`,
-    parseFloat(data.amount),
+    parseFloat(data.amount || 0),
     tagsJson,
     data.depositTx ? 'funded' : 'funded',
     data.depositTx || `0xdep${crypto.randomBytes(16).toString('hex')}`,
@@ -815,8 +897,7 @@ export function createBountyRecord(data) {
     data.maintainer || '0x461cd48D95993242bB04774cc68042795586BbAd',
     data.maintainerName || 'Circle Creative Guild',
     data.maintainerEmail || null,
-    data.isAiEligible ? 1 : 0,
-    data.description || 'Deliver high quality creative work satisfying specifications.',
+    data.description || 'Deliver high quality content satisfying specifications.',
     now,
     deadline
   );

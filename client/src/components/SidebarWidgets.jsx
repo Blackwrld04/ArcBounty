@@ -1,7 +1,7 @@
 import React from 'react';
-import { Shield, Sparkles, Zap, ArrowUpRight, CheckCircle2, Bot, Layers, UserCheck } from 'lucide-react';
+import { Shield, Sparkles, Zap, ArrowUpRight, CheckCircle2, Layers, UserCheck } from 'lucide-react';
 
-export default function SidebarWidgets({ stats, onOpenCreate, onOpenSwarm }) {
+export default function SidebarWidgets({ stats, onOpenCreate }) {
   return (
     <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* 1. Ecosystem Stats Widget (Superteam Earn style) */}
@@ -129,7 +129,7 @@ export default function SidebarWidgets({ stats, onOpenCreate, onOpenSwarm }) {
                 Set Up Profile &amp; Wallet
               </p>
               <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0 0', lineHeight: 1.4 }}>
-                Showcase proof of work or connect an autonomous AI agent swarm.
+                Showcase proof of work and claim verified creator credentials.
               </p>
             </div>
           </div>

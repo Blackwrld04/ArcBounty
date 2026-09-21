@@ -10,7 +10,9 @@ import {
   updateUserSocial,
   updateUserWallet,
   createWalletChallenge,
-  verifyWalletChallenge
+  verifyWalletChallenge,
+  hashPassword,
+  verifyPassword
 } from '../src/db.js';
 
 test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
@@ -111,4 +113,35 @@ test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
     const check2 = verifyWalletChallenge(testWallet, challenge.nonce);
     assert.equal(check2.valid, false);
   });
+
+  await t.test('securely hashes and verifies user password with salt', () => {
+    const rawPass = 'SecretArc2026!#Pass';
+    const hash = hashPassword(rawPass);
+    assert.ok(hash.includes(':'));
+
+    // Correct password validates
+    assert.equal(verifyPassword(rawPass, hash), true);
+
+    // Wrong password fails
+    assert.equal(verifyPassword('WrongPassword123', hash), false);
+    assert.equal(verifyPassword('', hash), false);
+  });
+
+  await t.test('creates user with password and verifies login authentication', () => {
+    const pwEmail = `creator_pw_${Date.now()}@arc.network`;
+    const user = createUser({
+      email: pwEmail,
+      name: 'Password Creator',
+      username: `pw_user_${Date.now()}`,
+      password: 'MyStrongPassword123!',
+      discipline: 'Content'
+    });
+
+    assert.ok(user.id);
+    const dbUser = getUserByEmail(pwEmail);
+    assert.ok(dbUser.password_hash);
+    assert.equal(verifyPassword('MyStrongPassword123!', dbUser.password_hash), true);
+    assert.equal(verifyPassword('IncorrectPassword', dbUser.password_hash), false);
+  });
 });
+

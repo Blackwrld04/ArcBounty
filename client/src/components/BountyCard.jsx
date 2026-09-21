@@ -5,7 +5,6 @@ import {
   Clock,
   MessageSquare,
   Star,
-  Bot,
   Zap,
   Palette,
   FileText,
@@ -21,6 +20,7 @@ export default function BountyCard({ bounty, onSelect }) {
     switch (cat) {
       case 'DESIGN':
         return { bg: '#f3e8ff', text: '#6b21a8', border: '#000000', label: 'Design' };
+      case 'CREATIVE':
       case 'CONTENT':
         return { bg: '#fff7ed', text: '#c2410c', border: '#000000', label: 'Content' };
       case 'DEV':
@@ -30,7 +30,7 @@ export default function BountyCard({ bounty, onSelect }) {
       case 'OTHER':
         return { bg: '#fff1f2', text: '#be123c', border: '#000000', label: 'Other' };
       default:
-        return { bg: '#f8fafc', text: '#334155', border: '#000000', label: 'Creative Task' };
+        return { bg: '#fff7ed', text: '#c2410c', border: '#000000', label: 'Content' };
     }
   };
 
@@ -132,24 +132,6 @@ export default function BountyCard({ bounty, onSelect }) {
               <MessageSquare size={12} />
               <span>{bounty.status === 'Open' ? 'Open' : '1 review'}</span>
             </div>
-
-            {/* AI Agent badge if eligible */}
-            {bounty.isAiEligible && (
-              <span className="desktop-only" style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '3px',
-                color: 'var(--arc-validator-blue)',
-                fontWeight: 700,
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                padding: '1px 6px',
-                borderRadius: '4px'
-              }}>
-                <Bot size={12} />
-                <span>AI Eligible</span>
-              </span>
-            )}
           </div>
         </div>
       </div>

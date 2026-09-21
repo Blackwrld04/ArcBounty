@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Sparkles, Plus, Cpu, Wallet } from 'lucide-react';
+import { Compass, Sparkles, Plus, Trophy, Wallet } from 'lucide-react';
 
 export default function MobileDock({
   activeTab,
@@ -79,14 +79,14 @@ export default function MobileDock({
         </button>
       </div>
 
-      {/* 4. AI Swarm */}
+      {/* 4. Leaderboard */}
       <button
-        id="mobile-dock-swarm-btn"
-        onClick={() => setActiveTab('swarm')}
+        id="mobile-dock-leaderboard-btn"
+        onClick={() => setActiveTab('leaderboard')}
         style={{
           background: 'transparent',
           border: 'none',
-          color: activeTab === 'swarm' ? '#000000' : '#6b7280',
+          color: activeTab === 'leaderboard' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -97,8 +97,8 @@ export default function MobileDock({
           flex: 1
         }}
       >
-        <Cpu size={22} color={activeTab === 'swarm' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'swarm' ? 3 : 2} />
-        <span style={{ borderBottom: activeTab === 'swarm' ? '2px solid #000' : 'none' }}>SWARMS</span>
+        <Trophy size={22} color={activeTab === 'leaderboard' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'leaderboard' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'leaderboard' ? '2px solid #000' : 'none' }}>LEADERS</span>
       </button>
 
       {/* 5. Wallet */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, ArrowRight, Bot, DollarSign, Calendar, Check, HelpCircle, Copy, Shield, ExternalLink, Wallet } from 'lucide-react';
+import { X, Sparkles, ArrowRight, DollarSign, Calendar, Check, HelpCircle, Copy, Shield, ExternalLink, Wallet } from 'lucide-react';
 import { CREATOR_CATEGORIES } from '../data/initialBounties';
 import { truncateAddress } from '../utils/arc';
 
@@ -11,7 +11,6 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
   const [amount, setAmount] = useState('500');
   const [description, setDescription] = useState('');
   const [deadlineDays, setDeadlineDays] = useState('14');
-  const [isAiEligible, setIsAiEligible] = useState(true);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [escrowWallet, setEscrowWallet] = useState('0x38bEc58406E9b7941F48cCe61aE2d1847137f884');
@@ -88,7 +87,7 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
       description: description || 'Deliver high quality creative work satisfying requirements.',
       tags: [category, 'Circle Arc', 'USDC'],
       deadlineDays: parseInt(deadlineDays, 10),
-      isAiEligible,
+      isAiEligible: false,
       escrowWallet,
       depositTx: generatedTx,
       maintainer: wallet.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
@@ -335,7 +334,7 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
                 }}
               >
                 <Sparkles size={14} />
-                <span>{isAiGenerating ? 'Drafting...' : 'AI Compose Brief'}</span>
+                <span>{isAiGenerating ? 'Drafting...' : 'Auto Compose Brief'}</span>
               </button>
             </div>
             <p style={{ fontSize: '0.88rem', color: '#64748b', marginBottom: '20px' }}>
@@ -580,37 +579,6 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
                   <span>Deposit locked: {depositTx.slice(0, 14)}...</span>
                 </div>
               )}
-            </div>
-
-            {/* AI Eligibility Toggle */}
-            <div style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '10px',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '24px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Bot size={20} color="var(--arc-validator-blue)" />
-                <div>
-                  <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    Permit AI Agents &amp; Autonomous Swarms
-                  </p>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '2px 0 0 0' }}>
-                    Allows machine creator agents to query and solve via API feed
-                  </p>
-                </div>
-              </div>
-
-              <input
-                type="checkbox"
-                checked={isAiEligible}
-                onChange={(e) => setIsAiEligible(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
