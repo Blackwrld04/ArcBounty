@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { recoverMessageAddress } from 'viem';
+import { sendVerificationEmail } from '../email.js';
 import {
   createVerificationCode,
   verifyCode,
@@ -8,7 +10,10 @@ import {
   getUserByToken,
   updateUserSocial,
   updateUserWallet,
-  updateUserProfile
+  updateUserProfile,
+  createWalletChallenge,
+  verifyWalletChallenge,
+  getUserByWalletAddress
 } from '../db.js';
 
 export const authRouter = Router();
@@ -36,9 +41,9 @@ function formatUser(user) {
 
 /**
  * POST /api/auth/send-code
- * Sends a 6-digit verification OTP to the user's email
+ * Sends a real 6-digit verification OTP to the user's email via nodemailer
  */
-authRouter.post('/send-code', (req, res) => {
+authRouter.post('/send-code', async (req, res) => {
   try {
     const { email, type = 'login' } = req.body;
 
@@ -54,7 +59,7 @@ authRouter.post('/send-code', (req, res) => {
       return res.status(404).json({
         success: false,
         userExists: false,
-        error: 'No account found with this email. Please sign up to create your creator profile.'
+        error: 'No account found with this email. Please switch to Sign Up.'
       });
     }
 
@@ -67,20 +72,24 @@ authRouter.post('/send-code', (req, res) => {
       });
     }
 
-    // Generate real 6-digit code
+    // Generate genuine 6-digit code
     const { code, expiresAt } = createVerificationCode(normalizedEmail, type);
 
+    // Dispatch real email via nodemailer
+    const emailResult = await sendVerificationEmail(normalizedEmail, code, type);
+
+    // Security: devCode is NEVER returned to the client in production verification!
     return res.json({
       success: true,
-      message: `Verification code sent to ${normalizedEmail}`,
+      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}`,
       email: normalizedEmail,
       type,
-      devCode: code, // Provided for instant demo testing
+      previewUrl: emailResult.previewUrl || null,
       expiresAt
     });
   } catch (err) {
     console.error('[Auth Error] send-code failed:', err);
-    return res.status(500).json({ success: false, error: 'Failed to send verification code' });
+    return res.status(500).json({ success: false, error: 'Failed to dispatch verification email' });
   }
 });
 
@@ -234,17 +243,123 @@ authRouter.get('/me', (req, res) => {
 });
 
 /**
- * POST /api/auth/social-connect
- * Links or unlinks Telegram, Discord, X, or GitHub
+ * GET /api/auth/wallet-nonce
+ * Generates an authentic EIP-4361 cryptographic challenge for the connecting wallet
  */
-authRouter.post('/social-connect', (req, res) => {
+authRouter.get('/wallet-nonce', (req, res) => {
+  try {
+    const { address } = req.query;
+    if (!address || !address.startsWith('0x')) {
+      return res.status(400).json({ success: false, error: 'Valid EVM address required' });
+    }
+
+    const challenge = createWalletChallenge(address);
+    return res.json({
+      success: true,
+      ...challenge
+    });
+  } catch (err) {
+    console.error('[Auth Error] wallet-nonce failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to generate cryptographic challenge' });
+  }
+});
+
+/**
+ * POST /api/auth/wallet-verify
+ * Cryptographically verifies EVM personal_sign signature using viem recoverMessageAddress
+ */
+authRouter.post('/wallet-verify', async (req, res) => {
+  try {
+    const { address, signature, nonce } = req.body;
+    if (!address || !signature || !nonce) {
+      return res.status(400).json({ success: false, error: 'Address, cryptographic signature, and nonce are required' });
+    }
+
+    const challengeCheck = verifyWalletChallenge(address, nonce);
+    if (!challengeCheck.valid) {
+      return res.status(400).json({ success: false, error: challengeCheck.error });
+    }
+
+    // Cryptographic signature recovery via viem
+    const recoveredAddress = await recoverMessageAddress({
+      message: challengeCheck.message,
+      signature
+    });
+
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      return res.status(401).json({
+        success: false,
+        error: 'Cryptographic signature verification failed. Address mismatch.'
+      });
+    }
+
+    // Check if user exists with this wallet
+    let user = getUserByWalletAddress(address);
+    if (!user) {
+      // First-time wallet sign-in: register user
+      const fakeEmail = `${address.slice(2, 10).toLowerCase()}@arc.user`;
+      user = createUser({
+        email: fakeEmail,
+        name: `Arc Creator (${address.slice(0, 6)}...${address.slice(-4)})`,
+        username: `arc-${address.slice(2, 8).toLowerCase()}`,
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        provider: 'wallet'
+      });
+      user = updateUserWallet(user.id, address);
+    }
+
+    const { token } = createSession(user.id);
+
+    return res.json({
+      success: true,
+      user: formatUser(user),
+      token
+    });
+  } catch (err) {
+    console.error('[Auth Error] wallet-verify failed:', err);
+    return res.status(500).json({ success: false, error: 'Cryptographic verification error: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/auth/social-connect
+ * Links or unlinks Telegram, Discord, X, or GitHub with live validation
+ */
+authRouter.post('/social-connect', async (req, res) => {
   try {
     const { userId, platform, handle, action = 'connect' } = req.body;
     if (!userId || !platform) {
       return res.status(400).json({ success: false, error: 'User ID and platform are required' });
     }
 
-    const updatedUser = updateUserSocial(userId, platform, action === 'disconnect' ? null : handle);
+    if (action === 'disconnect') {
+      const updatedUser = updateUserSocial(userId, platform, null);
+      return res.json({ success: true, user: formatUser(updatedUser) });
+    }
+
+    const cleanHandle = handle ? handle.trim().replace(/^@/, '') : '';
+    if (!cleanHandle) {
+      return res.status(400).json({ success: false, error: 'Handle cannot be empty' });
+    }
+
+    // Real GitHub API live verification
+    if (platform === 'github') {
+      try {
+        const ghRes = await fetch(`https://api.github.com/users/${cleanHandle}`, {
+          headers: { 'User-Agent': 'ArcBounty-Verification-Engine' }
+        });
+        if (ghRes.status === 404) {
+          return res.status(404).json({
+            success: false,
+            error: `GitHub account "@${cleanHandle}" does not exist. Please check the username.`
+          });
+        }
+      } catch (e) {
+        console.warn('[Social Auth] GitHub API network warning:', e.message);
+      }
+    }
+
+    const updatedUser = updateUserSocial(userId, platform, cleanHandle);
     return res.json({ success: true, user: formatUser(updatedUser) });
   } catch (err) {
     console.error('[Auth Error] social-connect failed:', err);

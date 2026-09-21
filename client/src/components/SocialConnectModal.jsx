@@ -147,15 +147,6 @@ export default function SocialConnectModal({
     }
   };
 
-  // Instant OAuth handshake simulation
-  const handleInstantOAuth = () => {
-    const fallbackHandle = (handle || `creator_${platform}`).replace(/^@/, '');
-    setHandle(fallbackHandle);
-    setTimeout(() => {
-      handleConnect();
-    }, 150);
-  };
-
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -354,37 +345,24 @@ export default function SocialConnectModal({
                   width: '100%',
                   padding: '12px',
                   fontSize: '0.9rem',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  cursor: isLoading ? 'wait' : 'pointer'
                 }}
               >
-                <span>{isLoading ? 'Verifying & Saving...' : `Link ${config.name} Profile`}</span>
+                <span>{isLoading ? 'Verifying Account...' : `Verify & Link ${config.name}`}</span>
                 <ArrowRight size={16} />
               </button>
 
-              <button
-                type="button"
-                onClick={handleInstantOAuth}
-                disabled={isLoading}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '2px solid #000000',
-                  boxShadow: '2px 2px 0px #000000',
-                  background: '#f8fafc',
-                  color: '#0f172a',
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <ExternalLink size={14} />
-                <span>Simulate One-Click OAuth Authorization</span>
-              </button>
+              {platform === 'github' && (
+                <p style={{ fontSize: '0.72rem', color: '#64748b', textAlign: 'center', margin: 0 }}>
+                  Account validity is confirmed in real time against the public GitHub API.
+                </p>
+              )}
+              {platform === 'telegram' && (
+                <p style={{ fontSize: '0.72rem', color: '#64748b', textAlign: 'center', margin: 0 }}>
+                  Make sure your Telegram username is public so sponsors can message you.
+                </p>
+              )}
             </div>
           </form>
         )}

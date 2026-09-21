@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Wallet, ArrowRight, ShieldCheck, ExternalLink, Zap } from 'lucide-react';
+import { X, Check, Wallet, ArrowRight, ShieldCheck, ExternalLink, Download } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 
 const WALLETS = [
@@ -7,6 +7,7 @@ const WALLETS = [
     id: 'rabby',
     name: 'Rabby Wallet',
     tag: 'RECOMMENDED FOR ARC',
+    url: 'https://rabby.io',
     desc: 'Optimal support for multi-chain routing & sub-400ms Malachite BFT finality.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
@@ -19,6 +20,7 @@ const WALLETS = [
     id: 'metamask',
     name: 'MetaMask',
     tag: 'POPULAR',
+    url: 'https://metamask.io',
     desc: 'Connect using MetaMask browser extension or mobile app.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
@@ -36,6 +38,7 @@ const WALLETS = [
     id: 'coinbase',
     name: 'Coinbase Wallet',
     tag: 'SMART WALLET',
+    url: 'https://www.coinbase.com/wallet',
     desc: 'Passkey-ready with zero transaction gas sponsor on Arc.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
@@ -49,6 +52,7 @@ const WALLETS = [
     id: 'phantom',
     name: 'Phantom',
     tag: 'MULTI-CHAIN',
+    url: 'https://phantom.app',
     desc: 'EVM & Solana multi-chain wallet with integrated token swap.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
@@ -71,89 +75,78 @@ export default function ConnectWalletModal({
   const [selectedWallet, setSelectedWallet] = useState('rabby');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
+  const [needsExtension, setNeedsExtension] = useState(false);
 
   if (!isOpen) return null;
 
   const handleConnect = async (walletId) => {
     setIsConnecting(true);
     setError('');
+    setNeedsExtension(false);
 
-    let address = null;
-
-    // Check for real browser extension
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts[0]) {
-          address = accounts[0];
-        }
-      } catch (err) {
-        console.warn('Injected provider request cancelled or unavailable, using simulated Arc address.');
-      }
-    }
-
-    if (!address) {
-      // Deterministic simulated Arc L1 EVM address
-      const randomHex = Math.random().toString(16).slice(2, 10);
-      address = `0x461cd48D95993242bB04774cc680427955${randomHex}`;
+    // Check if user has an active EVM provider in browser
+    if (typeof window === 'undefined' || !window.ethereum) {
+      setNeedsExtension(true);
+      setError('No Web3 wallet extension detected in your browser. Install Rabby Wallet or MetaMask below.');
+      setIsConnecting(false);
+      return;
     }
 
     try {
-      if (user && user.id) {
-        // User is logged in: link address to this user in SQLite
-        const res = await fetch('http://localhost:4050/api/auth/connect-wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            address
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          setError(data.error || 'Failed to link wallet');
-          setIsConnecting(false);
-          return;
-        }
-
-        onWalletConnected({
-          connected: true,
-          address: data.user.address,
-          balance: data.user.balance || 1000,
-          type: walletId
-        }, data.user);
-      } else {
-        // Guest user: register/login via wallet
-        const res = await fetch('http://localhost:4050/api/auth/wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address })
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          setError(data.error || 'Wallet login failed');
-          setIsConnecting(false);
-          return;
-        }
-
-        onWalletConnected({
-          connected: true,
-          address: data.user.address,
-          balance: data.user.balance || 1000,
-          type: walletId
-        }, data.user, data.token);
+      // 1. Request account from browser extension
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!accounts || !accounts[0]) {
+        throw new Error('No account selected in your Web3 wallet extension.');
       }
+      const address = accounts[0];
+
+      // 2. Request single-use cryptographic challenge nonce from ArcBounty server
+      const nonceRes = await fetch(`http://localhost:4050/api/auth/wallet-nonce?address=${address}`);
+      const challenge = await nonceRes.json();
+      if (!challenge.success) {
+        throw new Error(challenge.error || 'Failed to obtain cryptographic challenge from Arc server');
+      }
+
+      // 3. Request user's cryptographic personal_sign signature
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [challenge.message, address]
+      });
+
+      // 4. Verify signature on Arc server with viem
+      const verifyRes = await fetch('http://localhost:4050/api/auth/wallet-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          signature,
+          nonce: challenge.nonce
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok || !verifyData.success) {
+        throw new Error(verifyData.error || 'Cryptographic signature verification rejected');
+      }
+
+      // 5. Connect and save to state
+      onWalletConnected({
+        connected: true,
+        address: verifyData.user.address,
+        balance: verifyData.user.balance || 1000,
+        type: walletId
+      }, verifyData.user, verifyData.token);
 
       onClose();
     } catch (err) {
-      console.error('Wallet connection error:', err);
-      setError('Network error connecting to Circle Arc RPC');
+      console.error('Wallet cryptographic connection error:', err);
+      setError(err.message || 'Failed to cryptographically connect Web3 wallet');
     } finally {
       setIsConnecting(false);
     }
   };
+
+  const selectedWalletObj = WALLETS.find((w) => w.id === selectedWallet) || WALLETS[0];
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -215,13 +208,13 @@ export default function ConnectWalletModal({
               {wallet && wallet.connected ? 'Switch Connected Wallet' : 'Connect Web3 Wallet'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>
-              Circle Arc L1 · Chain ID 5042 · Canonical USDC
+              Circle Arc L1 · Chain ID 5042 · SIWE Cryptographic Verification
             </p>
           </div>
         </div>
 
         <p style={{ fontSize: '0.84rem', color: '#4b5563', lineHeight: 1.45, marginBottom: '20px' }}>
-          Connect your Web3 wallet to lock bounty escrow as a sponsor or receive deterministic &lt;400ms payouts as a creator.
+          Connect your Web3 wallet via cryptographic personal_sign signature to lock bounty escrow as a sponsor or receive deterministic USDC payouts.
         </p>
 
         {error && (
@@ -230,7 +223,7 @@ export default function ConnectWalletModal({
               background: '#fee2e2',
               border: '2px solid #000000',
               borderRadius: '8px',
-              padding: '8px 12px',
+              padding: '10px 12px',
               fontSize: '0.82rem',
               color: '#991b1b',
               fontWeight: 700,
@@ -238,6 +231,46 @@ export default function ConnectWalletModal({
             }}
           >
             {error}
+          </div>
+        )}
+
+        {/* If extension is missing, offer direct install links */}
+        {needsExtension && (
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '2px solid #000000',
+              boxShadow: '2px 2px 0px #000000',
+              borderRadius: '8px',
+              padding: '14px',
+              marginBottom: '16px'
+            }}
+          >
+            <p style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', margin: '0 0 10px 0' }}>
+              Install a verified Web3 wallet extension:
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <a
+                href="https://rabby.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ flex: 1, padding: '8px', fontSize: '0.8rem', justifyContent: 'center', textDecoration: 'none' }}
+              >
+                <Download size={14} />
+                <span>Install Rabby</span>
+              </a>
+              <a
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary"
+                style={{ flex: 1, padding: '8px', fontSize: '0.8rem', justifyContent: 'center', textDecoration: 'none' }}
+              >
+                <Download size={14} />
+                <span>Install MetaMask</span>
+              </a>
+            </div>
           </div>
         )}
 
@@ -250,7 +283,11 @@ export default function ConnectWalletModal({
             return (
               <div
                 key={w.id}
-                onClick={() => setSelectedWallet(w.id)}
+                onClick={() => {
+                  setSelectedWallet(w.id);
+                  setError('');
+                  setNeedsExtension(false);
+                }}
                 style={{
                   padding: '12px 16px',
                   borderRadius: '10px',
@@ -326,7 +363,7 @@ export default function ConnectWalletModal({
             cursor: isConnecting ? 'wait' : 'pointer'
           }}
         >
-          <span>{isConnecting ? 'Connecting to Arc L1...' : `Connect ${WALLETS.find(w => w.id === selectedWallet)?.name}`}</span>
+          <span>{isConnecting ? 'Verifying Cryptographic Signature...' : `Sign In with ${selectedWalletObj.name}`}</span>
           <ArrowRight size={16} />
         </button>
 
@@ -334,7 +371,7 @@ export default function ConnectWalletModal({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', fontSize: '0.72rem', color: '#64748b' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <ShieldCheck size={14} color="#16a34a" />
-            <span>Zero gas fees with EIP-3009 permits</span>
+            <span>Cryptographically verified via EIP-4361</span>
           </div>
           <a
             href="https://arc.io"

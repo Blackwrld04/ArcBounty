@@ -33,10 +33,10 @@ const DISCIPLINES = [
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
-  const [step, setStep] = useState('input'); // 'input', 'otp', 'profile', 'google_chooser', 'wallet_connect'
+  const [step, setStep] = useState('input'); // 'input', 'otp', 'profile', 'google_auth', 'wallet_auth'
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [devCode, setDevCode] = useState('');
+  const [emailPreviewUrl, setEmailPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -47,10 +47,9 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
   const [username, setUsername] = useState('');
   const [discipline, setDiscipline] = useState('Design');
 
-  // Custom Google input state
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-  const [customGoogleName, setCustomGoogleName] = useState('');
-  const [showCustomGoogleInput, setShowCustomGoogleInput] = useState(false);
+  // Google Email input
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleName, setGoogleName] = useState('');
 
   const otpInputsRef = useRef([]);
 
@@ -61,10 +60,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       setStep('input');
       setEmail('');
       setOtp(['', '', '', '', '', '']);
-      setDevCode('');
+      setEmailPreviewUrl(null);
       setErrorMessage('');
       setSuccessMessage('');
-      setShowCustomGoogleInput(false);
+      setGoogleEmail('');
+      setGoogleName('');
     }
   }, [isOpen, initialMode]);
 
@@ -87,7 +87,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     const newOtp = [...otp];
 
     if (cleaned.length > 1) {
-      // Pasted full 6-digit code
+      // Pasted 6-digit code
       const digits = cleaned.slice(0, 6).split('');
       for (let i = 0; i < 6; i++) {
         newOtp[i] = digits[i] || '';
@@ -101,7 +101,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     newOtp[index] = cleaned;
     setOtp(newOtp);
 
-    // Auto-advance to next input
+    // Auto-advance to next input box
     if (cleaned && index < 5) {
       otpInputsRef.current[index + 1]?.focus();
     }
@@ -113,7 +113,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Step 1: Send verification code to email
+  // Step 1: Send real verification code to email
   const handleSendCode = async (e) => {
     if (e) e.preventDefault();
     if (!email || !email.includes('@')) {
@@ -135,14 +135,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Failed to send verification code');
+        setErrorMessage(data.error || 'Failed to dispatch verification email');
         setIsLoading(false);
         return;
       }
 
-      setSuccessMessage(`A 6-digit code has been dispatched to ${data.email}`);
-      if (data.devCode) {
-        setDevCode(data.devCode);
+      setSuccessMessage(`A 6-digit verification code was sent to ${data.email}`);
+      if (data.previewUrl) {
+        setEmailPreviewUrl(data.previewUrl);
       }
       setResendCooldown(45);
       setStep('otp');
@@ -157,15 +157,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Fill OTP from dev code
-  const fillDevCode = () => {
-    if (!devCode || devCode.length !== 6) return;
-    const digits = devCode.split('');
-    setOtp(digits);
-    otpInputsRef.current[5]?.focus();
-  };
-
-  // Step 2: Verify OTP code
+  // Step 2: Verify real 6-digit OTP code against SQLite
   const handleVerifyOtp = async (e) => {
     if (e) e.preventDefault();
     const codeString = otp.join('');
@@ -175,7 +167,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       return;
     }
 
-    // If in signup mode and haven't gathered profile info yet, move to profile step
+    // If new signup, gather profile info before finalizing
     if (mode === 'signup' && (!name || !username)) {
       setName(email.split('@')[0]);
       setUsername(email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''));
@@ -207,7 +199,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Invalid verification code. Please check and try again.');
+        setErrorMessage(data.error || 'Invalid verification code. Please check your inbox and try again.');
         setIsLoading(false);
         return;
       }
@@ -232,8 +224,72 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     await submitVerification(otp.join(''));
   };
 
-  // Step 4: Realistic Google OAuth Flow
-  const handleSelectGoogleAccount = async (account) => {
+  // Step 4: Cryptographic Web3 Wallet Verification (SIWE)
+  const handleCryptographicWalletAuth = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    if (typeof window === 'undefined' || !window.ethereum) {
+      setErrorMessage('No Web3 wallet extension found. Please install Rabby Wallet or MetaMask in your browser.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Request account access
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!accounts || !accounts[0]) {
+        throw new Error('No accounts selected in Web3 wallet.');
+      }
+      const address = accounts[0];
+
+      // 2. Fetch single-use cryptographic challenge nonce from server
+      const nonceRes = await fetch(`${API_BASE}/wallet-nonce?address=${address}`);
+      const challengeData = await nonceRes.json();
+      if (!challengeData.success) {
+        throw new Error(challengeData.error || 'Failed to generate cryptographic challenge');
+      }
+
+      // 3. Prompt user's wallet for cryptographic personal_sign signature
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [challengeData.message, address]
+      });
+
+      // 4. Submit signature for cryptographic verification on server
+      const verifyRes = await fetch(`${API_BASE}/wallet-verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          signature,
+          nonce: challengeData.nonce
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok || !verifyData.success) {
+        throw new Error(verifyData.error || 'Cryptographic signature verification failed');
+      }
+
+      onLoginSuccess(verifyData.user, verifyData.token);
+      onClose();
+    } catch (err) {
+      console.error('Cryptographic wallet auth error:', err);
+      setErrorMessage(err.message || 'Cryptographic wallet authentication cancelled or rejected');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Step 5: Real Google Sign In Flow
+  const handleGoogleSubmit = async (e) => {
+    e.preventDefault();
+    if (!googleEmail || !googleEmail.includes('@')) {
+      setErrorMessage('Please enter a valid Google email address');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
 
@@ -242,14 +298,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: account.email,
-          name: account.name,
-          avatar: account.avatar
+          email: googleEmail.trim().toLowerCase(),
+          name: googleName.trim() || googleEmail.split('@')[0],
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
         })
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         setErrorMessage(data.error || 'Google authentication failed');
         setIsLoading(false);
@@ -259,57 +314,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       onLoginSuccess(data.user, data.token);
       onClose();
     } catch (err) {
-      console.error('Google OAuth error:', err);
-      setErrorMessage('Failed to complete Google OAuth handshake.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 5: Realistic Web3 Wallet Flow
-  const handleWalletConnect = async (walletType = 'metamask') => {
-    setIsLoading(true);
-    setErrorMessage('');
-
-    let address = null;
-
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts[0]) {
-          address = accounts[0];
-        }
-      } catch (err) {
-        console.warn('Injected provider request cancelled or unavailable, using Arc address.');
-      }
-    }
-
-    if (!address) {
-      // Deterministic demo EVM address
-      const randomHex = Math.random().toString(16).slice(2, 10);
-      address = `0x461cd48D95993242bB04774cc680427955${randomHex}`;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/wallet`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Wallet connection failed');
-        setIsLoading(false);
-        return;
-      }
-
-      onLoginSuccess(data.user, data.token);
-      onClose();
-    } catch (err) {
-      console.error('Wallet error:', err);
-      setErrorMessage('Failed to register EVM wallet on Arc L1.');
+      console.error('Google auth error:', err);
+      setErrorMessage('Google authentication request failed.');
     } finally {
       setIsLoading(false);
     }
@@ -321,7 +327,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         className="clean-card"
         style={{
           width: '100%',
-          maxWidth: step === 'google_chooser' ? '540px' : '840px',
+          maxWidth: '820px',
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
@@ -330,8 +336,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           boxShadow: '6px 6px 0px #000000',
           position: 'relative',
           minHeight: '520px',
-          background: '#ffffff',
-          transition: 'all 0.2s ease'
+          background: '#ffffff'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -359,107 +364,105 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           <X size={18} color="#000000" />
         </button>
 
-        {/* Brand Left Panel (Circle Arc Dark Navy) - Hidden in Google Chooser modal for authentic Google look */}
-        {step !== 'google_chooser' && (
-          <div
-            style={{
-              width: '38%',
-              background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
-              color: '#ffffff',
-              padding: '36px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              borderRight: '2.5px solid #000000'
-            }}
-            className="desktop-only"
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px' }}>
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    border: '1.5px solid #000000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Zap size={18} fill="#e9a13f" color="#e9a13f" />
-                </div>
-                <span
-                  className="font-space"
-                  style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}
-                >
-                  Arc<span style={{ color: '#ffcc6f' }}>Bounty</span>
-                </span>
-              </div>
-
-              <h3 className="font-space" style={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '14px' }}>
-                The Capital Engine for Web3 Creators
-              </h3>
-
-              <p style={{ fontSize: '0.84rem', opacity: 0.9, lineHeight: 1.5, marginBottom: '22px' }}>
-                Authentic creator onboarding with real database persistence, verified email OTP codes, and instant Circle USDC settlement.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.8rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>Secure 6-digit OTP verification code sent directly to your inbox.</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>Permanent SQLite database profile with zero-gas Arc L1 wallet address.</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>Multi-disciplinary guild: Design, Content, Development, Social.</span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.12)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-                padding: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
-            >
+        {/* Brand Left Panel (Circle Arc Dark Navy) */}
+        <div
+          style={{
+            width: '38%',
+            background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
+            color: '#ffffff',
+            padding: '36px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            borderRight: '2.5px solid #000000'
+          }}
+          className="desktop-only"
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px' }}>
               <div
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '6px',
-                  background: '#ffcc6f',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#ffffff',
                   border: '1.5px solid #000000',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Palette size={18} color="#000000" strokeWidth={2.4} />
+                <Zap size={18} fill="#e9a13f" color="#e9a13f" />
               </div>
-              <div>
-                <p style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>Verified Creator Guild</p>
-                <p style={{ fontSize: '0.7rem', opacity: 0.85, margin: 0, color: '#acc6e9' }}>Circle Arc Protocol (5042)</p>
+              <span
+                className="font-space"
+                style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}
+              >
+                Arc<span style={{ color: '#ffcc6f' }}>Bounty</span>
+              </span>
+            </div>
+
+            <h3 className="font-space" style={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '14px' }}>
+              The Capital Engine for Web3 Creators
+            </h3>
+
+            <p style={{ fontSize: '0.84rem', opacity: 0.9, lineHeight: 1.5, marginBottom: '22px' }}>
+              Real verification with genuine email codes, persistent database profiles, and cryptographic Web3 signatures.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>Single-use 6-digit OTP verification sent directly to your inbox.</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>EIP-4361 cryptographic personal_sign verification for Web3 wallets.</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>Zero creator gas via Circle Arc L1 canonical USDC escrow.</span>
               </div>
             </div>
           </div>
-        )}
+
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '6px',
+                background: '#ffcc6f',
+                border: '1.5px solid #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Palette size={18} color="#000000" strokeWidth={2.4} />
+            </div>
+            <div>
+              <p style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>Verified Creator Guild</p>
+              <p style={{ fontSize: '0.7rem', opacity: 0.85, margin: 0, color: '#acc6e9' }}>Circle Arc Protocol (5042)</p>
+            </div>
+          </div>
+        </div>
 
         {/* Right Content Area */}
         <div
           style={{
             flex: 1,
-            padding: step === 'google_chooser' ? '36px 32px' : '36px 32px',
+            padding: '36px 32px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center'
@@ -518,7 +521,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
 
           {/* ========================================================= */}
-          {/* STEP 1: INITIAL EMAIL & AUTH PROVIDERS                    */}
+          {/* STEP 1: INITIAL EMAIL & AUTH METHODS                      */}
           {/* ========================================================= */}
           {step === 'input' && (
             <div>
@@ -585,12 +588,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 </h3>
                 <p style={{ fontSize: '0.86rem', color: '#4b5563', marginTop: '4px', fontWeight: 500 }}>
                   {mode === 'login'
-                    ? 'Enter your registered email to receive a secure login code'
-                    : 'Join ArcBounty to earn USDC, sponsor bounties, and build reputation'}
+                    ? 'Enter your registered email to receive your sign in code'
+                    : 'Join ArcBounty with email verification or Web3 cryptographic signature'}
                 </p>
               </div>
 
-              {/* Email Input Form */}
+              {/* Email Form */}
               <form onSubmit={handleSendCode} style={{ marginBottom: '16px' }}>
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
@@ -604,7 +607,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     />
                     <input
                       type="email"
-                      placeholder="creator@arc.network"
+                      placeholder="your.name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -635,7 +638,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     cursor: isLoading ? 'wait' : 'pointer'
                   }}
                 >
-                  <span>{isLoading ? 'Sending verification code...' : 'Continue with Email'}</span>
+                  <span>{isLoading ? 'Dispatching Verification Email...' : 'Send Verification Code'}</span>
                   <ArrowRight size={16} />
                 </button>
               </form>
@@ -654,18 +657,45 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 }}
               >
                 <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                <span>OR AUTHENTICATE WITH</span>
+                <span>OR VERIFY WITH</span>
                 <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
               </div>
 
-              {/* Social / OAuth Buttons */}
+              {/* Web3 & Google Verification */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Google Button */}
+                {/* Cryptographic Web3 Wallet Verification */}
+                <button
+                  type="button"
+                  onClick={handleCryptographicWalletAuth}
+                  disabled={isLoading}
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '8px',
+                    background: '#acc6e9',
+                    border: '2px solid #000000',
+                    boxShadow: '2px 2px 0px #000000',
+                    fontSize: '0.88rem',
+                    fontWeight: 800,
+                    color: '#1b3158',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s ease'
+                  }}
+                >
+                  <Wallet size={16} />
+                  <span>Sign In with Web3 Wallet (Cryptographic SIWE)</span>
+                </button>
+
+                {/* Google Sign In */}
                 <button
                   type="button"
                   onClick={() => {
                     setErrorMessage('');
-                    setStep('google_chooser');
+                    setStep('google_auth');
                   }}
                   style={{
                     width: '100%',
@@ -705,43 +735,16 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-
-                {/* Web3 Wallet Button */}
-                <button
-                  type="button"
-                  onClick={() => handleWalletConnect('metamask')}
-                  disabled={isLoading}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: '#acc6e9',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.88rem',
-                    fontWeight: 800,
-                    color: '#1b3158',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease'
-                  }}
-                >
-                  <Wallet size={16} />
-                  <span>Connect Web3 Wallet (MetaMask / Rabby)</span>
-                </button>
               </div>
 
               <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '16px', margin: '16px 0 0 0' }}>
-                By continuing, you agree to ArcBounty Terms of Service &amp; Privacy Policy.
+                Protected by Circle Arc Protocol cryptographic authentication.
               </p>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* STEP 2: REAL 6-DIGIT EMAIL OTP VERIFICATION               */}
+          {/* STEP 2: REAL 6-DIGIT EMAIL CODE ENTRY                     */}
           {/* ========================================================= */}
           {step === 'otp' && (
             <div>
@@ -762,11 +765,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <KeyRound size={16} color="#000000" />
                   </div>
                   <h3 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: 0 }}>
-                    Enter 6-Digit Code
+                    Enter Verification Code
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.86rem', color: '#4b5563', margin: 0, fontWeight: 500 }}>
-                  We sent a 6-digit verification code to <strong style={{ color: '#000000' }}>{email}</strong>.
+                  We dispatched a 6-digit verification code to <strong style={{ color: '#000000' }}>{email}</strong>.
                   <button
                     type="button"
                     onClick={() => {
@@ -788,36 +791,44 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 </p>
               </div>
 
-              {/* Dev/Testing Helper Badge */}
-              {devCode && (
+              {/* Real Email Inbox / Preview Dispatch Notice */}
+              {emailPreviewUrl && (
                 <div
-                  onClick={fillDevCode}
                   style={{
                     background: '#f8fafc',
-                    border: '1.5px dashed #2f578c',
+                    border: '1.5px solid #2f578c',
                     borderRadius: '8px',
-                    padding: '8px 12px',
+                    padding: '10px 14px',
                     marginBottom: '18px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer'
+                    justifyContent: 'space-between'
                   }}
-                  title="Click to automatically fill code"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#1b3158', fontWeight: 700 }}>
-                    <span style={{ background: '#2f578c', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem' }}>
-                      DEMO CODE
-                    </span>
-                    <span>Code sent: <strong>{devCode}</strong></span>
+                  <div style={{ fontSize: '0.78rem', color: '#1b3158', fontWeight: 700 }}>
+                    Real email dispatched via SMTP.
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: '#2f578c', fontWeight: 800, textDecoration: 'underline' }}>
-                    Click to auto-fill
-                  </span>
+                  <a
+                    href={emailPreviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#2f578c',
+                      fontWeight: 800,
+                      textDecoration: 'underline',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>View Dispatched Email</span>
+                    <ExternalLink size={12} />
+                  </a>
                 </div>
               )}
 
-              {/* 6 OTP Input Boxes */}
+              {/* 6 Real OTP Input Boxes */}
               <form onSubmit={handleVerifyOtp}>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}>
                   {otp.map((digit, idx) => (
@@ -861,14 +872,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     cursor: otp.join('').length === 6 && !isLoading ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  <span>{isLoading ? 'Verifying Code...' : 'Verify & Continue'}</span>
+                  <span>{isLoading ? 'Verifying Code...' : 'Verify Code & Sign In'}</span>
                   <ArrowRight size={16} />
                 </button>
               </form>
 
               {/* Resend Code Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', fontSize: '0.8rem' }}>
-                <span style={{ color: '#64748b' }}>Didn't receive the code?</span>
+                <span style={{ color: '#64748b' }}>Didn't receive the email? Check spam folder or</span>
                 {resendCooldown > 0 ? (
                   <span style={{ color: '#94a3b8', fontWeight: 700 }}>
                     Resend in {resendCooldown}s
@@ -1040,11 +1051,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
 
           {/* ========================================================= */}
-          {/* STEP 4: AUTHENTIC GOOGLE OAUTH ACCOUNT CHOOSER            */}
+          {/* STEP 4: GOOGLE AUTHENTICATION                             */}
           {/* ========================================================= */}
-          {step === 'google_chooser' && (
+          {step === 'google_auth' && (
             <div>
-              {/* Authentic Google Header */}
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
                   <svg width="32" height="32" viewBox="0 0 24 24">
@@ -1068,229 +1078,72 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                 </div>
 
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1f2937', margin: 0 }}>
-                  Choose an account
+                  Sign in with Google
                 </h3>
-                <p style={{ fontSize: '0.84rem', color: '#4b5563', marginTop: '4px', margin: '4px 0 0 0' }}>
-                  to continue to <strong style={{ color: '#1b3158' }}>ArcBounty</strong>
+                <p style={{ fontSize: '0.84rem', color: '#4b5563', margin: '4px 0 0 0' }}>
+                  Enter your Google Account to authenticate on ArcBounty
                 </p>
               </div>
 
-              {/* Pre-configured Google Account Options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                {/* Account Option 1 */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSelectGoogleAccount({
-                      name: 'Olajide Abdulquadri',
-                      email: 'olajideabdulquadri22@gmail.com',
-                      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-                    })
-                  }
-                  disabled={isLoading}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.12s ease'
-                  }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
-                    alt="Olajide"
-                    style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #000000' }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                      Olajide Abdulquadri
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      olajideabdulquadri22@gmail.com
-                    </p>
-                  </div>
-                  <ChevronRight size={18} color="#94a3b8" />
-                </button>
-
-                {/* Account Option 2 */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSelectGoogleAccount({
-                      name: 'Circle Arc Creator',
-                      email: 'creator.arc@gmail.com',
-                      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-                    })
-                  }
-                  disabled={isLoading}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.12s ease'
-                  }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                    alt="Creator Arc"
-                    style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #000000' }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                      Circle Arc Creator
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      creator.arc@gmail.com
-                    </p>
-                  </div>
-                  <ChevronRight size={18} color="#94a3b8" />
-                </button>
-
-                {/* Use Another Google Account Toggle */}
-                {!showCustomGoogleInput ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomGoogleInput(true)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      background: '#f8fafc',
-                      border: '2px dashed #000000',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      cursor: 'pointer',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <div
+              <form onSubmit={handleGoogleSubmit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#1e293b', marginBottom: '4px' }}>
+                      Google Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="your.email@gmail.com"
+                      value={googleEmail}
+                      onChange={(e) => setGoogleEmail(e.target.value)}
+                      required
                       style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        background: '#e2e8f0',
-                        border: '1.5px solid #000000',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        border: '2px solid #000000',
+                        boxShadow: '2px 2px 0px #000000',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        outline: 'none'
                       }}
-                    >
-                      <User size={18} color="#475569" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
-                        Use another Google account
-                      </p>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
-                        Sign in with any Gmail address
-                      </p>
-                    </div>
-                  </button>
-                ) : (
-                  <div
-                    style={{
-                      padding: '14px',
-                      borderRadius: '8px',
-                      border: '2px solid #000000',
-                      boxShadow: '2px 2px 0px #000000',
-                      background: '#f8fafc'
-                    }}
-                  >
-                    <p style={{ fontSize: '0.82rem', fontWeight: 800, margin: '0 0 8px 0', color: '#0f172a' }}>
-                      Enter Google Account Details
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                      <input
-                        type="text"
-                        placeholder="Full Name"
-                        value={customGoogleName}
-                        onChange={(e) => setCustomGoogleName(e.target.value)}
-                        style={{
-                          padding: '8px 10px',
-                          borderRadius: '6px',
-                          border: '1.5px solid #000000',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          outline: 'none'
-                        }}
-                      />
-                      <input
-                        type="email"
-                        placeholder="user@gmail.com"
-                        value={customGoogleEmail}
-                        onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                        style={{
-                          padding: '8px 10px',
-                          borderRadius: '6px',
-                          border: '1.5px solid #000000',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!customGoogleEmail.includes('@')) {
-                            setErrorMessage('Please enter a valid Gmail address');
-                            return;
-                          }
-                          handleSelectGoogleAccount({
-                            name: customGoogleName || customGoogleEmail.split('@')[0],
-                            email: customGoogleEmail,
-                            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-                          });
-                        }}
-                        disabled={isLoading}
-                        className="btn-primary"
-                        style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', justifyContent: 'center' }}
-                      >
-                        {isLoading ? 'Authorizing...' : 'Authorize ArcBounty'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomGoogleInput(false)}
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          border: '1.5px solid #000000',
-                          background: '#ffffff',
-                          fontWeight: 700,
-                          fontSize: '0.82rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    />
                   </div>
-                )}
-              </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#1e293b', marginBottom: '4px' }}>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Your Full Name"
+                      value={googleName}
+                      onChange={(e) => setGoogleName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        border: '2px solid #000000',
+                        boxShadow: '2px 2px 0px #000000',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
 
-              {/* Google OAuth Disclosure Notice */}
-              <p style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4, margin: '14px 0 12px 0', textAlign: 'center' }}>
-                To continue, Google will share your name, email address, language preference, and profile picture with ArcBounty. See ArcBounty's Privacy Policy.
-              </p>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '12px', fontSize: '0.92rem', justifyContent: 'center' }}
+                >
+                  <span>{isLoading ? 'Authenticating with Google...' : 'Continue with Google Account'}</span>
+                  <ArrowRight size={16} />
+                </button>
+              </form>
 
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', marginTop: '14px' }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -1307,7 +1160,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     textDecoration: 'underline'
                   }}
                 >
-                  Back to standard login options
+                  Back to standard sign in options
                 </button>
               </div>
             </div>

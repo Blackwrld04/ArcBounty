@@ -57,6 +57,16 @@ db.exec(`
     created_at INTEGER NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS auth_challenges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    address TEXT NOT NULL,
+    nonce TEXT NOT NULL,
+    message TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 // Gracefully add social columns if migrating existing users table
@@ -285,4 +295,62 @@ export function updateUserProfile(userId, { name, username, bio, discipline, ava
 
   return getUserById(userId);
 }
+
+/**
+ * Get user by wallet address
+ */
+export function getUserByWalletAddress(address) {
+  if (!address) return null;
+  const stmt = db.prepare(`SELECT * FROM users WHERE wallet_address = ?`);
+  return stmt.get(address.toLowerCase());
+}
+
+/**
+ * Create a cryptographic challenge nonce for wallet authentication
+ */
+export function createWalletChallenge(address) {
+  const normalized = address.toLowerCase();
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const now = Date.now();
+  const expiresAt = now + 5 * 60 * 1000; // 5 minutes validity
+  const message = `Sign in to ArcBounty (Circle Arc L1)\nNetwork: Circle Arc (Chain ID 5042)\nAddress: ${normalized}\nNonce: ${nonce}\nIssued At: ${new Date(now).toISOString()}`;
+
+  // Invalidate past challenges for this address
+  const invalidateStmt = db.prepare(`UPDATE auth_challenges SET used = 1 WHERE address = ? AND used = 0`);
+  invalidateStmt.run(normalized);
+
+  const insertStmt = db.prepare(`
+    INSERT INTO auth_challenges (address, nonce, message, expires_at, used, created_at)
+    VALUES (?, ?, ?, ?, 0, ?)
+  `);
+  insertStmt.run(normalized, nonce, message, expiresAt, now);
+
+  return { message, nonce, expiresAt };
+}
+
+/**
+ * Verify and consume a wallet challenge nonce
+ */
+export function verifyWalletChallenge(address, nonce) {
+  const normalized = address.toLowerCase();
+  const now = Date.now();
+
+  const queryStmt = db.prepare(`
+    SELECT * FROM auth_challenges
+    WHERE address = ? AND nonce = ? AND used = 0 AND expires_at > ?
+    ORDER BY created_at DESC LIMIT 1
+  `);
+  const record = queryStmt.get(normalized, nonce, now);
+
+  if (!record) {
+    return { valid: false, error: 'Challenge expired or already used. Please request a new signature.' };
+  }
+
+  // Mark challenge as used
+  const updateStmt = db.prepare(`UPDATE auth_challenges SET used = 1 WHERE id = ?`);
+  updateStmt.run(record.id);
+
+  return { valid: true, message: record.message };
+}
+
 

@@ -8,7 +8,9 @@ import {
   createSession,
   getUserByToken,
   updateUserSocial,
-  updateUserWallet
+  updateUserWallet,
+  createWalletChallenge,
+  verifyWalletChallenge
 } from '../src/db.js';
 
 test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
@@ -93,5 +95,20 @@ test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
     const newAddr = '0x1234567890abcdef1234567890abcdef12345678';
     const updated = updateUserWallet(user.id, newAddr);
     assert.equal(updated.wallet_address, newAddr.toLowerCase());
+  });
+
+  await t.test('creates cryptographic challenge nonce and prevents replay', () => {
+    const testWallet = '0x9999999999999999999999999999999999999999';
+    const challenge = createWalletChallenge(testWallet);
+    assert.ok(challenge.nonce);
+    assert.ok(challenge.message.includes(testWallet.toLowerCase()));
+
+    // First verification succeeds
+    const check1 = verifyWalletChallenge(testWallet, challenge.nonce);
+    assert.equal(check1.valid, true);
+
+    // Second verification fails (prevent replay)
+    const check2 = verifyWalletChallenge(testWallet, challenge.nonce);
+    assert.equal(check2.valid, false);
   });
 });
