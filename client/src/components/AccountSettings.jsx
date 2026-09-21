@@ -555,25 +555,13 @@ export default function AccountSettings({
         {/* TAB 2: Wallet */}
         {activeTab === 'wallet' && (
           <div className="clean-card" style={{ padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
-              <div>
-                <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                  Primary Web3 Wallet (Arc L1)
-                </h3>
-                <p style={{ fontSize: '0.84rem', color: '#64748b', margin: '3px 0 0 0' }}>
-                  Connected to Circle Arc Mainnet (Chain ID 5042). All payments and escrow locks settle here.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setWalletModalOpen(true)}
-                className="btn-secondary"
-                style={{ padding: '8px 14px', fontSize: '0.82rem' }}
-              >
-                <Wallet size={15} />
-                <span>Switch / Connect Wallet</span>
-              </button>
+            <div style={{ marginBottom: '18px' }}>
+              <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                Primary Web3 Wallet (Arc L1)
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: '#64748b', margin: '3px 0 0 0' }}>
+                Connected to Circle Arc Mainnet (Chain ID 5042). All payments and escrow locks settle here.
+              </p>
             </div>
 
             <div

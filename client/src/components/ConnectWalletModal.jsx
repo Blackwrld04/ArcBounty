@@ -6,7 +6,6 @@ const WALLETS = [
   {
     id: 'rabby',
     name: 'Rabby Wallet',
-    tag: 'RECOMMENDED FOR ARC',
     url: 'https://rabby.io',
     desc: 'Optimal support for multi-chain routing & sub-400ms Malachite BFT finality.',
     icon: (
@@ -19,7 +18,6 @@ const WALLETS = [
   {
     id: 'metamask',
     name: 'MetaMask',
-    tag: 'POPULAR',
     url: 'https://metamask.io',
     desc: 'Connect using MetaMask browser extension or mobile app.',
     icon: (
@@ -37,7 +35,6 @@ const WALLETS = [
   {
     id: 'coinbase',
     name: 'Coinbase Wallet',
-    tag: 'SMART WALLET',
     url: 'https://www.coinbase.com/wallet',
     desc: 'Passkey-ready with zero transaction gas sponsor on Arc.',
     icon: (
@@ -51,7 +48,6 @@ const WALLETS = [
   {
     id: 'phantom',
     name: 'Phantom',
-    tag: 'MULTI-CHAIN',
     url: 'https://phantom.app',
     desc: 'EVM & Solana multi-chain wallet with integrated token swap.',
     icon: (
@@ -207,9 +203,6 @@ export default function ConnectWalletModal({
             <h3 className="font-space" style={{ fontSize: '1.35rem', fontWeight: 900, color: '#000000', margin: 0 }}>
               {wallet && wallet.connected ? 'Switch Connected Wallet' : 'Connect Web3 Wallet'}
             </h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>
-              Circle Arc L1 · Chain ID 5042 · SIWE Cryptographic Verification
-            </p>
           </div>
         </div>
 
@@ -304,24 +297,9 @@ export default function ConnectWalletModal({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   {w.icon}
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
-                        {w.name}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 800,
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          background: w.id === 'rabby' ? '#ffcc6f' : '#f1f5f9',
-                          color: '#000000',
-                          border: '1px solid #000000'
-                        }}
-                      >
-                        {w.tag}
-                      </span>
-                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
+                      {w.name}
+                    </span>
                     <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>
                       {w.desc}
                     </p>
