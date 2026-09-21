@@ -1,5 +1,9 @@
 import nodemailer from 'nodemailer';
+import dns from 'node:dns';
 import 'dotenv/config';
+
+// Force IPv4 lookup first to prevent ENETUNREACH issues with Gmail SMTP over IPv6
+dns.setDefaultResultOrder('ipv4first');
 
 let transporter = null;
 let etherealAccount = null;
@@ -28,9 +32,12 @@ async function getTransporter() {
   // 1. Direct Gmail Service
   if (GMAIL_USER && GMAIL_APP_PASSWORD) {
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      family: 4, // Guarantee IPv4 routing
       auth: {
-        user: GMAIL_USER,
+        user: GMAIL_USER.trim(),
         pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') // remove spaces from 16-char app password
       }
     });
