@@ -1,4 +1,5 @@
 import express from 'express';
+import { randomBytes } from 'crypto';
 import {
   getUserByToken,
   isAdminUser,
@@ -12,43 +13,128 @@ import {
 
 export const adminRouter = express.Router();
 
+// In-memory store for authenticated admin password sessions
+export const activeAdminTokens = new Map();
+
+/**
+ * POST /api/admin/login
+ * Public authentication route: validates master administrator password
+ */
+adminRouter.post('/login', (req, res) => {
+  const { password } = req.body;
+  const adminPassword = (process.env.ADMIN_PASSWORD || 'arcbounty2026_admin!').trim();
+
+  if (!password || password.trim() !== adminPassword) {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid administrator password. Access denied.'
+    });
+  }
+
+  const token = `arc_adm_${randomBytes(24).toString('hex')}`;
+  activeAdminTokens.set(token, {
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  });
+
+  return res.json({
+    success: true,
+    message: 'Master administrator access granted',
+    token,
+    admin: {
+      role: 'admin',
+      name: 'Master Administrator',
+      email: process.env.GMAIL_USER || 'admin@arcbounty.io'
+    }
+  });
+});
+
 /**
  * Middleware: Verify Admin Access
- * Validates session token and guarantees the authenticated user is an authorized admin.
+ * Validates either dedicated admin password token or authorized admin user session
  */
 export function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      error: 'Authentication required. Please sign in with an authorized admin account.'
+      error: 'Authentication required. Please enter administrator credentials.'
     });
   }
 
   const token = authHeader.split(' ')[1];
-  const user = getUserByToken(token);
 
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      error: 'Invalid or expired session token.'
-    });
+  // 1. Check dedicated admin password session
+  if (activeAdminTokens.has(token)) {
+    const session = activeAdminTokens.get(token);
+    if (Date.now() < session.expiresAt) {
+      req.user = {
+        id: 'admin_master',
+        email: process.env.GMAIL_USER || 'admin@arcbounty.io',
+        name: 'Master Administrator',
+        role: 'admin',
+        wallet_address: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884'
+      };
+      return next();
+    } else {
+      activeAdminTokens.delete(token);
+      return res.status(401).json({
+        success: false,
+        error: 'Admin session has expired. Please re-enter password.'
+      });
+    }
   }
 
-  const isAdmin = isAdminUser(user.email, user.wallet_address);
-  if (!isAdmin && user.role !== 'admin') {
+  // 2. Fallback: check SQLite database user session token
+  const user = getUserByToken(token);
+  if (user) {
+    const isAdmin = isAdminUser(user.email, user.wallet_address);
+    if (isAdmin || user.role === 'admin') {
+      req.user = user;
+      return next();
+    }
     return res.status(403).json({
       success: false,
       error: 'Access denied. Your account does not have administrative privileges.'
     });
   }
 
-  req.user = user;
-  next();
+  return res.status(401).json({
+    success: false,
+    error: 'Invalid or expired session token.'
+  });
 }
 
-// Protect all routes in this router with requireAdmin
+/**
+ * POST /api/admin/logout
+ * Invalidate admin session
+ */
+adminRouter.post('/logout', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    activeAdminTokens.delete(token);
+  }
+  res.json({ success: true, message: 'Admin logged out successfully' });
+});
+
+// Protect subsequent routes in this router with requireAdmin
 adminRouter.use(requireAdmin);
+
+/**
+ * GET /api/admin/verify-token
+ * Lightweight check to confirm admin token is still valid
+ */
+adminRouter.get('/verify-token', (req, res) => {
+  res.json({
+    success: true,
+    admin: {
+      role: 'admin',
+      name: req.user.name,
+      email: req.user.email
+    }
+  });
+});
 
 /**
  * GET /api/admin/stats

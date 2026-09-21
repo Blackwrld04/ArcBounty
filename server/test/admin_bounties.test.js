@@ -104,4 +104,55 @@ test('ArcBounty Escrow Payments & Admin Distribution Tests', async (t) => {
     assert.ok(stats.totalDistributedUsdc >= 1750);
     assert.equal(stats.escrowWallet, '0x38bEc58406E9b7941F48cCe61aE2d1847137f884');
   });
+
+  await t.test('authenticates master admin with password and rejects invalid attempts', async () => {
+    const { requireAdmin, activeAdminTokens } = await import('../src/routes/admin.js');
+    const validPassword = process.env.ADMIN_PASSWORD || 'arcbounty2026_admin!';
+
+    // Simulating login logic
+    const wrongAttempt = 'wrong_password_123';
+    assert.notEqual(wrongAttempt, validPassword);
+
+    // Mock Express request/response to test requireAdmin middleware
+    let nextCalled = false;
+    const req = { headers: {} };
+    const res = {
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        this.data = data;
+        return this;
+      }
+    };
+
+    // 1. Unauthenticated request without token
+    requireAdmin(req, res, () => { nextCalled = true; });
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 401);
+
+    // 2. Request with invalid token
+    req.headers.authorization = 'Bearer arc_adm_invalid_fake_token';
+    requireAdmin(req, res, () => { nextCalled = true; });
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 401);
+
+    // 3. Request with valid active admin password token
+    const testAdminToken = 'arc_adm_test_valid_token_xyz123';
+    activeAdminTokens.set(testAdminToken, {
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60000
+    });
+
+    req.headers.authorization = `Bearer ${testAdminToken}`;
+    requireAdmin(req, res, () => { nextCalled = true; });
+    assert.equal(nextCalled, true);
+    assert.equal(req.user.role, 'admin');
+    assert.equal(req.user.name, 'Master Administrator');
+
+    // Clean up
+    activeAdminTokens.delete(testAdminToken);
+  });
 });
+

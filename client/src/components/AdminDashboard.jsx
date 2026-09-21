@@ -18,12 +18,27 @@ import {
   Award,
   ChevronRight,
   AlertTriangle,
-  FileText
+  FileText,
+  Key,
+  Eye,
+  EyeOff,
+  LogOut,
+  ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { truncateAddress } from '../utils/arc';
 
 export default function AdminDashboard({ user, wallet, onBackToExplore }) {
+  // Master Administrator Password Authentication State
+  const [adminToken, setAdminToken] = useState(() => {
+    return sessionStorage.getItem('arcbounty_admin_token') || '';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authenticating, setAuthenticating] = useState(false);
+
+  // Admin Console State
   const [stats, setStats] = useState(null);
   const [bounties, setBounties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,24 +52,74 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
   const [settlementResult, setSettlementResult] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null); // { bounty, submission }
 
-  const token = localStorage.getItem('arcbounty_session_token');
+  const handlePasswordLogin = async (e) => {
+    if (e) e.preventDefault();
+    if (!passwordInput.trim()) {
+      setAuthError('Please enter administrator password.');
+      return;
+    }
+
+    setAuthenticating(true);
+    setAuthError('');
+    try {
+      const res = await fetch('http://localhost:4050/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput })
+      });
+
+      const data = await res.json();
+      if (data.success && data.token) {
+        sessionStorage.setItem('arcbounty_admin_token', data.token);
+        setAdminToken(data.token);
+        setPasswordInput('');
+      } else {
+        setAuthError(data.error || 'Invalid administrator password. Access denied.');
+      }
+    } catch (err) {
+      setAuthError('Connection failed: ' + err.message);
+    } finally {
+      setAuthenticating(false);
+    }
+  };
+
+  const handleLockConsole = async () => {
+    try {
+      if (adminToken) {
+        await fetch('http://localhost:4050/api/admin/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${adminToken}` }
+        });
+      }
+    } catch (e) {}
+    sessionStorage.removeItem('arcbounty_admin_token');
+    setAdminToken('');
+    if (onBackToExplore) {
+      onBackToExplore();
+    }
+  };
 
   const fetchAdminData = async () => {
+    if (!adminToken) return;
     setLoading(true);
     try {
-      // Fetch stats
-      const statsRes = await fetch('http://localhost:4050/api/admin/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const headers = { Authorization: `Bearer ${adminToken}` };
+      const [statsRes, bountiesRes] = await Promise.all([
+        fetch('http://localhost:4050/api/admin/stats', { headers }),
+        fetch('http://localhost:4050/api/admin/bounties', { headers })
+      ]);
+
       const statsData = await statsRes.json();
       if (statsData.success) {
         setStats(statsData.stats);
+      } else if (statsRes.status === 401 || statsRes.status === 403) {
+        // Invalidate stale token
+        sessionStorage.removeItem('arcbounty_admin_token');
+        setAdminToken('');
+        setAuthError('Admin session expired. Please re-enter your password.');
+        return;
       }
 
-      // Fetch all bounties
-      const bountiesRes = await fetch('http://localhost:4050/api/admin/bounties', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
       const bountiesData = await bountiesRes.json();
       if (bountiesData.success) {
         setBounties(bountiesData.bounties);
@@ -67,10 +132,10 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
   };
 
   useEffect(() => {
-    if (user?.isAdmin) {
+    if (adminToken) {
       fetchAdminData();
     }
-  }, [user]);
+  }, [adminToken]);
 
   const handleSelectBounty = async (bounty) => {
     setSelectedBounty(bounty);
@@ -78,7 +143,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
     setSettlementResult(null);
     try {
       const res = await fetch(`http://localhost:4050/api/admin/bounties/${bounty.id}/submissions`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${adminToken}` }
       });
       const data = await res.json();
       if (data.success) {
@@ -107,7 +172,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${adminToken}`
         },
         body: JSON.stringify({
           bountyId: bounty.id,
@@ -125,7 +190,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
           spread: 100,
           origin: { y: 0.6 }
         });
-        // Refresh data
+        // Refresh telemetry & submissions
         fetchAdminData();
         handleSelectBounty(bounty);
       } else {
@@ -138,47 +203,201 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
     }
   };
 
-  // Guard: Unauthorized View
-  if (!user || !user.isAdmin) {
+  // Guard: Master Password Gate Screen
+  if (!adminToken) {
     return (
-      <div className="container" style={{ padding: '60px 16px', maxWidth: '640px' }}>
+      <div style={{
+        minHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '50px 16px',
+        backgroundColor: 'var(--bg-canvas)'
+      }}>
         <div style={{
+          width: '100%',
+          maxWidth: '460px',
           background: '#ffffff',
           border: '2.5px solid #000000',
-          boxShadow: '4px 4px 0px #000000',
-          borderRadius: '12px',
-          padding: '40px 32px',
-          textAlign: 'center'
+          boxShadow: '6px 6px 0px #000000',
+          borderRadius: '14px',
+          padding: '36px 30px',
+          position: 'relative'
         }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: '#fee2e2',
-            border: '2px solid #000000',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px auto'
-          }}>
-            <Lock size={30} color="#b91c1c" />
+          {/* Top header badge */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#fee2e2',
+              color: '#991b1b',
+              border: '1.5px solid #000000',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              fontSize: '0.74rem',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              <Lock size={12} color="#991b1b" />
+              <span>Restricted Access</span>
+            </div>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>
+              Circle Arc L1 (5042)
+            </span>
           </div>
 
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', marginBottom: '8px' }}>
-            Administrator Access Restricted
-          </h2>
-          <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6, marginBottom: '24px' }}>
-            This portal is strictly reserved for ArcBounty platform administrators. Only authorized accounts configured in the server environment can oversee platform escrow deposits and execute prize disbursements.
-          </p>
+          <div style={{ textAlign: 'center', marginBottom: '26px' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '12px',
+              background: '#1b3158',
+              border: '2px solid #000000',
+              boxShadow: '3px 3px 0px #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto'
+            }}>
+              <Key size={26} color="#ffcc6f" />
+            </div>
 
-          <button
-            onClick={onBackToExplore}
-            className="btn-primary"
-            style={{ padding: '12px 24px', borderRadius: '8px' }}
-          >
-            <span>Back to Opportunities</span>
-            <ArrowRight size={16} />
-          </button>
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: '0 0 6px 0' }}>
+              ArcBounty Admin Portal
+            </h2>
+            <p style={{ fontSize: '0.86rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
+              Separate administrative environment. Enter master administrator password to access the platform escrow treasury and distribute prize USDC.
+            </p>
+          </div>
+
+          {authError && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: '#fef2f2',
+              border: '1.5px solid #ef4444',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              marginBottom: '20px',
+              fontSize: '0.84rem',
+              color: '#991b1b',
+              fontWeight: 700
+            }}>
+              <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0 }} />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordLogin}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 900,
+                color: '#0f172a',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
+              }}>
+                Master Admin Password
+              </label>
+
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    if (authError) setAuthError('');
+                  }}
+                  placeholder="Enter administrator password..."
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '12px 42px 12px 14px',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    border: '2px solid #000000',
+                    borderRadius: '8px',
+                    boxShadow: '2.5px 2.5px 0px #000000',
+                    outline: 'none',
+                    background: '#ffffff',
+                    color: '#0f172a'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px'
+                  }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={authenticating || !passwordInput.trim()}
+              style={{
+                width: '100%',
+                background: authenticating || !passwordInput.trim() ? '#cbd5e1' : '#1b3158',
+                color: '#ffffff',
+                border: '2px solid #000000',
+                boxShadow: authenticating || !passwordInput.trim() ? 'none' : '3px 3px 0px #000000',
+                borderRadius: '8px',
+                padding: '13px',
+                fontSize: '0.92rem',
+                fontWeight: 900,
+                cursor: authenticating || !passwordInput.trim() ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Key size={16} color="#ffcc6f" />
+              <span>{authenticating ? 'Verifying Password...' : 'Unlock Admin Console'}</span>
+              <ArrowRight size={16} />
+            </button>
+          </form>
+
+          <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px dashed #cbd5e1', paddingTop: '16px' }}>
+            <button
+              onClick={onBackToExplore}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748b',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <ArrowLeft size={14} />
+              <span>Return to Public Site</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -236,7 +455,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={fetchAdminData}
             style={{
@@ -244,8 +463,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
               border: '2px solid #000000',
               boxShadow: '2.5px 2.5px 0px #000000',
               borderRadius: '8px',
-              padding: '10px 16px',
-              fontSize: '0.85rem',
+              padding: '9px 15px',
+              fontSize: '0.84rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
@@ -260,9 +479,32 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
           <button
             onClick={onBackToExplore}
             className="btn-secondary"
-            style={{ padding: '10px 18px', borderRadius: '8px', fontSize: '0.85rem' }}
+            style={{ padding: '9px 15px', borderRadius: '8px', fontSize: '0.84rem' }}
           >
-            Back to Public View
+            <ArrowLeft size={14} />
+            <span>Back to Public View</span>
+          </button>
+
+          <button
+            onClick={handleLockConsole}
+            style={{
+              background: '#fee2e2',
+              color: '#991b1b',
+              border: '2px solid #000000',
+              boxShadow: '2.5px 2.5px 0px #000000',
+              borderRadius: '8px',
+              padding: '9px 15px',
+              fontSize: '0.84rem',
+              fontWeight: 900,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Lock administrative console and require password"
+          >
+            <LogOut size={14} color="#991b1b" />
+            <span>Lock Console</span>
           </button>
         </div>
       </div>

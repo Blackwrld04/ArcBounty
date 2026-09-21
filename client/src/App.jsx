@@ -68,9 +68,51 @@ export default function App() {
     activeBountiesCount: 164
   });
 
-  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'swarm', 'leaderboard'
-  const [activeView, setActiveView] = useState('explore');
+  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'swarm', 'leaderboard', 'admin'
+  const getInitialView = () => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
+        return 'admin';
+      }
+    }
+    return 'explore';
+  };
+
+  const [activeView, setActiveView] = useState(getInitialView);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Synchronize browser history and hash navigation
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
+        setActiveView('admin');
+      } else if (activeView === 'admin') {
+        setActiveView('explore');
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, [activeView]);
+
+  const handleBackToExplore = () => {
+    setActiveView('explore');
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
+        window.history.pushState({}, '', '/');
+      } else if (window.location.hash === '#/admin') {
+        window.location.hash = '';
+      }
+    }
+  };
 
   // Modals & Drawers state
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -313,27 +355,29 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-canvas)' }}>
-      {/* Modern Top Navigation Bar */}
-      <Navbar
-        user={user}
-        wallet={wallet}
-        network={network}
-        activeView={activeView}
-        setActiveView={setActiveView}
-        openAuthModal={handleOpenAuth}
-        openWalletDrawer={() => setWalletDrawerOpen(true)}
-        openConnectWalletModal={() => setConnectWalletModalOpen(true)}
-        openCreateModal={() => {
-          if (!user) {
-            handleOpenAuth('signup');
-          } else {
-            setCreateModalOpen(true);
-          }
-        }}
-        onLogout={handleLogout}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
+      {/* Modern Top Navigation Bar (Hidden when in dedicated separate Admin mode) */}
+      {activeView !== 'admin' && (
+        <Navbar
+          user={user}
+          wallet={wallet}
+          network={network}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          openAuthModal={handleOpenAuth}
+          openWalletDrawer={() => setWalletDrawerOpen(true)}
+          openConnectWalletModal={() => setConnectWalletModalOpen(true)}
+          openCreateModal={() => {
+            if (!user) {
+              handleOpenAuth('signup');
+            } else {
+              setCreateModalOpen(true);
+            }
+          }}
+          onLogout={handleLogout}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      )}
 
       {/* Main View Controller */}
       <main style={{ flex: 1 }}>
@@ -405,11 +449,11 @@ export default function App() {
         )}
 
         {activeView === 'admin' && (
-          <div style={{ paddingTop: '10px' }}>
+          <div>
             <AdminDashboard
               user={user}
               wallet={wallet}
-              onBackToExplore={() => setActiveView('explore')}
+              onBackToExplore={handleBackToExplore}
             />
           </div>
         )}
