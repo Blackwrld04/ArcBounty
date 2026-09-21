@@ -59,26 +59,6 @@ export default function Navbar({
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
           </div>
-
-          {/* Network indicator pill */}
-          <div
-            className="desktop-only"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '9999px',
-              background: '#f1f5f9',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: '#334155'
-            }}
-          >
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
-            <span>Circle Arc 5042</span>
-            <span style={{ color: '#64748b', fontSize: '0.7rem' }}>(&lt;400ms)</span>
-          </div>
         </div>
 
         {/* Center: Navigation Links & Search Bar (Superteam Earn style) */}
@@ -156,21 +136,6 @@ export default function Navbar({
           {!user ? (
             /* Logged Out Header (Guest User Experience) */
             <>
-              <button
-                onClick={() => openAuthModal('signup')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#475569',
-                  fontSize: '0.88rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: '6px 10px'
-                }}
-                className="desktop-only"
-              >
-                Become a Sponsor
-              </button>
 
               <button
                 id="navbar-login-btn"

@@ -13,7 +13,7 @@ import Leaderboard from './components/Leaderboard';
 import AdminDashboard from './components/AdminDashboard';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
-import { Zap, CheckCircle2, ExternalLink, X } from 'lucide-react';
+import { Zap, CheckCircle2, ExternalLink, X, Lock } from 'lucide-react';
 
 export default function App() {
   const [network, setNetwork] = useState(ARC_MAINNET);
@@ -574,6 +574,18 @@ export default function App() {
             <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
               Arc Docs ↗
             </a>
+            <button
+              id="footer-admin-btn"
+              onClick={() => {
+                setActiveView('admin');
+                if (typeof window !== 'undefined') window.history.pushState({}, '', '/admin');
+              }}
+              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              title="Admin Distribution Portal"
+            >
+              <Lock size={12} />
+              <span>Admin</span>
+            </button>
           </div>
         </div>
       </footer>
