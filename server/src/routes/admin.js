@@ -73,7 +73,7 @@ export function requireAdmin(req, res, next) {
         email: process.env.GMAIL_USER || 'admin@arcbounty.io',
         name: 'Master Administrator',
         role: 'admin',
-        wallet_address: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884'
+        wallet_address: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE'
       };
       return next();
     } else {

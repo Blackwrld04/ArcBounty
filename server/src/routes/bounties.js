@@ -15,7 +15,7 @@ export const bountyRouter = express.Router();
  * Retrieve platform escrow wallet address and chain metadata for deposit
  */
 bountyRouter.get('/escrow-wallet', (req, res) => {
-  const escrowWallet = process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884';
+  const escrowWallet = process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE';
   res.json({
     success: true,
     escrowWallet,

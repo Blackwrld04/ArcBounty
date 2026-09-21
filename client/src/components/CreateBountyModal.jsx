@@ -13,7 +13,7 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
   const [deadlineDays, setDeadlineDays] = useState('14');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [escrowWallet, setEscrowWallet] = useState('0x38bEc58406E9b7941F48cCe61aE2d1847137f884');
+  const [escrowWallet, setEscrowWallet] = useState('0x8b415aE3956992b0cbC6C78c485A4d099F6331cE');
   const [depositTx, setDepositTx] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('wallet'); // 'wallet' or 'manual'
   const [copiedEscrow, setCopiedEscrow] = useState(false);

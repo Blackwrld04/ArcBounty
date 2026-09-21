@@ -26,7 +26,7 @@ test('ArcBounty Escrow Payments & Admin Distribution Tests', async (t) => {
   });
 
   await t.test('creates bounty with designated escrow wallet and deposit metadata', () => {
-    const escrowAddr = '0x38bEc58406E9b7941F48cCe61aE2d1847137f884';
+    const escrowAddr = '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE';
     const mockTx = '0xdep1234567890abcdef1234567890abcdef12';
 
     createdBounty = createBountyRecord({
@@ -102,7 +102,7 @@ test('ArcBounty Escrow Payments & Admin Distribution Tests', async (t) => {
     assert.ok(stats.totalEscrowedUsdc > 0);
     assert.ok(stats.totalSubmissions >= 1);
     assert.ok(stats.totalDistributedUsdc >= 1750);
-    assert.equal(stats.escrowWallet, '0x38bEc58406E9b7941F48cCe61aE2d1847137f884');
+    assert.equal(stats.escrowWallet, '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE');
   });
 
   await t.test('authenticates master admin with password and rejects invalid attempts', async () => {

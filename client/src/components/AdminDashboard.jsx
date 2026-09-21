@@ -48,9 +48,16 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState(false);
+  const [copiedSubId, setCopiedSubId] = useState(null);
   const [distributingId, setDistributingId] = useState(null);
   const [settlementResult, setSettlementResult] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null); // { bounty, submission }
+
+  const handleCopySubWallet = (subId, address) => {
+    navigator.clipboard.writeText(address);
+    setCopiedSubId(subId);
+    setTimeout(() => setCopiedSubId(null), 2000);
+  };
 
   const handlePasswordLogin = async (e) => {
     if (e) e.preventDefault();
@@ -638,7 +645,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
               PLATFORM ESCROW TREASURY WALLET (USDC RECEIVER)
             </div>
             <div style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 800, color: '#ffffff', marginTop: '2px', wordBreak: 'break-all' }}>
-              {stats?.escrowWallet || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884'}
+              {stats?.escrowWallet || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE'}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
               All sponsors pay here when creating challenges &bull; You control payouts from this address
@@ -648,7 +655,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
-            onClick={() => handleCopyWallet(stats?.escrowWallet || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884')}
+            onClick={() => handleCopyWallet(stats?.escrowWallet || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE')}
             style={{
               background: copiedWallet ? '#10b981' : '#1b3158',
               color: '#ffffff',
@@ -668,7 +675,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
           </button>
 
           <a
-            href={`https://explorer.arc.io/address/${stats?.escrowWallet || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884'}`}
+            href={`https://explorer.arc.io/address/${stats?.escrowWallet || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE'}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -1052,12 +1059,76 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
                           </div>
                         )}
 
-                        {/* Payout Wallet Address */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.78rem' }}>
-                          <span style={{ color: '#64748b' }}>Payout Address:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a' }}>
-                            {sub.wallet_address}
-                          </span>
+                        {/* Participant Payout Wallet Card (Admin View) */}
+                        <div style={{
+                          background: '#f8fafc',
+                          border: '2px solid #000000',
+                          borderRadius: '8px',
+                          padding: '12px 14px',
+                          marginBottom: '14px',
+                          boxShadow: '2px 2px 0px #000000'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase' }}>
+                              <Wallet size={14} color="#2f578c" />
+                              <span>PARTICIPANT PAYOUT WALLET</span>
+                            </div>
+                            <span style={{ fontSize: '0.7rem', background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                              Ready for Payout
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.84rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                              {sub.wallet_address}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                              <button
+                                type="button"
+                                onClick={() => handleCopySubWallet(sub.id, sub.wallet_address)}
+                                style={{
+                                  background: copiedSubId === sub.id ? '#10b981' : '#f1f5f9',
+                                  color: copiedSubId === sub.id ? '#ffffff' : '#0f172a',
+                                  border: '1.5px solid #000000',
+                                  borderRadius: '5px',
+                                  padding: '4px 8px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Copy participant wallet"
+                              >
+                                {copiedSubId === sub.id ? <Check size={12} /> : <Copy size={12} />}
+                                <span>{copiedSubId === sub.id ? 'Copied' : 'Copy'}</span>
+                              </button>
+
+                              <a
+                                href={`https://explorer.arc.io/address/${sub.wallet_address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  background: '#ffffff',
+                                  color: '#2f578c',
+                                  border: '1.5px solid #000000',
+                                  borderRadius: '5px',
+                                  padding: '4px 8px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  textDecoration: 'none'
+                                }}
+                                title="View on Arc Explorer"
+                              >
+                                <span>Explorer</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Action: Distribute Button */}
@@ -1149,8 +1220,31 @@ export default function AdminDashboard({ user, wallet, onBackToExplore }) {
               )}
 
               <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, marginTop: '8px' }}>PAYOUT WALLET ADDRESS</div>
-              <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', wordBreak: 'break-all' }}>
-                {confirmModal.submission.wallet_address}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '6px 10px', marginTop: '3px' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', wordBreak: 'break-all' }}>
+                  {confirmModal.submission.wallet_address}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopySubWallet('confirm', confirmModal.submission.wallet_address)}
+                  style={{
+                    background: copiedSubId === 'confirm' ? '#10b981' : '#f1f5f9',
+                    color: copiedSubId === 'confirm' ? '#ffffff' : '#0f172a',
+                    border: '1.5px solid #000000',
+                    borderRadius: '4px',
+                    padding: '3px 8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    flexShrink: 0
+                  }}
+                >
+                  {copiedSubId === 'confirm' ? <Check size={11} /> : <Copy size={11} />}
+                  <span>{copiedSubId === 'confirm' ? 'Copied' : 'Copy'}</span>
+                </button>
               </div>
 
               <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, marginTop: '8px' }}>CHALLENGE</div>

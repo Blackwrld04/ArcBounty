@@ -528,7 +528,7 @@ export const INITIAL_BOUNTIES = [
     status: 'Open',
     paymentStatus: 'funded',
     depositTx: '0xarc9281a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a01',
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
     maintainerName: 'Circle Creative Guild',
     maintainerEmail: 'guild@circle.com',
@@ -554,7 +554,7 @@ export const INITIAL_BOUNTIES = [
     status: 'Open',
     paymentStatus: 'funded',
     depositTx: '0xarc7192a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a02',
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainerName: 'Arc Marketing DAO',
     maintainerEmail: 'marketing@arc.io',
@@ -580,7 +580,7 @@ export const INITIAL_BOUNTIES = [
     status: 'InReview',
     paymentStatus: 'funded',
     depositTx: '0xarc6182a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a03',
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
     maintainerName: 'Arc Research Foundation',
     maintainerEmail: 'research@arc.io',
@@ -606,7 +606,7 @@ export const INITIAL_BOUNTIES = [
     status: 'Settled',
     paymentStatus: 'settled',
     depositTx: '0xarc5182a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a04',
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x1234567890abcdef1234567890abcdef12345678',
     maintainerName: 'Arc Meme Department',
     maintainerEmail: 'memes@arc.io',
@@ -634,7 +634,7 @@ export const INITIAL_BOUNTIES = [
     status: 'Open',
     paymentStatus: 'funded',
     depositTx: '0xarc4182a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a05',
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainerName: 'Circle Developer Platform',
     maintainerEmail: 'cctp@circle.com',
@@ -853,7 +853,7 @@ export function getBountyById(id) {
 export function createBountyRecord(data) {
   const id = `bounty-arc-${Date.now().toString().slice(-4)}`;
   const bountyId = `0x${crypto.randomBytes(32).toString('hex')}`;
-  const escrowWallet = data.escrowWallet || process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884';
+  const escrowWallet = data.escrowWallet || process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE';
   const now = Date.now();
   const deadlineDays = parseInt(data.deadlineDays || '14', 10);
   const deadline = now + deadlineDays * 86400000;
@@ -1082,7 +1082,7 @@ export function getAdminOverviewStats() {
     totalSubmissions: subStats.total_submissions || 0,
     totalDistributions: disbStats.total_distributions || 0,
     totalDistributedUsdc: disbStats.total_distributed_amount || 0,
-    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x38bEc58406E9b7941F48cCe61aE2d1847137f884'
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE'
   };
 }
 
