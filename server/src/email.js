@@ -1,18 +1,59 @@
 import nodemailer from 'nodemailer';
+import 'dotenv/config';
 
 let transporter = null;
 let etherealAccount = null;
 
 /**
  * Initialize email transporter
- * Uses custom SMTP if configured via environment variables,
- * or automatic Ethereal email test account for realistic email dispatch
+ * Supports:
+ * 1. Gmail service via GMAIL_USER & GMAIL_APP_PASSWORD
+ * 2. Standard SMTP (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
+ * 3. Resend API (RESEND_API_KEY)
+ * 4. Automatic Ethereal email test account for local testing
  */
 async function getTransporter() {
   if (transporter) return transporter;
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+  const {
+    GMAIL_USER,
+    GMAIL_APP_PASSWORD,
+    RESEND_API_KEY,
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_USER,
+    SMTP_PASS
+  } = process.env;
 
+  // 1. Direct Gmail Service
+  if (GMAIL_USER && GMAIL_APP_PASSWORD) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') // remove spaces from 16-char app password
+      }
+    });
+    console.log(`[Email Service] Live Gmail SMTP connected for: ${GMAIL_USER}`);
+    return transporter;
+  }
+
+  // 2. Resend SMTP
+  if (RESEND_API_KEY) {
+    transporter = nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'resend',
+        pass: RESEND_API_KEY
+      }
+    });
+    console.log(`[Email Service] Live Resend SMTP connected.`);
+    return transporter;
+  }
+
+  // 3. Generic Custom SMTP
   if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
     transporter = nodemailer.createTransport({
       host: SMTP_HOST,
@@ -24,7 +65,8 @@ async function getTransporter() {
       }
     });
     console.log(`[Email Service] Configured with production SMTP: ${SMTP_HOST}`);
-  } else {
+    return transporter;
+  }
     // Generate an automatic Ethereal test inbox for authentic email dispatch & preview
     try {
       etherealAccount = await nodemailer.createTestAccount();
@@ -44,7 +86,6 @@ async function getTransporter() {
         jsonTransport: true
       });
     }
-  }
 
   return transporter;
 }
@@ -106,8 +147,10 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
     </html>
   `;
 
+  const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Security" <security@arcbounty.io>');
+
   const info = await mailer.sendMail({
-    from: process.env.FROM_EMAIL || '"ArcBounty Security" <security@arcbounty.io>',
+    from: sender,
     to: toEmail,
     subject,
     text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes.`,

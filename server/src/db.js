@@ -13,7 +13,7 @@ if (!existsSync(dataDir)) {
   mkdirSync(dataDir, { recursive: true });
 }
 
-const dbPath = join(dataDir, 'arcbounty.db');
+const dbPath = process.env.DB_PATH || join(dataDir, 'arcbounty.db');
 export const db = new DatabaseSync(dbPath);
 
 // Enable WAL mode for high performance
