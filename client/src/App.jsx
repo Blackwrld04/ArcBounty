@@ -11,6 +11,7 @@ import UserProfile from './components/UserProfile';
 import AccountSettings from './components/AccountSettings';
 import Leaderboard from './components/Leaderboard';
 import AdminDashboard from './components/AdminDashboard';
+import LegalModal from './components/LegalModal';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
 import { Zap, CheckCircle2, ExternalLink, X, Lock } from 'lucide-react';
@@ -120,6 +121,7 @@ export default function App() {
   const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedBounty, setSelectedBounty] = useState(null);
+  const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | 'support'
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success', link = null) => {
@@ -542,54 +544,174 @@ export default function App() {
         </div>
       )}
 
-      {/* Clean Footer (Inspired by Gibwork & Superteam) */}
-      <footer style={{
-        background: '#ffffff',
-        borderTop: '1px solid #e2e8f0',
-        padding: '40px 0',
-        marginTop: '60px'
-      }}>
-        <div className="container" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '20px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Clean Footer */}
+      <footer
+        style={{
+          background: '#ffffff',
+          borderTop: '2px solid #000000',
+          padding: '36px 0',
+          marginTop: '60px'
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--arc-protocol-navy)' }}>
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '6px' }}>
-              Built for Circle Arc L1 (Chain ID 5042)
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+              © 2026 ArcBounty. All rights reserved.
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '24px', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>
-            <button onClick={() => setActiveView('explore')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-              Bounties
-            </button>
-            <button onClick={() => setActiveView('leaderboard')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-              Leaderboard
-            </button>
-            <a href="https://arc.io" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-              Arc Docs ↗
-            </a>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '20px',
+              fontFamily: 'Space Grotesk, sans-serif',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}
+          >
             <button
-              id="footer-admin-btn"
-              onClick={() => {
-                setActiveView('admin');
-                if (typeof window !== 'undefined') window.history.pushState({}, '', '/admin');
+              onClick={() => setLegalModal('terms')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                transition: 'color 0.15s ease'
               }}
-              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              title="Admin Distribution Portal"
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
             >
-              <Lock size={12} />
-              <span>Admin</span>
+              Terms
             </button>
+
+            <a
+              href="https://arc.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#475569',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Docs
+            </a>
+
+            <button
+              onClick={() => setLegalModal('privacy')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Privacy
+            </button>
+
+            <button
+              onClick={() => setLegalModal('support')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Support
+            </button>
+
+            <span style={{ color: '#cbd5e1' }}>•</span>
+
+            <a
+              href="https://discord.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#475569',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Discord
+            </a>
+
+            <a
+              href="https://x.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#475569',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              X
+            </a>
+
+            <a
+              href="https://t.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#475569',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Telegram
+            </a>
           </div>
         </div>
       </footer>
+
+      {/* Legal & Support Information Modal */}
+      <LegalModal
+        type={legalModal}
+        onClose={() => setLegalModal(null)}
+      />
     </div>
   );
 }

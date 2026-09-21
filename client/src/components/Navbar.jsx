@@ -172,64 +172,58 @@ export default function Navbar({
               <button
                 id="navbar-create-bounty-btn"
                 onClick={openCreateModal}
+                className="btn-accent"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#10b981',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  padding: '8px 16px',
-                  fontSize: '0.86rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s ease'
+                  padding: '7px 15px',
+                  fontSize: '0.84rem',
+                  gap: '6px'
                 }}
               >
-                <Plus size={16} strokeWidth={2.5} />
+                <Plus size={16} strokeWidth={3} />
                 <span>Create Bounty</span>
               </button>
 
-              {/* Wallet Balance Pill */}
+              {/* Wallet Balance Button */}
               <button
+                id="navbar-usdc-balance-btn"
                 onClick={openWalletDrawer}
+                className="btn-secondary"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
+                  padding: '6px 12px',
+                  fontSize: '0.86rem',
                   gap: '6px',
                   background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '9999px',
-                  padding: '7px 14px',
-                  fontSize: '0.86rem',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  textTransform: 'none'
                 }}
-                title="Open Arc Wallet Drawer"
+                title="Collected Earnings: Open Arc Wallet Drawer"
               >
-                <span style={{ color: '#16a34a', fontWeight: 800 }}>${wallet.balance.toLocaleString()}</span>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', background: '#f1f5f9', padding: '1px 5px', borderRadius: '4px' }}>USDC</span>
+                <span style={{ color: '#16a34a', fontWeight: 900 }}>${(wallet?.balance || 0).toLocaleString()}</span>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    color: '#000000',
+                    background: 'var(--arc-blockstream-gold)',
+                    border: '1px solid #000000',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    fontWeight: 900
+                  }}
+                >
+                  USDC
+                </span>
               </button>
 
               {/* Refer Friends Button */}
               <button
+                id="navbar-refer-friends-btn"
                 onClick={() => setActiveView('account-referrals')}
+                className="btn-secondary desktop-only"
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '9999px',
                   padding: '7px 14px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#475569',
-                  cursor: 'pointer'
+                  fontSize: '0.84rem'
                 }}
-                className="desktop-only"
               >
-                Refer Friends
+                <span>Refer Friends</span>
               </button>
 
               {/* User Avatar & Dropdown Menu */}
