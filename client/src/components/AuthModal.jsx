@@ -578,7 +578,15 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
               </div>
               <span
                 className="font-space"
-                style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}
+                style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 900,
+                  letterSpacing: '-0.02em',
+                  color: '#ffffff',
+                  lineHeight: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}
               >
                 Arc<span style={{ color: '#ffcc6f' }}>Bounty</span>
               </span>

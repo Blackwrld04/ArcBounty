@@ -49,13 +49,51 @@ export default function Navbar({
         width: '100%',
         gap: '20px'
       }}>
-        {/* Left: Brand Logo & Network Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+        {/* Left: Brand Logo & Title */}
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <div
             onClick={() => setActiveView('explore')}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            style={{
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              userSelect: 'none'
+            }}
           >
-            <span className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--arc-protocol-navy)' }}>
+            {/* Brand Logo Icon Badge */}
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: 'var(--arc-blockstream-gold)',
+                border: '2px solid #000000',
+                boxShadow: '2px 2px 0px #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Zap size={20} color="#000000" fill="#000000" strokeWidth={2.4} />
+            </div>
+
+            {/* Brand Name Text */}
+            <span
+              className="font-space"
+              style={{
+                fontSize: '1.42rem',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                color: 'var(--arc-protocol-navy)',
+                lineHeight: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                margin: 0,
+                padding: 0
+              }}
+            >
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
           </div>

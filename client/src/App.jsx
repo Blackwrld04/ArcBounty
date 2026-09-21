@@ -564,10 +564,38 @@ export default function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--arc-protocol-navy)' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '7px',
+                background: 'var(--arc-blockstream-gold)',
+                border: '1.5px solid #000000',
+                boxShadow: '1.5px 1.5px 0px #000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Zap size={15} color="#000000" fill="#000000" strokeWidth={2.4} />
+            </div>
+            <span
+              className="font-space"
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 900,
+                color: 'var(--arc-protocol-navy)',
+                lineHeight: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                margin: 0,
+                padding: 0
+              }}
+            >
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, marginLeft: '4px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
               © 2026 ArcBounty. All rights reserved.
             </span>
           </div>
