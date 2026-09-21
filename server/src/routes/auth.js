@@ -17,7 +17,8 @@ import {
   getUserByWalletAddress,
   hashPassword,
   verifyPassword,
-  updateUserPassword
+  updateUserPassword,
+  getUserDisbursements
 } from '../db.js';
 
 export const authRouter = Router();
@@ -369,12 +370,41 @@ authRouter.get('/me', (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid or expired session' });
     }
 
+    const transactions = getUserDisbursements(user.email, user.wallet_address);
+
     return res.json({
       success: true,
-      user: formatUser(user)
+      user: formatUser(user),
+      transactions
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Failed to authenticate user' });
+  }
+});
+
+/**
+ * GET /api/auth/transactions
+ * Retrieves collected bounty payouts and transactions for the creator
+ */
+authRouter.get('/transactions', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    let user = null;
+    if (token) {
+      user = getUserByToken(token);
+    }
+
+    const email = req.query.email || (user ? user.email : null);
+    const address = req.query.address || (user ? user.wallet_address : null);
+
+    const transactions = getUserDisbursements(email, address);
+    return res.json({
+      success: true,
+      transactions
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to retrieve transactions' });
   }
 });
 

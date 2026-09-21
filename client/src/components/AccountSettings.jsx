@@ -588,7 +588,7 @@ export default function AccountSettings({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                  USDC BALANCE
+                  COLLECTED BOUNTY EARNINGS
                 </span>
                 <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#166534', border: '1px solid #166534', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
                   CHAIN ID 5042
@@ -622,21 +622,8 @@ export default function AccountSettings({
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  setWallet((prev) => ({ ...prev, balance: (prev.balance || 0) + 1000 }));
-                  alert('Claimed +$1,000 USDC from Circle Arc Faucet!');
-                }}
-                className="btn-primary"
-                style={{ padding: '10px 18px', fontSize: '0.86rem' }}
-              >
-                <Plus size={16} />
-                <span>Claim +$1,000 USDC Faucet</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setWalletModalOpen(true)}
-                className="btn-secondary"
+                className="btn-primary"
                 style={{ padding: '10px 18px', fontSize: '0.86rem' }}
               >
                 <span>Connect MetaMask / Rabby</span>

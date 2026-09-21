@@ -28,7 +28,7 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     avatar TEXT,
     wallet_address TEXT,
-    usdc_balance REAL DEFAULT 1000.0,
+    usdc_balance REAL DEFAULT 0.0,
     provider TEXT DEFAULT 'email',
     role TEXT DEFAULT 'creator',
     discipline TEXT DEFAULT 'Content',
@@ -343,7 +343,7 @@ export function createUser({
   const walletAddress = generateArcAddress();
   const defaultAvatar = avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`;
   const now = Date.now();
-  const initialBalance = 1000.0; // 1,000 USDC welcoming grant
+  const initialBalance = 0.0; // Creator collected earnings start at $0 until disbursed by admin from escrow
   const finalPasswordHash = passwordHash || (password ? hashPassword(password) : null);
 
   const insertStmt = db.prepare(`
@@ -1086,5 +1086,20 @@ export function getAdminOverviewStats() {
   };
 }
 
+/**
+ * Get all collected disbursements / payouts for a creator
+ */
+export function getUserDisbursements(userEmail, walletAddress) {
+  const email = (userEmail || '').toLowerCase();
+  const address = (walletAddress || '').toLowerCase();
 
-
+  const stmt = db.prepare(`
+    SELECT d.*, b.title as bounty_title
+    FROM disbursements d
+    LEFT JOIN bounties b ON d.bounty_id = b.id
+    WHERE (d.recipient_email IS NOT NULL AND LOWER(d.recipient_email) = ?)
+       OR (LOWER(d.recipient_address) = ?)
+    ORDER BY d.distributed_at DESC
+  `);
+  return stmt.all(email, address);
+}

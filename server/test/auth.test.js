@@ -52,7 +52,7 @@ test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
     assert.equal(user.email, testEmail);
     assert.ok(user.wallet_address.startsWith('0x'));
     assert.equal(user.discipline, 'Development');
-    assert.equal(user.usdc_balance, 1000.0);
+    assert.equal(user.usdc_balance, 0.0);
 
     const fetched = getUserByEmail(testEmail);
     assert.equal(fetched.id, user.id);

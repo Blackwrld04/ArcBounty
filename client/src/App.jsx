@@ -36,7 +36,7 @@ export default function App() {
         return {
           connected: true,
           address: u.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
-          balance: u.balance || 10000,
+          balance: typeof u.balance === 'number' ? u.balance : 0,
           type: 'simulated'
         };
       }
@@ -291,7 +291,7 @@ export default function App() {
             setWallet({
               connected: true,
               address: data.user.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
-              balance: data.user.balance || 1000,
+              balance: typeof data.user.balance === 'number' ? data.user.balance : 0,
               type: data.user.provider || 'email'
             });
             localStorage.setItem('arcbounty_session_user', JSON.stringify(data.user));
@@ -324,7 +324,7 @@ export default function App() {
     setWallet({
       connected: true,
       address: userData.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
-      balance: userData.balance || 1000,
+      balance: typeof userData.balance === 'number' ? userData.balance : 0,
       type: userData.provider || userData.type || 'email'
     });
     try {
@@ -460,6 +460,7 @@ export default function App() {
         wallet={wallet}
         setWallet={setWallet}
         network={network}
+        user={user}
       />
 
       {/* Dedicated Web3 Connect Wallet Modal */}

@@ -1,70 +1,98 @@
-import React, { useState } from 'react';
-import { X, Copy, Check, ExternalLink, ArrowUpRight, Plus, RefreshCw, Zap, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Copy, Check, ExternalLink, ShieldCheck, Coins, Award, CheckCircle, Wallet } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 
-export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, network }) {
+export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, network, user }) {
   const [copied, setCopied] = useState(false);
-  const [isFauceting, setIsFauceting] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTx, setLoadingTx] = useState(false);
+
+  const creatorAddress = wallet?.address || user?.address || '0x461cd48D95993242bB04774cc68042795586BbAd';
+  const creatorBalance = typeof wallet?.balance === 'number' ? wallet.balance : (user?.balance || 0);
+
+  // Fetch creator's authentic disbursements / payouts from the server
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchTransactions = async () => {
+      setLoadingTx(true);
+      try {
+        const token = localStorage.getItem('arcbounty_session_token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const query = user?.email ? `?email=${encodeURIComponent(user.email)}` : creatorAddress ? `?address=${encodeURIComponent(creatorAddress)}` : '';
+
+        const res = await fetch(`http://localhost:4050/api/auth/transactions${query}`, { headers });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+        }
+      } catch (err) {
+        console.error('Failed to load transactions:', err);
+      } finally {
+        setLoadingTx(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [isOpen, user?.email, creatorAddress]);
 
   if (!isOpen) return null;
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(wallet.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleAddFunds = () => {
-    setIsFauceting(true);
-    setTimeout(() => {
-      setWallet(prev => ({
-        ...prev,
-        balance: prev.balance + 1000
-      }));
-      setIsFauceting(false);
-    }, 400);
+    if (creatorAddress) {
+      navigator.clipboard.writeText(creatorAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
       <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
         {/* Drawer Header */}
-        <div style={{
-          padding: '22px 24px',
-          borderBottom: '1px solid #e2e8f0',
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between'
-        }}>
+        <div
+          style={{
+            padding: '22px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between'
+          }}
+        >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                Primary Creator Wallet
+              <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Creator Payout Wallet
               </h3>
               <button
+                type="button"
                 onClick={copyAddress}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748b',
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  color: '#475569',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  fontSize: '0.78rem',
-                  fontWeight: 600
+                  fontSize: '0.76rem',
+                  fontWeight: 700
                 }}
+                title="Copy creator address"
               >
-                <span>{truncateAddress(wallet.address)}</span>
-                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                <span>{truncateAddress(creatorAddress)}</span>
+                {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
               </button>
             </div>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', lineHeight: 1.4 }}>
-              Native Circle Arc L1 (Chain ID 5042). Instant USDC payouts from completed bounties land here.
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+              Native Circle Arc L1 (Chain ID 5042). Payouts for completed challenges are distributed here by the admin.
             </p>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             style={{
               background: '#f1f5f9',
@@ -86,200 +114,259 @@ export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, netwo
 
         {/* Scrollable Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          {/* Main Balance Box */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
-            color: '#ffffff',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 10px 20px -5px rgba(27, 49, 88, 0.25)',
-            marginBottom: '26px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.85 }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                AVAILABLE ESCROW BALANCE
+          {/* Main Balance Box: TOTAL COLLECTED EARNINGS */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              color: '#ffffff',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
+              border: '2px solid #000000',
+              marginBottom: '24px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.9 }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#94a3b8' }}>
+                TOTAL EARNINGS COLLECTED
               </span>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-                {network.name}
+              <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                {network?.name || 'Circle Arc'}
               </span>
             </div>
 
-            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-              <span className="font-space" style={{ fontSize: '2.6rem', fontWeight: 900, lineHeight: 1 }}>
-                ${wallet.balance.toLocaleString()}
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span className="font-space" style={{ fontSize: '2.7rem', fontWeight: 900, lineHeight: 1, color: '#ffffff' }}>
+                ${creatorBalance.toLocaleString()}
               </span>
-              <span style={{ fontSize: '1.2rem', fontWeight: 700, opacity: 0.9 }}>USDC</span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--arc-blockstream-gold)' }}>
+                USDC
+              </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button
-                onClick={handleAddFunds}
-                disabled={isFauceting}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '10px',
-                  background: 'var(--arc-blockstream-gold)',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <Plus size={16} />
-                <span>{isFauceting ? 'Minting...' : '+$1k Test Faucet'}</span>
-              </button>
-
-              <button
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onClick={() => alert('Withdrawal request initialized on Arc Mainnet.')}
-              >
-                <span>Withdraw</span>
-                <ArrowUpRight size={16} />
-              </button>
+            {/* Direct Payout Architecture Note (Withdraw and Test Faucet removed) */}
+            <div
+              style={{
+                marginTop: '18px',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px'
+              }}
+            >
+              <ShieldCheck size={18} color="var(--arc-blockstream-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ fontSize: '0.78rem', lineHeight: 1.45, color: '#cbd5e1' }}>
+                <strong style={{ color: '#ffffff', display: 'block', marginBottom: '2px' }}>
+                  Direct Admin Escrow Settlement
+                </strong>
+                Bounty rewards won from challenges are disbursed directly by the platform admin from the escrow contract to your creator wallet address.
+              </div>
             </div>
           </div>
 
-          {/* Assets Section */}
-          <div style={{ marginBottom: '26px' }}>
-            <h4 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              Holdings &amp; Tokens
+          {/* Connected Payout Wallet Card */}
+          <div style={{ marginBottom: '24px' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
+              Designated Payout Destination
             </h4>
 
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: '#2775ca',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '1rem'
-                }}>
-                  $
+            <div
+              style={{
+                background: '#ffffff',
+                border: '2px solid #000000',
+                boxShadow: '3px 3px 0px #000000',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: '#2775ca',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: '1rem',
+                    flexShrink: 0
+                  }}
+                >
+                  <Wallet size={18} />
                 </div>
-                <div>
+                <div style={{ overflow: 'hidden' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a' }}>Circle USDC</span>
-                    <span style={{ fontSize: '0.7rem', color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>CANONICAL</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>Circle USDC</span>
+                    <span style={{ fontSize: '0.68rem', color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                      CANONICAL
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'Geist Mono, monospace' }}>
-                    0x3600...0000
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontFamily: 'monospace', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {creatorAddress}
                   </span>
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', margin: 0 }}>
-                  ${wallet.balance.toLocaleString()}
-                </p>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>1.00 USD</p>
-              </div>
+              <button
+                type="button"
+                onClick={copyAddress}
+                style={{
+                  background: '#f8fafc',
+                  border: '1.5px solid #000',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  marginLeft: '8px'
+                }}
+              >
+                {copied ? <Check size={13} color="#16a34a" /> : <Copy size={13} />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
             </div>
           </div>
 
-          {/* Activity Section */}
+          {/* Activity Section: Real Collected Transactions */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h4 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
-                Recent Escrow Activity
+              <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                Payout Transactions ({transactions.length})
               </h4>
-              <span style={{ fontSize: '0.75rem', color: 'var(--arc-validator-blue)', fontWeight: 600 }}>
-                &lt;400ms BFT Finality
+              <span style={{ fontSize: '0.74rem', color: 'var(--arc-validator-blue)', fontWeight: 700 }}>
+                &lt;400ms Malachite BFT
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { title: 'Bounty Release: 3D Mascot Design', amount: '+$1,200 USDC', time: '1 hour ago', tx: '0xarc5042...88ad', type: 'incoming' },
-                { title: 'USDC Escrow Lock (Sponsor)', amount: '-$1,500 USDC', time: 'Yesterday', tx: '0xarc5042...b39c', type: 'outgoing' },
-                { title: 'Faucet Test Funds Claim', amount: '+$1,000 USDC', time: '2 days ago', tx: '0xarc5042...cc12', type: 'incoming' }
-              ].map((act, i) => (
+            {loadingTx ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.84rem' }}>
+                Loading transactions...
+              </div>
+            ) : transactions.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {transactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '10px',
+                      border: '2px solid #000000',
+                      boxShadow: '2px 2px 0px #000000',
+                      background: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <p style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                        {tx.bounty_title || 'Bounty Challenge Reward'}
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '3px 0 0 0', fontFamily: 'monospace' }}>
+                        {new Date(tx.distributed_at).toLocaleDateString()} · {truncateAddress(tx.tx_hash)}
+                      </p>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        style={{
+                          fontWeight: 900,
+                          fontSize: '0.92rem',
+                          color: '#16a34a',
+                          background: '#dcfce7',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #16a34a',
+                          display: 'inline-block'
+                        }}
+                      >
+                        +${tx.amount.toLocaleString()} USDC
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: '24px 20px',
+                  borderRadius: '12px',
+                  border: '2px dashed #cbd5e1',
+                  background: '#f8fafc',
+                  textAlign: 'center'
+                }}
+              >
                 <div
-                  key={i}
                   style={{
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: '#e2e8f0',
+                    border: '1.5px solid #000000',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'center',
+                    margin: '0 auto 10px auto'
                   }}
                 >
-                  <div>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
-                      {act.title}
-                    </p>
-                    <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0, fontFamily: 'Geist Mono, monospace' }}>
-                      {act.time} · {act.tx}
-                    </p>
-                  </div>
-
-                  <span style={{
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    color: act.type === 'incoming' ? '#16a34a' : '#0f172a'
-                  }}>
-                    {act.amount}
-                  </span>
+                  <Award size={20} color="#0f172a" />
                 </div>
-              ))}
-            </div>
+                <h5 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>
+                  No Bounty Payouts Collected Yet
+                </h5>
+                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+                  Participate in open challenges on ArcBounty. When your work is approved, your USDC reward will be disbursed directly from escrow to your wallet and logged here.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Drawer Footer */}
-        <div style={{
-          padding: '16px 24px',
-          borderTop: '1px solid #e2e8f0',
-          background: '#f8fafc',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.78rem',
-          color: '#64748b'
-        }}>
-          <span>Circle Arc Malachite BFT</span>
+        <div
+          style={{
+            padding: '16px 24px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#f8fafc',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.78rem',
+            color: '#64748b'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 700, color: '#0f172a' }}>Escrow:</span>
+            <span style={{ fontFamily: 'monospace' }}>0x8b41...31cE</span>
+          </div>
           <a
             href="https://explorer.arc.io"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: 'var(--arc-validator-blue)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+            style={{
+              color: 'var(--arc-validator-blue)',
+              fontWeight: 700,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
           >
             <span>View on ArcScan</span>
-            <ExternalLink size={12} />
+            <ExternalLink size={13} />
           </a>
         </div>
       </div>

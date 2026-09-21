@@ -39,12 +39,6 @@ export default function WalletModal({
     }
   };
 
-  const handleAddFaucetFunds = () => {
-    setWallet((prev) => ({
-      ...prev,
-      balance: prev.balance + 1000
-    }));
-  };
 
   return (
     <div
@@ -150,31 +144,19 @@ export default function WalletModal({
           marginBottom: '20px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#000000' }}>ACCOUNT BALANCE</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#000000' }}>COLLECTED BOUNTY EARNINGS</span>
             <span className="brutal-badge" style={{ background: '#ffffff', color: '#000000', fontSize: '0.7rem' }}>
-              {wallet.type === 'browser' ? 'MetaMask / Rabby' : 'Simulated Wallet'}
+              {wallet.type === 'browser' ? 'MetaMask / Rabby' : 'Designated Wallet'}
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <div>
-              <p className="font-space" style={{ fontSize: '1.9rem', fontWeight: 900, color: '#000000', lineHeight: 1 }}>
-                ${wallet.balance.toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 800 }}>USDC</span>
-              </p>
-              <p style={{ fontSize: '0.75rem', color: '#1f2937', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '4px' }}>
-                {wallet.address}
-              </p>
-            </div>
-
-            <button
-              onClick={handleAddFaucetFunds}
-              className="brutal-btn brutal-btn-white"
-              style={{ padding: '6px 10px', fontSize: '0.78rem' }}
-              title="Add simulated USDC"
-            >
-              <Plus size={14} strokeWidth={3} />
-              <span>+$1k USDC</span>
-            </button>
+          <div>
+            <p className="font-space" style={{ fontSize: '1.9rem', fontWeight: 900, color: '#000000', lineHeight: 1, margin: 0 }}>
+              ${(wallet.balance || 0).toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 800 }}>USDC</span>
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#1f2937', fontFamily: 'Geist Mono, monospace', fontWeight: 700, marginTop: '6px', margin: '6px 0 0 0' }}>
+              {wallet.address}
+            </p>
           </div>
         </div>
 

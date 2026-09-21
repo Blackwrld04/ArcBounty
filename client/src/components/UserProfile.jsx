@@ -383,10 +383,10 @@ export default function UserProfile({
             >
               <div style={{ textAlign: 'center' }}>
                 <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                  ${(wallet?.balance || 1000).toLocaleString()}
+                  ${(wallet?.balance || 0).toLocaleString()}
                 </p>
                 <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '2px 0 0 0', fontWeight: 700 }}>
-                  USDC BALANCE
+                  EARNINGS COLLECTED
                 </p>
               </div>
 
