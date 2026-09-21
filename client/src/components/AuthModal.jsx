@@ -3,6 +3,7 @@ import {
   X,
   Check,
   ArrowRight,
+  ArrowLeft,
   Wallet,
   ShieldCheck,
   Zap,
@@ -20,23 +21,50 @@ import {
   Lock,
   Eye,
   EyeOff,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const API_BASE = 'http://localhost:4050/api/auth';
 
 const DISCIPLINES = [
-  { id: 'Design', label: 'Design', icon: Palette },
-  { id: 'Content', label: 'Content', icon: FileText },
-  { id: 'Development', label: 'Dev', icon: Code2 },
-  { id: 'All Social', label: 'Social', icon: Share2 },
-  { id: 'Other', label: 'Other', icon: Layers }
+  {
+    id: 'Design',
+    label: 'Design',
+    desc: 'UI/UX, 3D Renders, Motion Graphics, Branding Kits',
+    icon: Palette
+  },
+  {
+    id: 'Content',
+    label: 'Content',
+    desc: 'Explainer Videos, Deep-Dive Threads, Technical Guides',
+    icon: FileText
+  },
+  {
+    id: 'Development',
+    label: 'Development',
+    desc: 'Smart Contracts, Frontends, DeFi Integrations, Bots',
+    icon: Code2
+  },
+  {
+    id: 'All Social',
+    label: 'All Social',
+    desc: 'Viral X/Twitter Posts, Memes, Community Moderation',
+    icon: Share2
+  },
+  {
+    id: 'Other',
+    label: 'Other',
+    desc: 'Protocol Research, Documentation Translation, Growth',
+    icon: Layers
+  }
 ];
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
   const [step, setStep] = useState('input'); // 'input', 'otp', 'google_auth'
+  const [signupSlide, setSignupSlide] = useState(1); // 1: Name & Handle, 2: Specialty, 3: Email & Password
   const [loginWithOtp, setLoginWithOtp] = useState(false); // toggle passwordless login
 
   // Credentials
@@ -70,6 +98,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     if (isOpen) {
       setMode(initialMode);
       setStep('input');
+      setSignupSlide(1);
       setLoginWithOtp(false);
       setEmail('');
       setPassword('');
@@ -182,14 +211,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Standard Registration Flow: validates inputs, hashes password, and dispatches 6-digit OTP to Gmail
-  const handleSignupSubmit = async (e) => {
+  // Slide 1 Next Validation
+  const handleSlide1Next = (e) => {
     e.preventDefault();
-    setErrorMessage('');
-
     const cleanName = name.trim();
     const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanName) {
       setErrorMessage('Please enter your full name.');
@@ -199,6 +225,29 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       setErrorMessage('Please choose a handle with at least 3 characters.');
       return;
     }
+
+    setErrorMessage('');
+    setSignupSlide(2);
+  };
+
+  // Slide 2 Next Validation
+  const handleSlide2Next = (e) => {
+    e.preventDefault();
+    if (!discipline) {
+      setErrorMessage('Please select your primary specialty.');
+      return;
+    }
+    setErrorMessage('');
+    setSignupSlide(3);
+  };
+
+  // Slide 3 Final Signup Submit
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    const cleanEmail = email.trim().toLowerCase();
+
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       setErrorMessage('Please enter a valid email address.');
       return;
@@ -219,8 +268,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: cleanName,
-          username: cleanUsername,
+          name: name.trim(),
+          username: username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ''),
           email: cleanEmail,
           password,
           discipline
@@ -452,13 +501,15 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
+  const currentStepNumber = mode === 'login' ? 1 : step === 'otp' ? 4 : signupSlide;
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="clean-card"
         style={{
           width: '100%',
-          maxWidth: '840px',
+          maxWidth: '860px',
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
@@ -498,10 +549,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         {/* Brand Left Panel (Circle Arc Dark Navy) */}
         <div
           style={{
-            width: '36%',
+            width: '34%',
             background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
             color: '#ffffff',
-            padding: '32px 24px',
+            padding: '32px 22px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -538,13 +589,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
             </h3>
 
             <p style={{ fontSize: '0.82rem', opacity: 0.9, lineHeight: 1.5, marginBottom: '22px' }}>
-              Industry-standard password security, genuine Gmail inbox verification, and instant USDC settlement on Circle Arc.
+              Join the institutional creative layer on Circle Arc with sub-second payouts and verified proof of work.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.78rem' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>Secure password hashing using Node scrypt cryptography.</span>
+                <span>Step-by-step guided onboarding designed for creators.</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -552,7 +603,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                 <ShieldCheck size={16} color="#ffcc6f" strokeWidth={2.5} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>Cryptographic Web3 wallet sign-in via EIP-4361 standard.</span>
+                <span>Gasless USDC escrow payments direct to your Arc wallet.</span>
               </div>
             </div>
           </div>
@@ -593,7 +644,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         <div
           style={{
             flex: 1,
-            padding: '32px 28px',
+            padding: '30px 28px',
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
@@ -655,85 +706,157 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
             </div>
           )}
 
+          {/* Top Switcher (Login vs Sign Up) */}
+          <div
+            style={{
+              display: 'flex',
+              background: '#f1f5f9',
+              border: '2px solid #000000',
+              borderRadius: '8px',
+              padding: '3px',
+              marginBottom: '18px'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setStep('input');
+                setErrorMessage('');
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: mode === 'login' ? '2px solid #000000' : '2px solid transparent',
+                background: mode === 'login' ? '#ffffff' : 'transparent',
+                boxShadow: mode === 'login' ? '2px 2px 0px #000000' : 'none',
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                color: mode === 'login' ? '#000000' : '#64748b',
+                transition: 'all 0.1s ease'
+              }}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setStep('input');
+                setSignupSlide(1);
+                setErrorMessage('');
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: mode === 'signup' ? '2px solid #000000' : '2px solid transparent',
+                background: mode === 'signup' ? '#ffffff' : 'transparent',
+                boxShadow: mode === 'signup' ? '2px 2px 0px #000000' : 'none',
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                color: mode === 'signup' ? '#000000' : '#64748b',
+                transition: 'all 0.1s ease'
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Stepper Indicator for Progressive Signup */}
+          {mode === 'signup' && (
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                {[
+                  { num: 1, label: 'Identity' },
+                  { num: 2, label: 'Specialty' },
+                  { num: 3, label: 'Password' },
+                  { num: 4, label: 'Verify Email' }
+                ].map((s, idx) => {
+                  const isCompleted = currentStepNumber > s.num;
+                  const isActive = currentStepNumber === s.num;
+                  return (
+                    <React.Fragment key={s.num}>
+                      <div
+                        onClick={() => {
+                          if (step !== 'otp' && isCompleted) {
+                            setSignupSlide(s.num);
+                            setErrorMessage('');
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: isCompleted ? 'pointer' : 'default'
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '50%',
+                            border: '2px solid #000000',
+                            background: isCompleted ? '#10b981' : isActive ? 'var(--arc-blockstream-gold)' : '#ffffff',
+                            color: isCompleted ? '#ffffff' : '#000000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 900,
+                            fontSize: '0.75rem',
+                            boxShadow: isActive ? '1.5px 1.5px 0px #000000' : 'none'
+                          }}
+                        >
+                          {isCompleted ? <Check size={14} strokeWidth={3} /> : s.num}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '0.76rem',
+                            fontWeight: isActive ? 900 : 700,
+                            color: isActive ? '#000000' : isCompleted ? '#10b981' : '#94a3b8'
+                          }}
+                          className="desktop-only"
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                      {idx < 3 && (
+                        <div
+                          style={{
+                            flex: 1,
+                            height: '2px',
+                            background: currentStepNumber > idx + 1 ? '#000000' : '#e2e8f0',
+                            margin: '0 4px'
+                          }}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ========================================================= */}
-          {/* STEP 1: LOGIN OR SIGNUP FORM                              */}
+          {/* LOGIN FLOW                                                */}
           {/* ========================================================= */}
-          {step === 'input' && (
+          {mode === 'login' && step === 'input' && (
             <div>
               <div style={{ marginBottom: '18px' }}>
-                {/* Tab Switcher: Login vs Sign Up */}
-                <div
-                  style={{
-                    display: 'flex',
-                    background: '#f1f5f9',
-                    border: '2px solid #000000',
-                    borderRadius: '8px',
-                    padding: '3px',
-                    marginBottom: '16px'
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('login');
-                      setErrorMessage('');
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: mode === 'login' ? '2px solid #000000' : '2px solid transparent',
-                      background: mode === 'login' ? '#ffffff' : 'transparent',
-                      boxShadow: mode === 'login' ? '2px 2px 0px #000000' : 'none',
-                      fontWeight: 800,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      color: mode === 'login' ? '#000000' : '#64748b',
-                      transition: 'all 0.1s ease'
-                    }}
-                  >
-                    Log In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signup');
-                      setErrorMessage('');
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: mode === 'signup' ? '2px solid #000000' : '2px solid transparent',
-                      background: mode === 'signup' ? '#ffffff' : 'transparent',
-                      boxShadow: mode === 'signup' ? '2px 2px 0px #000000' : 'none',
-                      fontWeight: 800,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      color: mode === 'signup' ? '#000000' : '#64748b',
-                      transition: 'all 0.1s ease'
-                    }}
-                  >
-                    Sign Up
-                  </button>
-                </div>
-
                 <h3 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: 0 }}>
-                  {mode === 'login' ? 'Welcome Back' : 'Create Creator Account'}
+                  Welcome Back
                 </h3>
                 <p style={{ fontSize: '0.84rem', color: '#4b5563', marginTop: '4px', fontWeight: 500 }}>
-                  {mode === 'login'
-                    ? 'Enter your account credentials to access your bounties and earnings.'
-                    : 'Set up your credentials and verify your email to start earning.'}
+                  Enter your credentials to access your bounties and USDC balance.
                 </p>
               </div>
 
-              {/* ---------------------------------------------------- */}
-              {/* LOGIN FORM                                           */}
-              {/* ---------------------------------------------------- */}
-              {mode === 'login' && !loginWithOtp && (
+              {!loginWithOtp ? (
+                /* Standard Password Login */
                 <form onSubmit={handlePasswordLogin} style={{ marginBottom: '16px' }}>
-                  {/* Email / Username */}
                   <div style={{ marginBottom: '14px' }}>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
                       Email Address or Username
@@ -765,7 +888,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     </div>
                   </div>
 
-                  {/* Password */}
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
@@ -828,7 +950,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                           cursor: 'pointer',
                           color: '#64748b'
                         }}
-                        title={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -851,12 +972,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <ArrowRight size={16} />
                   </button>
                 </form>
-              )}
-
-              {/* ---------------------------------------------------- */}
-              {/* PASSWORDLESS OTP LOGIN FORM (FALLBACK)               */}
-              {/* ---------------------------------------------------- */}
-              {mode === 'login' && loginWithOtp && (
+              ) : (
+                /* Fallback OTP Login */
                 <form onSubmit={handleSendOtpCode} style={{ marginBottom: '16px' }}>
                   <div style={{ marginBottom: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -921,104 +1038,59 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                       cursor: isLoading ? 'wait' : 'pointer'
                     }}
                   >
-                    <span>{isLoading ? 'Dispatching Verification Email...' : 'Send Sign-In Code to Gmail'}</span>
+                    <span>{isLoading ? 'Dispatching Email...' : 'Send Sign-In Code to Gmail'}</span>
                     <ArrowRight size={16} />
                   </button>
                 </form>
               )}
+            </div>
+          )}
 
-              {/* ---------------------------------------------------- */}
-              {/* SIGN UP FORM (FULL REGISTRATION WITH PASSWORD)       */}
-              {/* ---------------------------------------------------- */}
-              {mode === 'signup' && (
-                <form onSubmit={handleSignupSubmit} style={{ marginBottom: '16px' }}>
-                  {/* Name & Username in 2 columns */}
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
-                        Full Name *
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <User
-                          size={16}
-                          color="#64748b"
-                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="e.g. Satoshi Nakamoto"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          required
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px 10px 32px',
-                            borderRadius: '6px',
-                            border: '2px solid #000000',
-                            boxShadow: '2px 2px 0px #000000',
-                            fontSize: '0.86rem',
-                            fontWeight: 600,
-                            outline: 'none'
-                          }}
-                        />
-                      </div>
+          {/* ========================================================= */}
+          {/* PROGRESSIVE SIGNUP SLIDES                                  */}
+          {/* ========================================================= */}
+          {mode === 'signup' && step === 'input' && (
+            <div>
+              {/* SLIDE 1: CREATOR IDENTITY (NAME & HANDLE) */}
+              {signupSlide === 1 && (
+                <form onSubmit={handleSlide1Next} className="slide-step">
+                  <div style={{ marginBottom: '18px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fffae6', border: '1.5px solid #000', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '6px' }}>
+                      <User size={13} />
+                      <span>STEP 1 OF 3: CREATOR IDENTITY</span>
                     </div>
-
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
-                        Handle (@) *
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <AtSign
-                          size={15}
-                          color="#64748b"
-                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="satoshi"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                          required
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px 10px 30px',
-                            borderRadius: '6px',
-                            border: '2px solid #000000',
-                            boxShadow: '2px 2px 0px #000000',
-                            fontSize: '0.86rem',
-                            fontWeight: 600,
-                            outline: 'none'
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <h3 className="font-space" style={{ fontSize: '1.35rem', fontWeight: 900, color: '#000000', margin: 0 }}>
+                      What should we call you?
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: '#4b5563', marginTop: '3px', fontWeight: 500 }}>
+                      Set your public display name and creator handle on Circle Arc.
+                    </p>
                   </div>
 
-                  {/* Email */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
-                      Email Address *
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
+                      Full Name *
                     </label>
                     <div style={{ position: 'relative' }}>
-                      <Mail
-                        size={16}
+                      <User
+                        size={17}
                         color="#64748b"
-                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
                       />
                       <input
-                        type="email"
-                        placeholder="your.email@gmail.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        type="text"
+                        placeholder="e.g. Satoshi Nakamoto"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        autoFocus
                         required
                         style={{
                           width: '100%',
-                          padding: '10px 12px 10px 32px',
-                          borderRadius: '6px',
+                          padding: '11px 14px 11px 38px',
+                          borderRadius: '8px',
                           border: '2px solid #000000',
                           boxShadow: '2px 2px 0px #000000',
-                          fontSize: '0.86rem',
+                          fontSize: '0.9rem',
                           fontWeight: 600,
                           outline: 'none'
                         }}
@@ -1026,41 +1098,194 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     </div>
                   </div>
 
-                  {/* Discipline Selection */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
-                      Primary Specialty
+                  <div style={{ marginBottom: '22px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, marginBottom: '6px', color: '#1e293b' }}>
+                      Creator Handle (@) *
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
-                      {DISCIPLINES.map((item) => {
-                        const Icon = item.icon;
-                        const isSelected = discipline === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => setDiscipline(item.id)}
+                    <div style={{ position: 'relative' }}>
+                      <AtSign
+                        size={16}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="satoshi"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px 11px 36px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                      Your unique link: arcbounty.io/@{username || 'handle'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '0.92rem',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <span>Continue to Primary Specialty</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              )}
+
+              {/* SLIDE 2: PRIMARY SPECIALTY */}
+              {signupSlide === 2 && (
+                <form onSubmit={handleSlide2Next} className="slide-step">
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#e0f2fe', border: '1.5px solid #000', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '6px' }}>
+                      <Sparkles size={13} color="#0369a1" />
+                      <span>STEP 2 OF 3: PRIMARY SPECIALTY</span>
+                    </div>
+                    <h3 className="font-space" style={{ fontSize: '1.35rem', fontWeight: 900, color: '#000000', margin: 0 }}>
+                      What is your primary craft?
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: '#4b5563', marginTop: '3px', fontWeight: 500 }}>
+                      Tailors which bounties and sponsor challenges are surfaced to you first.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                    {DISCIPLINES.map((item) => {
+                      const Icon = item.icon;
+                      const isSelected = discipline === item.id;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => setDiscipline(item.id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: isSelected ? '2.5px solid #000000' : '1.5px solid #cbd5e1',
+                            background: isSelected ? '#fffae6' : '#ffffff',
+                            boxShadow: isSelected ? '3px 3px 0px #000000' : 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.1s ease'
+                          }}
+                        >
+                          <div
                             style={{
-                              padding: '6px 4px',
+                              width: '32px',
+                              height: '32px',
                               borderRadius: '6px',
-                              border: isSelected ? '2px solid #000000' : '1.5px solid #cbd5e1',
-                              background: isSelected ? '#fffae6' : '#ffffff',
-                              boxShadow: isSelected ? '2px 2px 0px #000000' : 'none',
+                              background: isSelected ? 'var(--arc-blockstream-gold)' : '#f1f5f9',
+                              border: '1.5px solid #000000',
                               display: 'flex',
-                              flexDirection: 'column',
                               alignItems: 'center',
-                              gap: '3px',
-                              cursor: 'pointer',
-                              transition: 'all 0.1s ease'
+                              justifyContent: 'center',
+                              flexShrink: 0
                             }}
                           >
-                            <Icon size={14} color={isSelected ? '#000000' : '#64748b'} strokeWidth={2.2} />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: isSelected ? '#000000' : '#475569' }}>
+                            <Icon size={16} color="#000000" strokeWidth={2.4} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a' }}>
                               {item.label}
-                            </span>
-                          </button>
-                        );
-                      })}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                              {item.desc}
+                            </div>
+                          </div>
+                          {isSelected && <Check size={18} color="#16a34a" strokeWidth={3} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSignupSlide(1)}
+                      className="btn-secondary"
+                      style={{ padding: '12px 18px', borderRadius: '8px', gap: '6px' }}
+                    >
+                      <ArrowLeft size={16} />
+                      <span>Back</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '0.92rem',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <span>Continue to Security</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* SLIDE 3: EMAIL & PASSWORD SECURITY */}
+              {signupSlide === 3 && (
+                <form onSubmit={handleSignupSubmit} className="slide-step">
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dcfce7', border: '1.5px solid #000', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, marginBottom: '6px' }}>
+                      <Lock size={13} color="#166534" />
+                      <span>STEP 3 OF 3: CREDENTIALS</span>
+                    </div>
+                    <h3 className="font-space" style={{ fontSize: '1.35rem', fontWeight: 900, color: '#000000', margin: 0 }}>
+                      Set email &amp; password
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: '#4b5563', marginTop: '3px', fontWeight: 500 }}>
+                      We will dispatch a 6-digit verification code to this Gmail address.
+                    </p>
+                  </div>
+
+                  {/* Email */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '4px', color: '#1e293b' }}>
+                      Email Address (Gmail Inbox) *
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Mail
+                        size={16}
+                        color="#64748b"
+                        style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+                      />
+                      <input
+                        type="email"
+                        placeholder="your.email@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        autoFocus
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px 10px 36px',
+                          borderRadius: '8px',
+                          border: '2px solid #000000',
+                          boxShadow: '2px 2px 0px #000000',
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          outline: 'none'
+                        }}
+                      />
                     </div>
                   </div>
 
@@ -1086,7 +1311,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                           style={{
                             width: '100%',
                             padding: '10px 32px 10px 30px',
-                            borderRadius: '6px',
+                            borderRadius: '8px',
                             border: '2px solid #000000',
                             boxShadow: '2px 2px 0px #000000',
                             fontSize: '0.86rem',
@@ -1134,7 +1359,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                           style={{
                             width: '100%',
                             padding: '10px 32px 10px 30px',
-                            borderRadius: '6px',
+                            borderRadius: '8px',
                             border: '2px solid #000000',
                             boxShadow: '2px 2px 0px #000000',
                             fontSize: '0.86rem',
@@ -1164,7 +1389,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   </div>
 
                   {/* Password validation indicators */}
-                  <div style={{ display: 'flex', gap: '14px', marginBottom: '16px', fontSize: '0.72rem' }}>
+                  <div style={{ display: 'flex', gap: '14px', marginBottom: '18px', fontSize: '0.72rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: password.length >= 8 ? '#166534' : '#64748b' }}>
                       <Check size={12} strokeWidth={3} />
                       <span>At least 8 characters</span>
@@ -1175,127 +1400,43 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="btn-primary"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      fontSize: '0.92rem',
-                      justifyContent: 'center',
-                      cursor: isLoading ? 'wait' : 'pointer'
-                    }}
-                  >
-                    <span>{isLoading ? 'Creating Account & Sending Code...' : 'Create Account & Verify Email'}</span>
-                    <ArrowRight size={16} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSignupSlide(2)}
+                      className="btn-secondary"
+                      style={{ padding: '12px 18px', borderRadius: '8px', gap: '6px' }}
+                    >
+                      <ArrowLeft size={16} />
+                      <span>Back</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="btn-primary"
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '0.92rem',
+                        justifyContent: 'center',
+                        cursor: isLoading ? 'wait' : 'pointer'
+                      }}
+                    >
+                      <span>{isLoading ? 'Sending 6-Digit Code...' : 'Create Account & Verify Email'}</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
                 </form>
               )}
-
-              {/* Divider */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  margin: '14px 0',
-                  color: '#94a3b8',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.05em'
-                }}
-              >
-                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                <span>OR CONTINUE WITH</span>
-                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-              </div>
-
-              {/* Web3 & Google Verification */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={handleCryptographicWalletAuth}
-                  disabled={isLoading}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: '#acc6e9',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.86rem',
-                    fontWeight: 800,
-                    color: '#1b3158',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease'
-                  }}
-                >
-                  <Wallet size={16} />
-                  <span>Sign In with Web3 Wallet (EIP-4361 SIWE)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setErrorMessage('');
-                    setStep('google_auth');
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    background: '#ffffff',
-                    border: '2px solid #000000',
-                    boxShadow: '2px 2px 0px #000000',
-                    fontSize: '0.86rem',
-                    fontWeight: 700,
-                    color: '#000000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease'
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                    />
-                  </svg>
-                  <span>Continue with Google</span>
-                </button>
-              </div>
-
-              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '14px', margin: '14px 0 0 0' }}>
-                Protected by Circle Arc Protocol cryptographic authentication.
-              </p>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* STEP 2: REAL 6-DIGIT EMAIL CODE ENTRY                     */}
+          {/* STEP 4 / 'otp': REAL 6-DIGIT EMAIL CODE VERIFICATION       */}
           {/* ========================================================= */}
           {step === 'otp' && (
-            <div>
+            <div className="slide-step">
               <div style={{ marginBottom: '18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div
@@ -1312,16 +1453,17 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   >
                     <KeyRound size={16} color="#000000" />
                   </div>
-                  <h3 className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: 0 }}>
+                  <h3 className="font-space" style={{ fontSize: '1.4rem', fontWeight: 900, color: '#000000', margin: 0 }}>
                     Check Your Gmail Inbox
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.86rem', color: '#4b5563', margin: 0, fontWeight: 500 }}>
-                  We dispatched a 6-digit verification code to <strong style={{ color: '#000000' }}>{email}</strong>.
+                  We dispatched a single-use 6-digit code to <strong style={{ color: '#000000' }}>{email}</strong>.
                   <button
                     type="button"
                     onClick={() => {
                       setStep('input');
+                      setSignupSlide(3);
                       setErrorMessage('');
                     }}
                     style={{
@@ -1334,12 +1476,12 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                       textDecoration: 'underline'
                     }}
                   >
-                    Edit email
+                    Change
                   </button>
                 </p>
               </div>
 
-              {/* Dispatched Preview Notice */}
+              {/* Real Email Dispatched Preview Notice */}
               {emailPreviewUrl && (
                 <div
                   style={{
@@ -1354,7 +1496,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   }}
                 >
                   <div style={{ fontSize: '0.78rem', color: '#1b3158', fontWeight: 700 }}>
-                    Real email dispatched via SMTP.
+                    Real email dispatched via Gmail SMTP.
                   </div>
                   <a
                     href={emailPreviewUrl}
@@ -1420,14 +1562,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     cursor: otp.join('').length === 6 && !isLoading ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  <span>{isLoading ? 'Verifying Code...' : 'Verify Code & Access Account'}</span>
+                  <span>{isLoading ? 'Activating Account...' : 'Verify Code & Launch Account'}</span>
                   <ArrowRight size={16} />
                 </button>
               </form>
 
               {/* Resend Code Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', fontSize: '0.8rem' }}>
-                <span style={{ color: '#64748b' }}>Didn't receive the email? Check spam folder or</span>
+                <span style={{ color: '#64748b' }}>Didn't receive email? Check spam or</span>
                 {resendCooldown > 0 ? (
                   <span style={{ color: '#94a3b8', fontWeight: 700 }}>
                     Resend in {resendCooldown}s
@@ -1458,8 +1600,101 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
 
           {/* ========================================================= */}
-          {/* STEP 3: GOOGLE AUTHENTICATION                             */}
+          {/* ALTERNATIVE LOGIN / SIGN IN WITH WALLET OR GOOGLE        */}
           {/* ========================================================= */}
+          {step === 'input' && (
+            <div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  margin: '16px 0 12px 0',
+                  color: '#94a3b8',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.05em'
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                <span>OR {mode === 'signup' ? 'REGISTER' : 'CONTINUE'} WITH</span>
+                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleCryptographicWalletAuth}
+                  disabled={isLoading}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: '#acc6e9',
+                    border: '2px solid #000000',
+                    boxShadow: '2px 2px 0px #000000',
+                    fontSize: '0.84rem',
+                    fontWeight: 800,
+                    color: '#1b3158',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Wallet size={15} />
+                  <span>Connect Web3 Wallet (EIP-4361 SIWE)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMessage('');
+                    setStep('google_auth');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '9px 14px',
+                    borderRadius: '8px',
+                    background: '#ffffff',
+                    border: '2px solid #000000',
+                    boxShadow: '2px 2px 0px #000000',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#000000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* GOOGLE AUTHENTICATION SCREEN */}
           {step === 'google_auth' && (
             <div>
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -1545,7 +1780,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   className="btn-primary"
                   style={{ width: '100%', padding: '12px', fontSize: '0.92rem', justifyContent: 'center' }}
                 >
-                  <span>{isLoading ? 'Authenticating with Google...' : 'Continue with Google Account'}</span>
+                  <span>{isLoading ? 'Authenticating...' : 'Continue with Google Account'}</span>
                   <ArrowRight size={16} />
                 </button>
               </form>
