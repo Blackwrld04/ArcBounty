@@ -2,7 +2,7 @@
   "name": "arcbounty-root",
   "version": "1.0.0",
   "type": "module",
-  "description": "ArcBounty — Decentralized Developer & AI Agent Bounty Platform on Circle Arc",
+  "description": "ArcBounty — Open Bounty & Proof-of-Work Protocol for Web3 Creators on Circle Arc",
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix client",

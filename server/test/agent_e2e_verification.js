@@ -1,5 +1,5 @@
 /**
- * ArcBounty End-to-End Autonomous Agent Verification Suite
+ * ArcBounty End-to-End System Verification Suite
  * Simulates complete User Journey, Sponsor Journey, Admin Governance Journey, and Security Boundaries
  */
 
@@ -31,7 +31,7 @@ function assert(condition, message) {
 
 async function runAgentVerification() {
   console.log('===========================================================');
-  console.log('🚀 STARTING ARCTBOUNTY FULL END-TO-END AUTONOMOUS AUDIT');
+  console.log('🚀 STARTING ARCTBOUNTY FULL END-TO-END SYSTEM AUDIT');
   console.log('===========================================================\n');
 
   const timestamp = Date.now();
@@ -128,7 +128,7 @@ async function runAgentVerification() {
       category: 'DEVELOPMENT',
       categoryName: 'Smart Contracts & Infrastructure',
       amount: 1000,
-      description: 'Design and benchmark a sub-second autonomous agent settlement pipeline on Circle Arc L1.',
+      description: 'Design and benchmark a sub-second creator settlement pipeline on Circle Arc L1.',
       maintainerName: 'Agent Sponsor Lab',
       maintainerEmail: testUserEmail,
       deadlineDays: 7
@@ -233,7 +233,7 @@ async function runAgentVerification() {
     body: JSON.stringify({
       submissionUrl: deliverableUrl,
       walletAddress: contribWallet,
-      notes: 'Initial release: Autonomous agent bridge with sub-second finality.',
+      notes: 'Initial release: High-performance bridge with sub-second finality.',
       creatorName: 'Contributor Bot',
       creatorEmail: contributorEmail,
       solverType: 'Human Creator',
@@ -331,7 +331,7 @@ async function runAgentVerification() {
   }
 
   console.log('\n===========================================================');
-  console.log('🎉 ALL END-TO-END AUTONOMOUS AGENT AUDIT TESTS PASSED (100%)');
+  console.log('🎉 ALL END-TO-END SYSTEM AUDIT TESTS PASSED (100%)');
   console.log('===========================================================');
 }
 

@@ -65,8 +65,8 @@ export default function LegalModal({ type, onClose }) {
           </div>
 
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>10. Autonomous AI Agent Participation</strong>
-            Autonomous AI agents and automated solvers may participate in designated AI-eligible challenges. Operators of automated agents bear full legal and financial responsibility for their agents' outputs, code quality, and compliance with anti-spam rate limits.
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>10. Contributor Quality & Originality Standards</strong>
+            All submissions must be original, high-integrity deliverables produced by the submitting creator or team. Plagiarism, unlicensed asset redistribution, and deceptive submissions are strictly prohibited and result in permanent disqualification.
           </div>
 
           <div>
@@ -94,7 +94,7 @@ export default function LegalModal({ type, onClose }) {
               { id: 'arc-engine', label: 'Arc Engine' },
               { id: 'creators', label: 'For Creators' },
               { id: 'sponsors', label: 'For Sponsors' },
-              { id: 'ai-agents', label: 'AI Agents' },
+              { id: 'developer-api', label: 'Developer API' },
               { id: 'faq', label: 'FAQ' }
             ].map(tab => (
               <button
@@ -240,22 +240,23 @@ export default function LegalModal({ type, onClose }) {
             </div>
           )}
 
-          {/* Tab 5: AI Agents */}
-          {activeDocsTab === 'ai-agents' && (
+          {/* Tab 5: Developer API */}
+          {activeDocsTab === 'developer-api' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ background: '#f8fafc', border: '1.5px solid #000000', borderRadius: '8px', padding: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <Terminal size={18} color="#000000" />
-                  <strong style={{ color: '#0f172a' }}>Autonomous Solver Integration</strong>
+                  <strong style={{ color: '#0f172a' }}>Developer REST API & Telemetry</strong>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>
-                  ArcBounty challenges can be solved by autonomous coding agents and LLM-driven software bots.
+                  ArcBounty provides a high-throughput REST API for querying real-time protocol metrics, challenge feeds, and on-chain escrow states.
                 </p>
               </div>
 
               <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <li><strong>PR Automation:</strong> Automated agents authenticate via API tokens and submit PR links directly through REST endpoints.</li>
-                <li><strong>Proof of Work:</strong> Agent submissions must include executable code, automated test suites, and documentation. Hallucinated or non-compiling entries are automatically rejected.</li>
+                <li><strong>Public Bounties Feed:</strong> Query live challenges across categories via <code>GET /api/bounties</code>.</li>
+                <li><strong>Realtime Protocol Telemetry:</strong> Access aggregate platform volume, settled tasks, and escrow telemetry via <code>GET /api/stats</code>.</li>
+                <li><strong>On-Chain Proofs:</strong> Query verified settlement transaction hashes directly against Circle Arc Mainnet RPC.</li>
               </ul>
             </div>
           )}

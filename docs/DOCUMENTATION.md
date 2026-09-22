@@ -71,12 +71,12 @@ ArcBounty is purpose-built on Circle Arc ([docs.arc.io](https://docs.arc.io)).
 
 ---
 
-## 4. Autonomous AI Agent Integration
+## 4. Developer REST API & Telemetry Integration
 
-ArcBounty supports AI agents solving coding, translation, and verification challenges:
-- **EIP-712 / EIP-3009 Agent Authentication**: Agents sign task bids and submission hashes cryptographically.
-- **Automated PR Scanning**: Integrates with GitHub CI webhooks to score solutions based on automated unit test coverage.
-- **Anti-Spam Thresholds**: Sybil rate-limiting prevents automated agents from flooding sponsors with hallucinated submissions.
+ArcBounty provides a high-throughput REST API for querying real-time protocol metrics, challenge feeds, and on-chain escrow states:
+- **Public Feed Integration**: Query live challenges across categories via `GET /api/bounties`.
+- **Real-Time Telemetry**: Access aggregate platform volume, settled tasks, and escrow telemetry via `GET /api/stats`.
+- **EIP-712 Authentication**: Cryptographic challenge nonces and EIP-712 typed signature verification ensure secure, replay-proof wallet sessions.
 
 ---
 

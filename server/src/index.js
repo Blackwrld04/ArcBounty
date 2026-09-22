@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
 import { bountyRouter } from './routes/bounties.js';
-import { agentRouter } from './routes/agent.js';
 import { statsRouter } from './routes/stats.js';
 import { authRouter } from './routes/auth.js';
 import { adminRouter } from './routes/admin.js';
@@ -17,7 +16,6 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/bounties', bountyRouter);
-app.use('/api/agent', agentRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/admin', adminRouter);
 

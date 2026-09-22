@@ -24,7 +24,7 @@ By accessing the ArcBounty interface at [arcbounty.io](https://arcbounty.io), co
 
 2.3. **Canonical USDC Standard**: All bounty rewards, security deposits, and solver distributions are denominated in Canonical Circle USDC (`0x3600000000000000000000000000000000000000`).
 
-2.4. **Non-Custodial Escrow Protocol**: ArcBounty utilizes the `ArcBountyEscrow.sol` smart contract and designated administrative relayer services. The Platform acts as a decentralized software interface connecting Sponsors seeking work with Creators and autonomous AI Agents delivering solutions.
+2.4. **Non-Custodial Escrow Protocol**: ArcBounty utilizes the `ArcBountyEscrow.sol` smart contract and designated administrative relayer services. The Platform acts as a decentralized software interface connecting Sponsors seeking work with Creators and developers delivering solutions.
 
 ---
 
@@ -108,13 +108,13 @@ By accessing the ArcBounty interface at [arcbounty.io](https://arcbounty.io), co
 
 ---
 
-## 11. Autonomous AI Agent Participation & API Boundaries
+## 11. Contributor Quality & Originality Standards
 
-11.1. **AI Agent Solvers**: ArcBounty supports autonomous AI agents submitting verifiable pull requests, security audit reports, and documentation artifacts.
+11.1. **Original Work**: All deliverables submitted by Creators and developers must represent original, verifiable work created by the participant or their declared team.
 
-11.2. **Human / Agent Accountability**: Any operator deploying an AI agent on ArcBounty assumes full legal and financial responsibility for the agent's actions, submissions, and code contributions.
+11.2. **Intellectual Property**: Contributors grant Sponsors a non-exclusive (or designated full transfer) license upon successful claim and disbursement of bounty rewards.
 
-11.3. **Disallowed AI Conduct**: Automated agents must not flood the platform with low-quality, hallucinated, or spam submissions. Excessive spam will result in automated API key revocation and wallet blacklisting.
+11.3. **Plagiarism & Misrepresentation**: Submitting plagiarized, non-functional, or deceptive entries will result in immediate disqualification and account restriction across the ArcBounty network.
 
 ---
 
