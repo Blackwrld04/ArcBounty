@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Zap, Shield, Layers, Plus, CheckCircle2 } from 'lucide-react';
 
 export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user, stats }) {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
   return (
-    <section style={{ padding: '32px 0 20px 0' }}>
+    <section style={{ padding: isMobile ? '20px 0 12px 0' : '32px 0 20px 0' }}>
       <div className="container">
         {/* Flagship Hero Grid (Inspired by Superteam Earn & Gibwork) */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 340px',
-          gap: '36px',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 340px',
+          gap: isMobile ? '20px' : '36px',
           alignItems: 'stretch'
         }}>
           {/* Main Feature Banner (Left 70%) */}
@@ -18,11 +24,11 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
             style={{
               background: 'linear-gradient(135deg, #1b3158 0%, #2f578c 100%)',
               color: '#ffffff',
-              padding: '36px 38px',
+              padding: isMobile ? '24px 20px' : '36px 38px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: '260px',
+              minHeight: isMobile ? '220px' : '260px',
               position: 'relative',
               overflow: 'hidden'
             }}
@@ -37,23 +43,23 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
 
               {/* Unique Headline */}
               <h1 className="font-space" style={{
-                fontSize: 'clamp(1.85rem, 3.2vw, 2.6rem)',
+                fontSize: isMobile ? 'clamp(1.4rem, 5.5vw, 1.85rem)' : 'clamp(1.85rem, 3.2vw, 2.6rem)',
                 fontWeight: 900,
                 color: '#ffffff',
                 letterSpacing: '-0.025em',
                 lineHeight: 1.18,
-                marginBottom: '14px'
+                marginBottom: isMobile ? '10px' : '14px'
               }}>
                 The Open Bounty Protocol for Web3 Creators &amp; Builders
               </h1>
 
               {/* Subheading */}
               <p style={{
-                fontSize: '0.98rem',
+                fontSize: isMobile ? '0.88rem' : '0.98rem',
                 color: '#acc6e9',
                 lineHeight: 1.55,
                 maxWidth: '640px',
-                marginBottom: '26px',
+                marginBottom: isMobile ? '18px' : '26px',
                 fontWeight: 500
               }}>
                 Lock canonical USDC in escrow. Deliver high-impact work in <strong>Content, Design, Development, and All Social</strong> campaigns. Receive instant disbursements with sub-second Malachite BFT finality.
@@ -61,15 +67,15 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
             </div>
 
             {/* CTAs & Social Proof */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: isMobile ? '10px' : '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', flexWrap: 'wrap' }}>
                 {!user ? (
                   <>
                     <button
                       id="hero-signup-btn"
                       onClick={() => openAuthModal('signup')}
                       className="btn-accent"
-                      style={{ padding: '12px 24px', fontSize: '0.92rem' }}
+                      style={{ padding: isMobile ? '10px 18px' : '12px 24px', fontSize: isMobile ? '0.84rem' : '0.92rem' }}
                     >
                       <span>Sign Up as Creator</span>
                       <ArrowRight size={16} />
@@ -78,7 +84,7 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                     <button
                       onClick={onExploreClick}
                       className="btn-secondary"
-                      style={{ padding: '12px 20px', fontSize: '0.92rem', background: '#ffffff', color: '#000000' }}
+                      style={{ padding: isMobile ? '10px 16px' : '12px 20px', fontSize: isMobile ? '0.84rem' : '0.92rem', background: '#ffffff', color: '#000000' }}
                     >
                       <span>Explore Bounties</span>
                     </button>
@@ -89,7 +95,7 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                       id="hero-create-bounty-btn"
                       onClick={openCreateModal}
                       className="btn-accent"
-                      style={{ padding: '12px 24px', fontSize: '0.92rem' }}
+                      style={{ padding: isMobile ? '10px 18px' : '12px 24px', fontSize: isMobile ? '0.84rem' : '0.92rem' }}
                     >
                       <Plus size={16} strokeWidth={2.5} />
                       <span>Post a Bounty</span>
@@ -98,7 +104,7 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                     <button
                       onClick={onExploreClick}
                       className="btn-secondary"
-                      style={{ padding: '12px 20px', fontSize: '0.92rem', background: '#ffffff', color: '#000000' }}
+                      style={{ padding: isMobile ? '10px 16px' : '12px 20px', fontSize: isMobile ? '0.84rem' : '0.92rem', background: '#ffffff', color: '#000000' }}
                     >
                       <span>Browse Opportunities</span>
                     </button>
@@ -154,7 +160,7 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                   TOTAL VALUE SETTLED
                 </p>
                 <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: '2px 0 0 0' }}>
-                  ${(stats?.totalSettledUsdc || 142800).toLocaleString()} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
+                  ${(stats?.totalDistributedUsdc ?? stats?.totalSettledUsdc ?? 0).toLocaleString()} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
                 </p>
               </div>
             </div>
@@ -179,7 +185,7 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                   ACTIVE OPPORTUNITIES
                 </p>
                 <p className="font-space" style={{ fontSize: '1.45rem', fontWeight: 900, color: '#000000', margin: '2px 0 0 0' }}>
-                  {stats?.activeBountiesCount || 164} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Bounties</span>
+                  {stats?.activeBountiesCount ?? (stats?.openBounties || 0)} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Bounties</span>
                 </p>
               </div>
             </div>

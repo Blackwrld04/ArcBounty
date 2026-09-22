@@ -1,37 +1,38 @@
 import React from 'react';
-import { Shield, Sparkles, Zap, ArrowUpRight, CheckCircle2, Layers, UserCheck } from 'lucide-react';
+import { Shield, Sparkles, ArrowUpRight } from 'lucide-react';
 
 export default function SidebarWidgets({ stats, onOpenCreate }) {
   return (
     <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* 1. Ecosystem Stats Widget (Superteam Earn style) */}
-      <div className="clean-card" style={{ padding: '20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', alignItems: 'center' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>
-              <Shield size={14} />
-              <span>TOTAL ESCROW</span>
-            </div>
-            <p className="font-space" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-              ${(stats?.totalSettledUsdc || 142800).toLocaleString()}
-            </p>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Settled on Arc Mainnet</span>
+      {/* 1. Ecosystem Stats Widget: TOTAL ESCROW (Single focused metric, OPPORTUNITIES removed) */}
+      <div className="clean-card" style={{ padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16a34a', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <Shield size={16} strokeWidth={2.5} />
+            <span>TOTAL ESCROW</span>
           </div>
-
-          <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--arc-validator-blue)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>
-              <Layers size={14} />
-              <span>OPPORTUNITIES</span>
-            </div>
-            <p className="font-space" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-              {stats?.activeBountiesCount || 164}
-            </p>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Active Creator Tasks</span>
-          </div>
+          <span style={{
+            background: '#dcfce7',
+            color: '#166534',
+            border: '1.5px solid #16a34a',
+            borderRadius: '4px',
+            padding: '2px 8px',
+            fontSize: '0.68rem',
+            fontWeight: 800
+          }}>
+            Circle Arc L1
+          </span>
         </div>
+
+        <p className="font-space" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '4px 0 2px 0', letterSpacing: '-0.02em' }}>
+          ${(stats?.totalEscrowedUsdc ?? stats?.tvlUsdc ?? 0).toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>USDC</span>
+        </p>
+        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+          Secured in Canonical Circle Arc Escrow
+        </span>
       </div>
 
-      {/* 2. Spotlight Promo Card (Circle Arc L1) */}
+      {/* 2. Spotlight Promo Card: OFFICIAL CIRCLE ARC ENGINE */}
       <div
         className="clean-card"
         style={{
@@ -48,7 +49,7 @@ export default function SidebarWidgets({ stats, onOpenCreate }) {
         </div>
 
         <h4 className="font-space" style={{ fontSize: '1.15rem', fontWeight: 800, lineHeight: 1.3, marginBottom: '8px' }}>
-          Built for Designers, Creators &amp; Autonomous Agents
+          Built for Projects, Designers, Creators &amp; developers.
         </h4>
 
         <p style={{ fontSize: '0.82rem', opacity: 0.88, lineHeight: 1.5, marginBottom: '16px' }}>

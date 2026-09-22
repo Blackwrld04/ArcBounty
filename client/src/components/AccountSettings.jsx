@@ -13,9 +13,13 @@ import {
   Unlink,
   CheckCircle2,
   Save,
-  RotateCcw
+  RotateCcw,
+  Camera,
+  Upload,
+  Mail
 } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
+import { API_BASE } from '../utils/api';
 import SocialConnectModal from './SocialConnectModal';
 import ConnectWalletModal from './ConnectWalletModal';
 
@@ -28,9 +32,13 @@ export default function AccountSettings({
   initialTab = 'account'
 }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'account', 'wallet', 'notifications', 'referrals'
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
   const [name, setName] = useState(user?.name || 'Arc Creator');
   const [username, setUsername] = useState(user?.username || 'creator');
   const [bio, setBio] = useState(user?.bio || 'Web3 Creator on Circle Arc L1');
+  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80');
+  const avatarFileRef = React.useRef(null);
+  const [usernameStatus, setUsernameStatus] = useState({ state: 'idle', message: '' }); // 'idle', 'checking', 'available', 'taken', 'invalid'
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState(false);
   const [savedNotifications, setSavedNotifications] = useState(false);
@@ -48,6 +56,38 @@ export default function AccountSettings({
     githubBounties: true,
     productUpdates: true
   });
+
+  // Real-time handle availability checking
+  React.useEffect(() => {
+    const clean = (username || '').trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_-]/g, '');
+    if (!clean || clean === (user?.username || '').toLowerCase()) {
+      setUsernameStatus({ state: 'idle', message: '' });
+      return;
+    }
+
+    if (clean.length < 3) {
+      setUsernameStatus({ state: 'invalid', message: 'Handle must be at least 3 characters' });
+      return;
+    }
+
+    setUsernameStatus({ state: 'checking', message: 'Checking availability...' });
+    const timer = setTimeout(() => {
+      fetch(`${API_BASE}/api/auth/check-username?username=${clean}&userId=${user?.id || ''}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.available) {
+            setUsernameStatus({ state: 'available', message: `@${clean} is available!` });
+          } else {
+            setUsernameStatus({ state: 'taken', message: data?.message || `@${clean} is already taken by another creator.` });
+          }
+        })
+        .catch(() => {
+          setUsernameStatus({ state: 'idle', message: '' });
+        });
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [username, user?.username, user?.id]);
 
   const referralLink = `https://arcbounty.io?ref=${username}`;
 
@@ -69,18 +109,24 @@ export default function AccountSettings({
     e.preventDefault();
     if (!user || !user.id) return;
 
+    if (usernameStatus.state === 'taken') {
+      setProfileError(usernameStatus.message || `Creator handle "@${username}" is already taken by another creator.`);
+      return;
+    }
+
     setIsSavingProfile(true);
     setProfileError('');
 
     try {
-      const res = await fetch('http://localhost:4050/api/auth/update-profile', {
+      const res = await fetch(`${API_BASE}/api/auth/update-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           name: name.trim(),
           username: username.trim(),
-          bio: bio.trim()
+          bio: bio.trim(),
+          avatar
         })
       });
 
@@ -164,11 +210,13 @@ export default function AccountSettings({
                 border: activeTab === t.id ? '2px solid #000000' : '2px solid transparent',
                 boxShadow: activeTab === t.id ? '2px 2px 0px #000000' : 'none',
                 borderRadius: '8px',
-                padding: '8px 16px',
-                fontSize: '0.88rem',
+                padding: isMobile ? '6px 12px' : '8px 16px',
+                fontSize: isMobile ? '0.78rem' : '0.88rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                transition: 'all 0.12s ease'
+                transition: 'all 0.12s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               {t.label}
@@ -180,7 +228,7 @@ export default function AccountSettings({
         {activeTab === 'account' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {/* Profile Settings Card */}
-            <form onSubmit={handleSaveProfile} className="clean-card" style={{ padding: '28px' }}>
+            <form onSubmit={handleSaveProfile} className="clean-card" style={{ padding: isMobile ? '20px 16px' : '28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
                 <div>
                   <h3 className="font-space" style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
@@ -204,19 +252,141 @@ export default function AccountSettings({
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'center', marginBottom: '22px' }}>
-                <img
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
-                  alt={name}
-                  style={{ width: '76px', height: '76px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000' }}
-                />
-                <div>
-                  <p style={{ fontSize: '0.88rem', fontWeight: 800, margin: 0 }}>Public Avatar</p>
-                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>Synced with authentication provider</p>
+              <div style={{ marginBottom: '22px' }}>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={avatar}
+                      alt={name}
+                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #000000', boxShadow: '2px 2px 0px #000000' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => avatarFileRef.current?.click()}
+                      style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: 'var(--arc-blockstream-gold)',
+                        border: '1.5px solid #000000',
+                        boxShadow: '1px 1px 0px #000000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#000000'
+                      }}
+                      title="Upload new avatar"
+                    >
+                      <Camera size={13} strokeWidth={2.4} />
+                    </button>
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: '0.88rem', fontWeight: 800, margin: 0 }}>Public Avatar</p>
+                    <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 8px 0' }}>
+                      JPG, PNG, or select a Web3 preset below
+                    </p>
+                    <input
+                      type="file"
+                      ref={avatarFileRef}
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setAvatar(ev.target.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => avatarFileRef.current?.click()}
+                      style={{
+                        background: '#ffffff',
+                        border: '1.5px solid #000000',
+                        boxShadow: '1.5px 1.5px 0px #000000',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <Upload size={12} />
+                      <span>Upload New Avatar</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Avatar Presets */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Presets:</span>
+                  {[
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                    'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+                    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80'
+                  ].map((presetUrl, idx) => (
+                    <img
+                      key={idx}
+                      src={presetUrl}
+                      alt={`Preset ${idx + 1}`}
+                      onClick={() => setAvatar(presetUrl)}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: avatar === presetUrl ? '2px solid var(--arc-blockstream-gold)' : '1px solid #000000',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              {/* Registered Sign-up Email Address */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mail size={14} color="#1b3158" />
+                    <span>Registered Sign-up Email</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', border: '1px solid #16a34a', borderRadius: '4px', padding: '1px 6px' }}>
+                    Verified Account
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '2px solid #000000',
+                  boxShadow: '2px 2px 0px #000000',
+                  background: '#f8fafc',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.88rem' }}>{user?.email || 'No email attached'}</span>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Sign-up Identity</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', display: 'block', marginBottom: '6px' }}>
                     Creator Handle (@)
@@ -229,13 +399,33 @@ export default function AccountSettings({
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '2px solid #000000',
+                      border: usernameStatus.state === 'taken' ? '2px solid #ef4444' : '2px solid #000000',
                       boxShadow: '2px 2px 0px #000000',
                       fontSize: '0.9rem',
                       fontWeight: 600,
                       outline: 'none'
                     }}
                   />
+                  {usernameStatus.state === 'checking' && (
+                    <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, display: 'block', marginTop: '4px' }}>
+                      Checking availability...
+                    </span>
+                  )}
+                  {usernameStatus.state === 'available' && (
+                    <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 800, display: 'block', marginTop: '4px' }}>
+                      {usernameStatus.message}
+                    </span>
+                  )}
+                  {usernameStatus.state === 'taken' && (
+                    <span style={{ fontSize: '0.74rem', color: '#dc2626', fontWeight: 800, display: 'block', marginTop: '4px' }}>
+                      {usernameStatus.message}
+                    </span>
+                  )}
+                  {usernameStatus.state === 'invalid' && (
+                    <span style={{ fontSize: '0.74rem', color: '#d97706', fontWeight: 700, display: 'block', marginTop: '4px' }}>
+                      {usernameStatus.message}
+                    </span>
+                  )}
                 </div>
 
                 <div>

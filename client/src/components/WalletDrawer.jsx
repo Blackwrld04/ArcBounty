@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, ExternalLink, ShieldCheck, Coins, Award, CheckCircle, Wallet } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
+import { API_BASE } from '../utils/api';
 
 export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, network, user }) {
   const [copied, setCopied] = useState(false);
@@ -21,7 +22,7 @@ export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, netwo
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const query = user?.email ? `?email=${encodeURIComponent(user.email)}` : creatorAddress ? `?address=${encodeURIComponent(creatorAddress)}` : '';
 
-        const res = await fetch(`http://localhost:4050/api/auth/transactions${query}`, { headers });
+        const res = await fetch(`${API_BASE}/api/auth/transactions${query}`, { headers });
         const data = await res.json();
         if (data.success && Array.isArray(data.transactions)) {
           setTransactions(data.transactions);
@@ -142,28 +143,6 @@ export default function WalletDrawer({ isOpen, onClose, wallet, setWallet, netwo
               <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--arc-blockstream-gold)' }}>
                 USDC
               </span>
-            </div>
-
-            {/* Direct Payout Architecture Note (Withdraw and Test Faucet removed) */}
-            <div
-              style={{
-                marginTop: '18px',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px'
-              }}
-            >
-              <ShieldCheck size={18} color="var(--arc-blockstream-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div style={{ fontSize: '0.78rem', lineHeight: 1.45, color: '#cbd5e1' }}>
-                <strong style={{ color: '#ffffff', display: 'block', marginBottom: '2px' }}>
-                  Direct Admin Escrow Settlement
-                </strong>
-                Bounty rewards won from challenges are disbursed directly by the platform admin from the escrow contract to your creator wallet address.
-              </div>
             </div>
           </div>
 

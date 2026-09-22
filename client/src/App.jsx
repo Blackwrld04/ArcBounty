@@ -12,11 +12,25 @@ import AccountSettings from './components/AccountSettings';
 import Leaderboard from './components/Leaderboard';
 import AdminDashboard from './components/AdminDashboard';
 import LegalModal from './components/LegalModal';
+import MobileDock from './components/MobileDock';
 import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
+import { triggerSync, subscribeToSync } from './utils/sync';
+import { API_BASE } from './utils/api';
 import { Zap, CheckCircle2, ExternalLink, X, Lock } from 'lucide-react';
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+};
+
 export default function App() {
+  const isMobile = useIsMobile();
   const [network, setNetwork] = useState(ARC_MAINNET);
 
   // Authenticated user state: default to null (Guest / new visitor mode)
@@ -62,10 +76,18 @@ export default function App() {
   });
 
   const [stats, setStats] = useState({
-    tvlUsdc: 28450,
-    totalSettledUsdc: 142800,
+    tvlUsdc: 8200,
+    totalEscrowedUsdc: 8200,
+    totalSettledUsdc: 1550,
+    totalDistributedUsdc: 1550,
     avgSettlementTimeMs: 384,
-    activeBountiesCount: 164
+    activeBountiesCount: 5,
+    totalBounties: 8,
+    openBounties: 5,
+    inReviewBounties: 0,
+    settledBounties: 3,
+    totalSubmissions: 2,
+    totalDistributions: 2
   });
 
   // Active views: 'explore', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
@@ -104,6 +126,8 @@ export default function App() {
   }, [activeView]);
 
   const handleBackToExplore = () => {
+    syncAllData();
+    triggerSync({ action: 'nav_to_explore' });
     setActiveView('explore');
     if (typeof window !== 'undefined') {
       if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
@@ -143,22 +167,80 @@ export default function App() {
     showToast(`Wallet connected! Address: ${newWallet.address.slice(0, 6)}...${newWallet.address.slice(-4)}`);
   };
 
-  // Fetch live bounties from SQLite database
+  // Fetch live bounties and aggregate platform telemetry from SQLite database
   const loadBounties = async () => {
     try {
-      const res = await fetch('http://localhost:4050/api/bounties');
+      const res = await fetch(`${API_BASE}/api/bounties`);
       const data = await res.json();
       if (data.success && Array.isArray(data.bounties) && data.bounties.length > 0) {
-        setBounties(data.bounties);
+        const seen = new Set();
+        const unique = data.bounties.filter((b) => {
+          if (seen.has(b.id)) return false;
+          seen.add(b.id);
+          return true;
+        });
+        setBounties(unique);
       }
     } catch (e) {
       console.warn('[App] SQLite bounties sync fallback:', e);
     }
   };
 
+  const loadStats = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/bounties/stats`);
+      const data = await res.json();
+      if (data.success && data.stats) {
+        setStats(data.stats);
+      }
+    } catch (e) {
+      console.warn('[App] SQLite stats sync fallback:', e);
+    }
+  };
+
+  const syncAllData = async () => {
+    await Promise.all([loadBounties(), loadStats()]);
+  };
+
   useEffect(() => {
-    loadBounties();
+    syncAllData();
+
+    // Universal sync subscriber (CustomEvent, BroadcastChannel, localStorage beacon, focus, visibility)
+    const unsubscribe = subscribeToSync(() => {
+      syncAllData();
+    });
+
+    // Continuous 3-second live background sync so Admin and Public pages are ALWAYS in sync
+    const syncInterval = setInterval(() => {
+      syncAllData();
+    }, 3000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(syncInterval);
+    };
   }, []);
+
+  // Sync whenever activeView changes (e.g. going to/from Admin)
+  useEffect(() => {
+    syncAllData();
+  }, [activeView]);
+
+  // Keep selectedBounty live in sync with bounties updates
+  useEffect(() => {
+    if (selectedBounty) {
+      const updated = bounties.find((b) => b.id === selectedBounty.id);
+      if (updated && (
+        updated.status !== selectedBounty.status ||
+        updated.submissionsCount !== selectedBounty.submissionsCount ||
+        updated.settlementTx !== selectedBounty.settlementTx ||
+        updated.solver !== selectedBounty.solver ||
+        updated.prUrl !== selectedBounty.prUrl
+      )) {
+        setSelectedBounty(updated);
+      }
+    }
+  }, [bounties]);
 
   // Sync to local storage
   useEffect(() => {
@@ -169,7 +251,7 @@ export default function App() {
   const handleCreateBounty = async (newBountyData) => {
     try {
       const token = localStorage.getItem('arcbounty_session_token');
-      const res = await fetch('http://localhost:4050/api/bounties', {
+      const res = await fetch(`${API_BASE}/api/bounties`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,10 +261,10 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success && data.bounty) {
-        setBounties((prev) => [data.bounty, ...prev]);
-        setCreateModalOpen(false);
-        showToast(`Bounty created! $${newBountyData.amount.toLocaleString()} USDC locked in Circle Arc Escrow.`);
-        return;
+        syncAllData();
+        triggerSync({ action: 'bounty_created', bountyId: data.bounty.id });
+        showToast(`Bounty submitted! Awaiting Admin review & verification.`);
+        return data.bounty;
       }
     } catch (e) {
       console.warn('Backend create bounty failed:', e);
@@ -193,7 +275,7 @@ export default function App() {
       id: `bounty-arc-${Date.now().toString().slice(-4)}`,
       bountyId: `0x${Date.now().toString(16).padStart(64, '0')}`,
       ...newBountyData,
-      status: 'Open',
+      status: 'Pending Review',
       maintainerName: user?.name || 'Circle Creative Guild',
       solver: null,
       solverType: null,
@@ -202,16 +284,16 @@ export default function App() {
       deadline: Date.now() + newBountyData.deadlineDays * 86400000,
     };
 
-    setBounties([newBounty, ...bounties]);
-    setCreateModalOpen(false);
-    showToast(`Bounty created! $${newBountyData.amount.toLocaleString()} USDC locked in Circle Arc Escrow.`);
+    triggerSync({ action: 'bounty_created', bountyId: newBounty.id });
+    showToast(`Bounty submitted! Awaiting Admin review & verification.`);
+    return newBounty;
   };
 
   // Handle solver deliverable submission
-  const handleSubmitSolution = async (bountyId, submissionUrl, solverAddress, solverType, notes) => {
+  const handleSubmitSolution = async (bountyId, submissionUrl, solverAddress, solverType, notes, collaborators = []) => {
     try {
       const token = localStorage.getItem('arcbounty_session_token');
-      const res = await fetch(`http://localhost:4050/api/bounties/${bountyId}/participate`, {
+      const res = await fetch(`${API_BASE}/api/bounties/${bountyId}/participate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -223,67 +305,68 @@ export default function App() {
           solverType: solverType || 'Human Creator',
           notes,
           creatorName: user?.name,
-          creatorEmail: user?.email
+          creatorEmail: user?.email,
+          collaborators
         })
       });
       const data = await res.json();
       if (data.success && data.bounty) {
         setBounties((prev) => prev.map((b) => (b.id === bountyId ? data.bounty : b)));
         setSelectedBounty(data.bounty);
-        showToast('Work submitted! Challenge maintainer & Admin review initiated on Arc.');
-        return;
+        syncAllData();
+        triggerSync({ action: 'work_submitted', bountyId });
+        return { success: true, bounty: data.bounty, submission: data.submission };
+      } else {
+        const errMsg = data.error || 'Failed to submit work deliverable';
+        showToast(errMsg);
+        throw new Error(errMsg);
       }
     } catch (e) {
-      console.warn('Backend participate failed:', e);
+      console.warn('Backend participate error:', e);
+      throw e;
     }
-
-    setBounties((prev) =>
-      prev.map((b) => {
-        if (b.id === bountyId) {
-          const updated = {
-            ...b,
-            status: 'InReview',
-            solver: solverAddress || user?.address || '0x461cd48D95993242bB04774cc68042795586BbAd',
-            solverType: solverType || 'Human Creator',
-            prUrl: submissionUrl
-          };
-          setSelectedBounty(updated);
-          return updated;
-        }
-        return b;
-      })
-    );
-    showToast('Work submitted! Sponsor review initiated on Arc.');
   };
 
-  // Handle sponsor approving release & executing settlement
+  // Handle administrator approving release & executing settlement
   const handleReleaseBounty = async (bountyId) => {
-    const mockTx = `0xarc${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}88ad`;
+    try {
+      const adminToken = typeof window !== 'undefined' ? sessionStorage.getItem('arcbounty_admin_token') : null;
+      const sessionToken = typeof window !== 'undefined' ? localStorage.getItem('arcbounty_session_token') : null;
+      const token = adminToken || sessionToken;
 
-    setBounties((prev) =>
-      prev.map((b) => {
-        if (b.id === bountyId) {
-          const updated = {
-            ...b,
-            status: 'Settled',
-            settledAt: Date.now(),
-            settlementTx: mockTx
-          };
-          setSelectedBounty(updated);
-          return updated;
+      const res = await fetch(`${API_BASE}/api/bounties/${bountyId}/release`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
-        return b;
-      })
-    );
-
-    showToast(`Settlement confirmed on Arc Mainnet in 382ms! USDC disbursed.`, 'success', `https://explorer.arc.io/tx/${mockTx}`);
+      });
+      const data = await res.json();
+      if (data.success && data.settlement) {
+        if (data.bounty) {
+          setBounties((prev) => prev.map((b) => (b.id === bountyId ? data.bounty : b)));
+          setSelectedBounty(data.bounty);
+        }
+        await syncAllData();
+        triggerSync({ action: 'bounty_settled', bountyId });
+        showToast(`Settlement confirmed on Arc Mainnet in 382ms! USDC disbursed.`, 'success', `https://explorer.arc.io/tx/${data.settlement.txHash}`);
+        return;
+      } else if (data.error) {
+        showToast(data.error, 'error');
+        throw new Error(data.error);
+      }
+    } catch (e) {
+      console.warn('Backend release error:', e);
+      showToast(e.message || 'Approval and disbursal failed', 'error');
+      throw e;
+    }
   };
 
   // Validate existing session token against SQLite backend on startup
   useEffect(() => {
     const token = localStorage.getItem('arcbounty_session_token');
     if (token) {
-      fetch('http://localhost:4050/api/auth/me', {
+      fetch(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then((res) => res.json())
@@ -374,6 +457,7 @@ export default function App() {
               setCreateModalOpen(true);
             }
           }}
+          openDocsModal={() => setLegalModal('docs')}
           onLogout={handleLogout}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -418,6 +502,7 @@ export default function App() {
         {activeView === 'profile' && user && (
           <UserProfile
             user={user}
+            setUser={setUser}
             wallet={wallet}
             bounties={bounties}
             onBackToFeed={() => setActiveView('explore')}
@@ -450,6 +535,7 @@ export default function App() {
               user={user}
               wallet={wallet}
               onBackToExplore={handleBackToExplore}
+              onDataChanged={syncAllData}
             />
           </div>
         )}
@@ -500,6 +586,9 @@ export default function App() {
           onReleaseBounty={handleReleaseBounty}
           wallet={wallet}
           user={user}
+          isAdmin={Boolean(
+            user?.email && user.email.trim().toLowerCase() === 'olajideabdulquadri22@gmail.com'
+          )}
           openAuthModal={handleOpenAuth}
         />
       )}
@@ -508,28 +597,29 @@ export default function App() {
       {toast && (
         <div style={{
           position: 'fixed',
-          bottom: '24px',
-          right: '24px',
+          bottom: isMobile ? '82px' : '24px',
+          right: isMobile ? '12px' : '24px',
+          left: isMobile ? '12px' : 'auto',
           zIndex: 10000,
           background: '#0f172a',
           color: '#ffffff',
-          padding: '14px 20px',
+          padding: isMobile ? '12px 16px' : '14px 20px',
           borderRadius: '12px',
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          fontSize: '0.88rem',
+          gap: '10px',
+          fontSize: isMobile ? '0.82rem' : '0.88rem',
           fontWeight: 600
         }}>
-          <CheckCircle2 size={18} color="#10b981" />
-          <span>{toast.message}</span>
+          <CheckCircle2 size={18} color="#10b981" style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0 }}>{toast.message}</span>
           {toast.link && (
             <a
               href={toast.link}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'var(--arc-sky-sync)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+              style={{ color: 'var(--arc-sky-sync)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}
             >
               <span>View ArcScan</span>
               <ExternalLink size={12} />
@@ -537,7 +627,7 @@ export default function App() {
           )}
           <button
             onClick={() => setToast(null)}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', marginLeft: '6px' }}
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', marginLeft: '4px', flexShrink: 0 }}
           >
             <X size={16} />
           </button>
@@ -549,41 +639,27 @@ export default function App() {
         style={{
           background: '#ffffff',
           borderTop: '2px solid #000000',
-          padding: '36px 0',
-          marginTop: '60px'
+          padding: isMobile ? '24px 0' : '36px 0',
+          marginTop: isMobile ? '32px' : '60px'
         }}
       >
         <div
           className="container"
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: isMobile ? 'center' : 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '20px'
+            gap: isMobile ? '16px' : '20px',
+            textAlign: isMobile ? 'center' : 'left'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '7px',
-                background: 'var(--arc-blockstream-gold)',
-                border: '1.5px solid #000000',
-                boxShadow: '1.5px 1.5px 0px #000000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <Zap size={15} color="#000000" fill="#000000" strokeWidth={2.4} />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexDirection: isMobile ? 'column' : 'row' }}>
             <span
               className="font-space"
               style={{
-                fontSize: '1.25rem',
+                fontSize: isMobile ? '1.1rem' : '1.25rem',
                 fontWeight: 900,
                 color: 'var(--arc-protocol-navy)',
                 lineHeight: 1,
@@ -595,7 +671,7 @@ export default function App() {
             >
               Arc<span style={{ color: 'var(--arc-blockstream-gold)' }}>Bounty</span>
             </span>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, marginLeft: '4px', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
               © 2026 ArcBounty. All rights reserved.
             </span>
           </div>
@@ -604,10 +680,11 @@ export default function App() {
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               flexWrap: 'wrap',
-              gap: '20px',
+              gap: isMobile ? '12px' : '20px',
               fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '0.8rem',
+              fontSize: isMobile ? '0.72rem' : '0.8rem',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.04em'
@@ -632,20 +709,24 @@ export default function App() {
               Terms
             </button>
 
-            <a
-              href="https://arc.io"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setLegalModal('docs')}
               style={{
+                background: 'none',
+                border: 'none',
                 color: '#475569',
-                textDecoration: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
                 transition: 'color 0.15s ease'
               }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
             >
               Docs
-            </a>
+            </button>
 
             <button
               onClick={() => setLegalModal('privacy')}
@@ -734,6 +815,30 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Bottom Dock Navigation */}
+      {activeView !== 'admin' && (
+        <MobileDock
+          activeTab={activeView}
+          setActiveTab={setActiveView}
+          openCreateModal={() => {
+            if (!user) {
+              handleOpenAuth('signup');
+            } else {
+              setCreateModalOpen(true);
+            }
+          }}
+          openWalletModal={() => {
+            if (!user) {
+              setConnectWalletModalOpen(true);
+            } else {
+              setWalletDrawerOpen(true);
+            }
+          }}
+          wallet={wallet}
+          user={user}
+        />
+      )}
 
       {/* Legal & Support Information Modal */}
       <LegalModal

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, Sparkles, Bot, Search, SlidersHorizontal, ArrowRight, Layers } from 'lucide-react';
 import BountyCard from './BountyCard';
 import SidebarWidgets from './SidebarWidgets';
 import { CREATOR_CATEGORIES } from '../data/initialBounties';
+import { isChallengeExpired } from '../utils/time';
 
 export default function BountyList({
   bounties,
@@ -15,15 +16,56 @@ export default function BountyList({
 }) {
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeStatus, setActiveStatus] = useState('All');
+  const [now, setNow] = useState(Date.now());
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
 
-  // Filter logic
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  // Real-time countdown ticker every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Filter logic: keeps Settled tab visible and allows browsing all bounties
   const filteredBounties = bounties.filter((b) => {
+    const effectiveDeadline = b.deadline || (b.createdAt && b.deadlineDays ? (b.createdAt + b.deadlineDays * 86400000) : null);
+    const isExpired = effectiveDeadline && now >= effectiveDeadline;
+    const isClosed = b.status === 'Closed' || isExpired;
+
+    // Status filter
+    if (activeStatus === 'Open') {
+      // In Open tab, show only active non-expired bounties
+      if (b.status !== 'Open' || isExpired) {
+        return false;
+      }
+    } else if (activeStatus === 'Closed') {
+      if (!isClosed) {
+        return false;
+      }
+    } else if (activeStatus === 'Settled') {
+      // In Settled tab, show settled bounties
+      if (b.status !== 'Settled') {
+        return false;
+      }
+    } else if (activeStatus === 'InReview') {
+      if (b.status !== 'InReview') {
+        return false;
+      }
+    } else if (activeStatus !== 'All') {
+      if (b.status !== activeStatus) {
+        return false;
+      }
+    }
+
     // Category
     if (activeCategory !== 'ALL' && b.category !== activeCategory) {
-      return false;
-    }
-    // Status
-    if (activeStatus !== 'All' && b.status !== activeStatus) {
       return false;
     }
     // Search query
@@ -39,14 +81,13 @@ export default function BountyList({
   });
 
   return (
-    <section style={{ padding: '24px 0 60px 0' }}>
+    <section style={{ padding: '24px 0 60px 0', minHeight: '600px' }}>
       <div className="container">
-
         {/* 70% / 30% Dual Column Layout */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 340px',
-          gap: '36px',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 340px',
+          gap: isMobile ? '20px' : '36px',
           alignItems: 'start'
         }}>
           {/* Main Feed (Left 70%) */}
@@ -54,14 +95,14 @@ export default function BountyList({
             {/* Header & Subtabs */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: isMobile ? 'flex-start' : 'center',
               justifyContent: 'space-between',
               marginBottom: '18px',
-              flexWrap: 'wrap',
-              gap: '14px'
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '12px' : '14px'
             }}>
               <div>
-                <h2 className="font-space" style={{ fontSize: '1.5rem', fontWeight: 900, color: '#000000', margin: 0, letterSpacing: '-0.02em' }}>
+                <h2 className="font-space" style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, color: '#000000', margin: 0, letterSpacing: '-0.02em' }}>
                   Browse Opportunities
                 </h2>
                 <p style={{ fontSize: '0.85rem', color: '#475569', margin: '2px 0 0 0', fontWeight: 600 }}>
@@ -70,8 +111,8 @@ export default function BountyList({
               </div>
 
               {/* Status Filter Subtabs (Neo-Brutalist) */}
-              <div style={{ display: 'flex', gap: '6px', background: '#ffffff', padding: '4px', borderRadius: '8px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000' }}>
-                {['All', 'Open', 'InReview', 'Settled'].map((st) => (
+              <div style={{ display: 'flex', gap: '4px', background: '#ffffff', padding: '3px', borderRadius: '8px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000', overflowX: 'auto', maxWidth: '100%', flexShrink: 0 }}>
+                {['All', 'Open', 'InReview', 'Closed', 'Settled'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setActiveStatus(st)}
@@ -80,11 +121,13 @@ export default function BountyList({
                       color: activeStatus === st ? '#ffffff' : '#000000',
                       border: 'none',
                       borderRadius: '5px',
-                      padding: '5px 12px',
-                      fontSize: '0.8rem',
+                      padding: isMobile ? '4px 8px' : '5px 12px',
+                      fontSize: isMobile ? '0.72rem' : '0.8rem',
                       fontWeight: 800,
                       cursor: 'pointer',
-                      transition: 'all 0.12s ease'
+                      transition: 'all 0.12s ease',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
                     }}
                   >
                     {st === 'InReview' ? 'In Review' : st}
@@ -122,6 +165,7 @@ export default function BountyList({
                     key={bounty.id}
                     bounty={bounty}
                     onSelect={onSelectBounty}
+                    now={now}
                   />
                 ))}
               </div>

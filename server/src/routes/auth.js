@@ -6,6 +6,7 @@ import {
   verifyCode,
   getUserByEmail,
   getUserByUsername,
+  getUserById,
   createUser,
   createSession,
   getUserByToken,
@@ -18,7 +19,8 @@ import {
   hashPassword,
   verifyPassword,
   updateUserPassword,
-  getUserDisbursements
+  getUserDisbursements,
+  getUserProfileStats
 } from '../db.js';
 
 export const authRouter = Router();
@@ -409,6 +411,34 @@ authRouter.get('/transactions', (req, res) => {
 });
 
 /**
+ * GET /api/auth/profile-stats
+ * Returns accurate user stats (earnings, submissions count, wins count, submissions list)
+ */
+authRouter.get('/profile-stats', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    let user = null;
+    if (token) {
+      user = getUserByToken(token);
+    }
+
+    const userId = req.query.userId || (user ? user.id : null);
+    const email = req.query.email || (user ? user.email : null);
+    const address = req.query.address || (user ? user.wallet_address : null);
+
+    const stats = getUserProfileStats(userId, email, address);
+    return res.json({
+      success: true,
+      stats
+    });
+  } catch (err) {
+    console.error('[Auth Error] profile-stats failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to retrieve profile stats' });
+  }
+});
+
+/**
  * GET /api/auth/wallet-nonce
  * Generates an authentic EIP-4361 cryptographic challenge for the connecting wallet
  */
@@ -459,19 +489,35 @@ authRouter.post('/wallet-verify', async (req, res) => {
       });
     }
 
-    // Check if user exists with this wallet
-    let user = getUserByWalletAddress(address);
-    if (!user) {
-      // First-time wallet sign-in: register user
-      const fakeEmail = `${address.slice(2, 10).toLowerCase()}@arc.user`;
-      user = createUser({
-        email: fakeEmail,
-        name: `Arc Creator (${address.slice(0, 6)}...${address.slice(-4)})`,
-        username: `arc-${address.slice(2, 8).toLowerCase()}`,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-        provider: 'wallet'
-      });
-      user = updateUserWallet(user.id, address);
+    // Check if request is from an existing authenticated user session
+    const authHeader = req.headers.authorization;
+    let authUser = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      authUser = getUserByToken(authHeader.split(' ')[1]);
+    }
+    if (!authUser && req.body.userId) {
+      authUser = getUserById(req.body.userId);
+    }
+
+    let user = null;
+    if (authUser) {
+      // User is already logged in: link this verified EVM wallet to their existing account
+      user = updateUserWallet(authUser.id, address);
+    } else {
+      // Standalone wallet sign-in: check if user exists with this wallet
+      user = getUserByWalletAddress(address);
+      if (!user) {
+        // First-time wallet sign-in: register user
+        const fakeEmail = `${address.slice(2, 10).toLowerCase()}@arc.user`;
+        user = createUser({
+          email: fakeEmail,
+          name: `Arc Creator (${address.slice(0, 6)}...${address.slice(-4)})`,
+          username: `arc-${address.slice(2, 8).toLowerCase()}`,
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          provider: 'wallet'
+        });
+        user = updateUserWallet(user.id, address);
+      }
     }
 
     const { token } = createSession(user.id);
@@ -566,7 +612,50 @@ authRouter.post('/update-profile', (req, res) => {
     const updatedUser = updateUserProfile(userId, { name, username, bio, discipline, avatar });
     return res.json({ success: true, user: formatUser(updatedUser) });
   } catch (err) {
-    console.error('[Auth Error] update-profile failed:', err);
-    return res.status(500).json({ success: false, error: err.message || 'Failed to update profile' });
+    console.error('[Auth Error] update-profile failed:', err.message);
+    const isConflict = err.message && (err.message.includes('already taken') || err.message.includes('UNIQUE constraint'));
+    return res.status(isConflict ? 409 : 400).json({
+      success: false,
+      error: err.message.includes('UNIQUE constraint')
+        ? 'Creator handle is already taken by another creator.'
+        : err.message
+    });
+  }
+});
+
+/**
+ * GET /api/auth/check-username
+ * Real-time endpoint to check if a creator handle is available
+ */
+authRouter.get('/check-username', (req, res) => {
+  try {
+    const { username, userId } = req.query;
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username parameter is required' });
+    }
+
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_-]/g, '');
+    if (!cleanUsername || cleanUsername.length < 3) {
+      return res.json({
+        success: true,
+        available: false,
+        username: cleanUsername,
+        message: 'Handle must be at least 3 characters long (letters, numbers, _, -).'
+      });
+    }
+
+    const existing = getUserByUsername(cleanUsername);
+    const isTaken = Boolean(existing && (!userId || existing.id !== userId));
+
+    return res.json({
+      success: true,
+      available: !isTaken,
+      username: cleanUsername,
+      message: isTaken
+        ? `Creator handle "@${cleanUsername}" is already taken.`
+        : `Creator handle "@${cleanUsername}" is available!`
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });

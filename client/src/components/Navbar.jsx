@@ -12,12 +12,20 @@ export default function Navbar({
   openWalletDrawer,
   openConnectWalletModal,
   openCreateModal,
+  openDocsModal,
   onLogout,
   searchQuery,
   setSearchQuery
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -38,7 +46,7 @@ export default function Navbar({
       background: 'rgba(255, 255, 255, 0.92)',
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid #e2e8f0',
-      height: '70px',
+      height: isMobile ? '56px' : '70px',
       display: 'flex',
       alignItems: 'center'
     }}>
@@ -47,9 +55,10 @@ export default function Navbar({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        gap: '20px'
+        gap: isMobile ? '8px' : '20px'
       }}>
         {/* Left: Brand Logo & Title */}
+        {/* Left: Brand Name Logo */}
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <div
             onClick={() => setActiveView('explore')}
@@ -57,35 +66,16 @@ export default function Navbar({
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '10px',
               userSelect: 'none'
             }}
           >
-            {/* Brand Logo Icon Badge */}
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '8px',
-                background: 'var(--arc-blockstream-gold)',
-                border: '2px solid #000000',
-                boxShadow: '2px 2px 0px #000000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <Zap size={20} color="#000000" fill="#000000" strokeWidth={2.4} />
-            </div>
-
-            {/* Brand Name Text */}
+            {/* Brand Name Text as Logo */}
             <span
               className="font-space"
               style={{
-                fontSize: '1.42rem',
+                fontSize: isMobile ? '1.35rem' : '1.65rem',
                 fontWeight: 900,
-                letterSpacing: '-0.03em',
+                letterSpacing: '-0.035em',
                 color: 'var(--arc-protocol-navy)',
                 lineHeight: 1,
                 display: 'inline-flex',
@@ -132,18 +122,39 @@ export default function Navbar({
             >
               Leaderboard
             </button>
+            <button
+              onClick={openDocsModal}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748b',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                padding: '4px 0',
+                fontFamily: 'inherit',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+            >
+              Docs
+            </button>
             <a
-              href="https://arc.io"
+              href="https://docs.arc.io"
               target="_blank"
               rel="noopener noreferrer"
               style={{
                 color: '#64748b',
                 fontWeight: 600,
                 fontSize: '0.88rem',
-                textDecoration: 'none'
+                textDecoration: 'none',
+                transition: 'color 0.15s ease'
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
             >
-              Arc Docs ↗
+              Arc L1 ↗
             </a>
           </div>
 
@@ -170,7 +181,7 @@ export default function Navbar({
         </div>
 
         {/* Right: Actions depending on Auth State */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px' }}>
           {!user ? (
             /* Logged Out Header (Guest User Experience) */
             <>
@@ -179,7 +190,7 @@ export default function Navbar({
                 id="navbar-login-btn"
                 onClick={() => openAuthModal('login')}
                 className="btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '0.86rem' }}
+                style={{ padding: isMobile ? '6px 12px' : '8px 16px', fontSize: isMobile ? '0.78rem' : '0.86rem' }}
               >
                 Log In
               </button>
@@ -188,7 +199,7 @@ export default function Navbar({
                 id="navbar-signup-btn"
                 onClick={() => openAuthModal('signup')}
                 className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '0.86rem' }}
+                style={{ padding: isMobile ? '6px 14px' : '8px 18px', fontSize: isMobile ? '0.78rem' : '0.86rem' }}
               >
                 Sign Up
               </button>
@@ -212,13 +223,13 @@ export default function Navbar({
                 onClick={openCreateModal}
                 className="btn-accent"
                 style={{
-                  padding: '7px 15px',
+                  padding: isMobile ? '6px 10px' : '7px 15px',
                   fontSize: '0.84rem',
                   gap: '6px'
                 }}
               >
                 <Plus size={16} strokeWidth={3} />
-                <span>Create Bounty</span>
+                {!isMobile && <span>Create Bounty</span>}
               </button>
 
               {/* Wallet Balance Button */}
@@ -227,9 +238,9 @@ export default function Navbar({
                 onClick={openWalletDrawer}
                 className="btn-secondary"
                 style={{
-                  padding: '6px 12px',
-                  fontSize: '0.86rem',
-                  gap: '6px',
+                  padding: isMobile ? '5px 8px' : '6px 12px',
+                  fontSize: isMobile ? '0.78rem' : '0.86rem',
+                  gap: '4px',
                   background: '#ffffff',
                   textTransform: 'none'
                 }}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Wallet, Zap, Plus, ExternalLink, CheckCircle } from 'lucide-react';
 import { ARC_MAINNET, ARC_TESTNET, truncateAddress } from '../utils/arc';
+import { getWalletProvider } from '../utils/wallet';
 
 export default function WalletModal({
   isOpen,
@@ -13,9 +14,15 @@ export default function WalletModal({
   if (!isOpen) return null;
 
   const handleConnectBrowserWallet = async () => {
-    if (typeof window.ethereum !== 'undefined') {
+    const provider = getWalletProvider('phantom') ||
+      getWalletProvider('rabby') ||
+      getWalletProvider('metamask') ||
+      getWalletProvider('coinbase') ||
+      (typeof window !== 'undefined' ? (window.phantom?.ethereum || window.ethereum) : null);
+
+    if (provider) {
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
         if (accounts.length > 0) {
           setWallet({
             connected: true,

@@ -7,8 +7,7 @@ export const ARC_BOUNTY_ESCROW_ABI = [
       { "name": "bountyId", "type": "bytes32" },
       { "name": "amount", "type": "uint256" },
       { "name": "deadline", "type": "uint256" },
-      { "name": "issueUrl", "type": "string" },
-      { "name": "isAiEligible", "type": "bool" }
+      { "name": "issueUrl", "type": "string" }
     ],
     "outputs": []
   },
@@ -55,8 +54,7 @@ export const ARC_BOUNTY_ESCROW_ABI = [
       { "name": "deadline", "type": "uint256" },
       { "name": "status", "type": "uint8" },
       { "name": "issueUrl", "type": "string" },
-      { "name": "prUrl", "type": "string" },
-      { "name": "isAiEligible", "type": "bool" }
+      { "name": "prUrl", "type": "string" }
     ]
   },
   {

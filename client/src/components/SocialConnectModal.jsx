@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, ArrowRight, ExternalLink, ShieldCheck, Unlink } from 'lucide-react';
+import { API_BASE } from '../utils/api';
 
 const PLATFORM_CONFIG = {
   telegram: {
@@ -87,7 +88,7 @@ export default function SocialConnectModal({
     setError('');
 
     try {
-      const res = await fetch('http://localhost:4050/api/auth/social-connect', {
+      const res = await fetch(`${API_BASE}/api/auth/social-connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,7 +121,7 @@ export default function SocialConnectModal({
     setError('');
 
     try {
-      const res = await fetch('http://localhost:4050/api/auth/social-connect', {
+      const res = await fetch(`${API_BASE}/api/auth/social-connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

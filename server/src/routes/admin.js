@@ -8,8 +8,20 @@ import {
   getBountyById,
   getBountySubmissions,
   disburseBountyReward,
+  approveBountyRecord,
+  rejectBountyRecord,
+  getAllCreatorEmails,
+  getAllUsers,
+  scoreBountySubmission,
+  disburseMultiWinnerRewards,
+  scanArcEscrowDeposits,
+  getAuditLedgerData,
   db
 } from '../db.js';
+import {
+  sendBountyApprovedNotification,
+  sendNewBountyBroadcastToCreators
+} from '../email.js';
 
 export const adminRouter = express.Router();
 
@@ -55,14 +67,20 @@ adminRouter.post('/login', (req, res) => {
  */
 export function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  let token = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query?.token) {
+    token = req.query.token;
+  }
+
+  if (!token) {
     return res.status(401).json({
       success: false,
       error: 'Authentication required. Please enter administrator credentials.'
     });
   }
-
-  const token = authHeader.split(' ')[1];
 
   // 1. Check dedicated admin password session
   if (activeAdminTokens.has(token)) {
@@ -89,7 +107,7 @@ export function requireAdmin(req, res, next) {
   const user = getUserByToken(token);
   if (user) {
     const isAdmin = isAdminUser(user.email, user.wallet_address);
-    if (isAdmin || user.role === 'admin') {
+    if (isAdmin) {
       req.user = user;
       return next();
     }
@@ -158,12 +176,29 @@ adminRouter.get('/stats', (req, res) => {
 });
 
 /**
+ * GET /api/admin/users
+ * Directory of registered creators & users with profile details
+ */
+adminRouter.get('/users', (req, res) => {
+  try {
+    const users = getAllUsers();
+    res.json({
+      success: true,
+      totalUsers: users.length,
+      users
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/admin/bounties
  * All bounties across the platform with full status details & submission counts
  */
 adminRouter.get('/bounties', (req, res) => {
   try {
-    const bounties = getAllBounties();
+    const bounties = getAllBounties({ includePending: true, ...req.query });
     res.json({
       success: true,
       total: bounties.length,
@@ -198,10 +233,10 @@ adminRouter.get('/bounties/:id/submissions', (req, res) => {
 });
 
 /**
- * POST /api/admin/distribute
+ * POST /api/admin/distribute (or /api/admin/disburse)
  * Admin dispatches USDC prize directly to the winning creator
  */
-adminRouter.post('/distribute', async (req, res) => {
+adminRouter.post(['/distribute', '/disburse'], async (req, res) => {
   try {
     const { bountyId, submissionId, amount } = req.body;
 
@@ -253,3 +288,177 @@ adminRouter.post('/verify-bounty', (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+/**
+ * POST /api/admin/bounties/:id/approve
+ * Admin reviews escrow deposit and challenge criteria, approves and launches live
+ */
+adminRouter.post('/bounties/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const bounty = getBountyById(id);
+    if (!bounty) {
+      return res.status(404).json({ success: false, error: 'Bounty not found' });
+    }
+
+    const updatedBounty = approveBountyRecord(id, req.user?.email || 'admin');
+
+    // Asynchronously dispatch email notifications
+    try {
+      if (updatedBounty.maintainerEmail) {
+        sendBountyApprovedNotification(updatedBounty.maintainerEmail, updatedBounty).catch((err) => {
+          console.warn('[Admin Approve] Maintainer notification error:', err.message);
+        });
+      }
+      const creatorEmails = getAllCreatorEmails();
+      if (creatorEmails && creatorEmails.length > 0) {
+        sendNewBountyBroadcastToCreators(creatorEmails, updatedBounty).catch((err) => {
+          console.warn('[Admin Approve] Creator broadcast error:', err.message);
+        });
+      }
+    } catch (mailErr) {
+      console.warn('[Admin Approve] Email broadcast dispatch error:', mailErr);
+    }
+
+    res.json({
+      success: true,
+      message: `Bounty "${updatedBounty.title}" approved and published live! Email notifications dispatched.`,
+      bounty: updatedBounty
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/bounties/:id/reject
+ * Admin rejects a pending bounty
+ */
+adminRouter.post('/bounties/:id/reject', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const bounty = getBountyById(id);
+    if (!bounty) {
+      return res.status(404).json({ success: false, error: 'Bounty not found' });
+    }
+
+    const updatedBounty = rejectBountyRecord(id, reason || 'Escrow deposit or challenge conditions not verified');
+    res.json({
+      success: true,
+      message: `Bounty "${updatedBounty.title}" rejected.`,
+      bounty: updatedBounty
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/submissions/:submissionId/score
+ * Record structured rubric scores and reviewer notes
+ */
+adminRouter.post('/submissions/:submissionId/score', (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { scoreCodeQuality, scoreCreativity, scoreCompleteness, reviewerNotes } = req.body;
+    const scored = scoreBountySubmission({
+      submissionId,
+      scoreCodeQuality,
+      scoreCreativity,
+      scoreCompleteness,
+      reviewerNotes
+    });
+    res.json({ success: true, message: 'Submission scored successfully', scored });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/admin/bounties/:id/disburse-multi-winner
+ * Disburse tiered prizes to multiple ranked winners
+ */
+adminRouter.post('/bounties/:id/disburse-multi-winner', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { winners } = req.body;
+    if (!winners || !Array.isArray(winners) || winners.length === 0) {
+      return res.status(400).json({ success: false, error: 'No winners provided for split disbursement' });
+    }
+    const adminEmail = req.adminUser?.email || 'admin@arcbounty.io';
+    const result = disburseMultiWinnerRewards({
+      bountyId: id,
+      winners,
+      adminEmail
+    });
+    res.json({
+      success: true,
+      message: 'Multi-winner prize distribution settled successfully on Arc L1.',
+      result
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/admin/scan-deposits
+ * Auto-detect incoming Arc Escrow deposits on Arc L1
+ */
+adminRouter.get('/scan-deposits', (req, res) => {
+  try {
+    const result = scanArcEscrowDeposits();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/admin/export-csv
+ * 1-Click CSV Audit Ledger Export
+ */
+adminRouter.get('/export-csv', (req, res) => {
+  try {
+    const ledger = getAuditLedgerData();
+    const headers = [
+      'Disbursement_ID',
+      'Distributed_At_UTC',
+      'Bounty_ID',
+      'Bounty_Title',
+      'Sponsor_Name',
+      'Sponsor_Wallet',
+      'Recipient_Address',
+      'Recipient_Email',
+      'Amount_USDC',
+      'Arc_Tx_Hash',
+      'Admin_Email'
+    ];
+
+    const csvRows = [headers.join(',')];
+    for (const row of ledger) {
+      csvRows.push([
+        `"${row.disbursement_id}"`,
+        `"${new Date(row.distributed_at).toISOString()}"`,
+        `"${row.bounty_id}"`,
+        `"${(row.bounty_title || '').replace(/"/g, '""')}"`,
+        `"${(row.sponsor_name || '').replace(/"/g, '""')}"`,
+        `"${row.sponsor_wallet || ''}"`,
+        `"${row.recipient_address}"`,
+        `"${row.recipient_email || ''}"`,
+        `"${row.amount_usdc}"`,
+        `"${row.tx_hash}"`,
+        `"${row.admin_email}"`
+      ].join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=arcbounty_audit_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    return res.send(csvContent);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+

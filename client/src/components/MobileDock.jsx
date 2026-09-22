@@ -1,12 +1,13 @@
 import React from 'react';
-import { Compass, Sparkles, Plus, Trophy, Wallet } from 'lucide-react';
+import { Compass, User, Plus, Trophy, Wallet } from 'lucide-react';
 
 export default function MobileDock({
   activeTab,
   setActiveTab,
   openCreateModal,
   openWalletModal,
-  wallet
+  wallet,
+  user
 }) {
   return (
     <nav className="mobile-dock">
@@ -22,36 +23,38 @@ export default function MobileDock({
           flexDirection: 'column',
           alignItems: 'center',
           gap: '3px',
-          fontSize: '0.7rem',
+          fontSize: '0.65rem',
           fontWeight: 900,
           cursor: 'pointer',
-          flex: 1
+          flex: 1,
+          letterSpacing: '0.03em'
         }}
       >
-        <Compass size={22} color={activeTab === 'explore' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'explore' ? 3 : 2} />
-        <span style={{ borderBottom: activeTab === 'explore' ? '2px solid #000' : 'none' }}>EXPLORE</span>
+        <Compass size={21} color={activeTab === 'explore' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'explore' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'explore' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>EXPLORE</span>
       </button>
 
-      {/* 2. Leaderboard */}
+      {/* 2. Profile */}
       <button
-        id="mobile-dock-tasks-btn"
-        onClick={() => setActiveTab('leaderboard')}
+        id="mobile-dock-profile-btn"
+        onClick={() => setActiveTab(user ? 'profile' : 'explore')}
         style={{
           background: 'transparent',
           border: 'none',
-          color: activeTab === 'leaderboard' ? '#000000' : '#6b7280',
+          color: activeTab === 'profile' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '3px',
-          fontSize: '0.7rem',
+          fontSize: '0.65rem',
           fontWeight: 900,
           cursor: 'pointer',
-          flex: 1
+          flex: 1,
+          letterSpacing: '0.03em'
         }}
       >
-        <Sparkles size={22} color={activeTab === 'leaderboard' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'leaderboard' ? 3 : 2} />
-        <span style={{ borderBottom: activeTab === 'leaderboard' ? '2px solid #000' : 'none' }}>RANKS</span>
+        <User size={21} color={activeTab === 'profile' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'profile' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'profile' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>PROFILE</span>
       </button>
 
       {/* 3. Center Action: Post Bounty */}
@@ -60,8 +63,8 @@ export default function MobileDock({
           id="mobile-dock-create-btn"
           onClick={openCreateModal}
           style={{
-            width: '52px',
-            height: '52px',
+            width: '50px',
+            height: '50px',
             borderRadius: '50%',
             background: 'var(--arc-token-sand)',
             border: '3px solid #000000',
@@ -70,12 +73,13 @@ export default function MobileDock({
             alignItems: 'center',
             justifyContent: 'center',
             color: '#000000',
-            marginTop: '-22px',
-            cursor: 'pointer'
+            marginTop: '-20px',
+            cursor: 'pointer',
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease'
           }}
           title="Post a creator bounty"
         >
-          <Plus size={28} strokeWidth={3.5} />
+          <Plus size={26} strokeWidth={3.5} />
         </button>
       </div>
 
@@ -91,14 +95,15 @@ export default function MobileDock({
           flexDirection: 'column',
           alignItems: 'center',
           gap: '3px',
-          fontSize: '0.7rem',
+          fontSize: '0.65rem',
           fontWeight: 900,
           cursor: 'pointer',
-          flex: 1
+          flex: 1,
+          letterSpacing: '0.03em'
         }}
       >
-        <Trophy size={22} color={activeTab === 'leaderboard' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'leaderboard' ? 3 : 2} />
-        <span style={{ borderBottom: activeTab === 'leaderboard' ? '2px solid #000' : 'none' }}>LEADERS</span>
+        <Trophy size={21} color={activeTab === 'leaderboard' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'leaderboard' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'leaderboard' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>RANKS</span>
       </button>
 
       {/* 5. Wallet */}
@@ -113,13 +118,14 @@ export default function MobileDock({
           flexDirection: 'column',
           alignItems: 'center',
           gap: '3px',
-          fontSize: '0.7rem',
+          fontSize: '0.65rem',
           fontWeight: 900,
           cursor: 'pointer',
-          flex: 1
+          flex: 1,
+          letterSpacing: '0.03em'
         }}
       >
-        <Wallet size={22} color={wallet.connected ? 'var(--arc-validator-blue)' : '#000000'} strokeWidth={2.5} />
+        <Wallet size={21} color={wallet?.connected ? 'var(--arc-validator-blue)' : '#000000'} strokeWidth={2.5} />
         <span>WALLET</span>
       </button>
     </nav>

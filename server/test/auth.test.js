@@ -12,7 +12,9 @@ import {
   createWalletChallenge,
   verifyWalletChallenge,
   hashPassword,
-  verifyPassword
+  verifyPassword,
+  getUserByUsername,
+  updateUserProfile
 } from '../src/db.js';
 
 test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
@@ -142,6 +144,85 @@ test('ArcBounty SQLite Auth & Verification Database Tests', async (t) => {
     assert.ok(dbUser.password_hash);
     assert.equal(verifyPassword('MyStrongPassword123!', dbUser.password_hash), true);
     assert.equal(verifyPassword('IncorrectPassword', dbUser.password_hash), false);
+  });
+
+  await t.test('strictly enforces creator handle uniqueness case-insensitively', () => {
+    const handleTestEmail1 = `creator_uniq1_${Date.now()}@arc.network`;
+    const handleTestEmail2 = `creator_uniq2_${Date.now()}@arc.network`;
+
+    // 1. Create first user with unique handle
+    const user1 = createUser({
+      email: handleTestEmail1,
+      name: 'Alpha Creator',
+      username: 'solidity_wizard',
+      discipline: 'Dev'
+    });
+    assert.equal(user1.username, 'solidity_wizard');
+
+    // 2. Lookup finds user case-insensitively
+    const foundLower = getUserByUsername('solidity_wizard');
+    const foundUpper = getUserByUsername('SOLIDITY_WIZARD');
+    const foundMixed = getUserByUsername('Solidity_Wizard');
+    assert.ok(foundLower);
+    assert.equal(foundLower.id, user1.id);
+    assert.equal(foundUpper.id, user1.id);
+    assert.equal(foundMixed.id, user1.id);
+
+    // 3. Create second user with different handle
+    const user2 = createUser({
+      email: handleTestEmail2,
+      name: 'Beta Creator',
+      username: 'solidity_apprentice',
+      discipline: 'Dev'
+    });
+    assert.equal(user2.username, 'solidity_apprentice');
+
+    // 4. Updating user2 to user1's handle must fail (exact match)
+    assert.throws(() => {
+      updateUserProfile(user2.id, { username: 'solidity_wizard' });
+    }, /already taken/i);
+
+    // 5. Updating user2 to user1's handle with uppercase must fail (case-insensitive)
+    assert.throws(() => {
+      updateUserProfile(user2.id, { username: 'SOLIDITY_WIZARD' });
+    }, /already taken/i);
+
+    // 6. User1 updating their own handle with same name or different casing succeeds
+    const updatedSelf = updateUserProfile(user1.id, { username: 'solidity_wizard' });
+    assert.equal(updatedSelf.username, 'solidity_wizard');
+
+    // 7. Creating user with strictUsername=true must fail if handle taken
+    assert.throws(() => {
+      createUser({
+        email: `creator_uniq3_${Date.now()}@arc.network`,
+        name: 'Gamma Creator',
+        username: 'solidity_wizard',
+        strictUsername: true
+      });
+    }, /already taken/i);
+  });
+
+  await t.test('authenticated user linking wallet updates existing profile and retains single unified account', () => {
+    const unifiedEmail = `unified_${Date.now()}@arc.network`;
+    const user = createUser({
+      email: unifiedEmail,
+      name: 'Unified Tester',
+      username: `unified_${Date.now()}`
+    });
+
+    const { token } = createSession(user.id);
+    const newWallet = '0x1122334455667788990011223344556677889900';
+
+    // Update wallet on the existing user account
+    const updated = updateUserWallet(user.id, newWallet);
+    assert.equal(updated.id, user.id);
+    assert.equal(updated.wallet_address, newWallet.toLowerCase());
+    assert.equal(updated.email, unifiedEmail);
+
+    // Verify session retrieval retains the updated wallet on the same profile
+    const sessionUser = getUserByToken(token);
+    assert.equal(sessionUser.id, user.id);
+    assert.equal(sessionUser.wallet_address, newWallet.toLowerCase());
   });
 });
 

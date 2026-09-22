@@ -11,10 +11,18 @@ import {
   Code,
   Share2,
   Globe,
-  Layers
+  Layers,
+  Users
 } from 'lucide-react';
+import { getRemainingTime } from '../utils/time';
 
-export default function BountyCard({ bounty, onSelect }) {
+export default function BountyCard({ bounty, onSelect, now }) {
+  const [isMobile] = React.useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const effectiveDeadline = bounty.deadline || (bounty.createdAt && bounty.deadlineDays ? (bounty.createdAt + bounty.deadlineDays * 86400000) : null);
+  const remaining = getRemainingTime(effectiveDeadline, now || Date.now());
+  const isSettled = bounty.status === 'Settled' || bounty.status === 'Closed';
+  const isExpired = remaining.isExpired;
+  const isClosed = isSettled || isExpired;
   // Category theme mapped cleanly to official Circle Arc colors
   const getCategoryTheme = (cat) => {
     switch (cat) {
@@ -42,11 +50,11 @@ export default function BountyCard({ bounty, onSelect }) {
       className="bounty-row"
     >
       {/* Left: Sponsor Avatar & Discipline Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px', flex: 1, minWidth: 0 }}>
         <div style={{
-          width: '46px',
-          height: '46px',
-          borderRadius: '10px',
+          width: isMobile ? '38px' : '46px',
+          height: isMobile ? '38px' : '46px',
+          borderRadius: isMobile ? '8px' : '10px',
           background: theme.bg,
           border: '2px solid #000000',
           boxShadow: '2px 2px 0px #000000',
@@ -121,23 +129,110 @@ export default function BountyCard({ bounty, onSelect }) {
               {theme.label}
             </span>
 
-            {/* Deadline */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-              <Clock size={12} />
-              <span>Due in 10d</span>
-            </div>
+            {/* Prize Distribution Split Badge */}
+            {bounty.rewardDistribution && (
+              <span
+                style={{
+                  background: '#f8fafc',
+                  color: '#1e293b',
+                  border: '1.5px solid #000000',
+                  boxShadow: '1px 1px 0px #000000',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontWeight: 800,
+                  fontSize: '0.72rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <Users size={11} strokeWidth={2.4} />
+                <span>
+                  {bounty.rewardDistribution.type === 'tiered'
+                    ? `${bounty.rewardDistribution.winnerCount} Winners`
+                    : bounty.rewardDistribution.type === 'equal'
+                    ? `${bounty.rewardDistribution.winnerCount} Winners × $${bounty.rewardDistribution.perWinnerAmount}`
+                    : '1 Winner'}
+                </span>
+              </span>
+            )}
 
-            {/* Submissions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }} className="desktop-only">
-              <MessageSquare size={12} />
-              <span>{bounty.status === 'Open' ? 'Open' : '1 review'}</span>
-            </div>
+            {/* Status / Deadline Badge */}
+            {isClosed ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontWeight: 800,
+                  color: '#475569',
+                  background: '#f1f5f9',
+                  border: '1.5px solid #000000',
+                  boxShadow: '1px 1px 0px #000000',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  textTransform: 'uppercase'
+                }}
+                title={isSettled ? 'Challenge Settled & Disbursed' : 'Challenge Deadline Ended'}
+              >
+                <CheckCircle2 size={12} color="#16a34a" strokeWidth={2.5} />
+                <span>Closed</span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontWeight: 700,
+                  color: remaining.days === 0 ? '#b91c1c' : '#1f2937',
+                  background: remaining.days === 0 ? '#fee2e2' : '#f1f5f9',
+                  border: '1.5px solid #000000',
+                  boxShadow: '1px 1px 0px #000000',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem'
+                }}
+                title={effectiveDeadline ? `Deadline: ${new Date(effectiveDeadline).toLocaleString()}` : 'No deadline'}
+              >
+                <Clock size={12} color={remaining.days === 0 ? '#b91c1c' : '#000000'} strokeWidth={2.2} />
+                <span>{remaining.text}</span>
+              </div>
+            )}
+
+            {/* Submissions / Participants */}
+            {isClosed ? (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontWeight: 800,
+                fontSize: '0.74rem',
+                color: '#1e3a8a',
+                background: '#dbeafe',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                border: '1.5px solid #000000',
+                boxShadow: '1px 1px 0px #000000'
+              }} className="desktop-only">
+                <Users size={12} color="#1e40af" strokeWidth={2.5} />
+                <span>
+                  {bounty.participantsCount || bounty.submissionsCount || (bounty.submissions?.length) || 0} {((bounty.participantsCount || bounty.submissionsCount || (bounty.submissions?.length) || 0) === 1) ? 'Participant' : 'Participants'} &bull; Submissions for Review
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }} className="desktop-only">
+                <MessageSquare size={12} />
+                <span>{bounty.submissionsCount ? `${bounty.submissionsCount} submissions` : 'Open for submissions'}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Right: Payout Amount & Action Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0, paddingLeft: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '16px', flexShrink: 0, paddingLeft: isMobile ? '0' : '12px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
             {/* Circle USDC Symbol */}
@@ -156,7 +251,7 @@ export default function BountyCard({ bounty, onSelect }) {
             }}>
               $
             </div>
-            <span className="font-space" style={{ fontSize: '1.3rem', fontWeight: 900, color: '#000000' }}>
+            <span className="font-space" style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 900, color: '#000000' }}>
               ${bounty.amount.toLocaleString()}
             </span>
             <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4b5563' }}>USDC</span>
@@ -192,8 +287,8 @@ export default function BountyCard({ bounty, onSelect }) {
         </div>
 
         <div style={{
-          width: '36px',
-          height: '36px',
+          width: isMobile ? '30px' : '36px',
+          height: isMobile ? '30px' : '36px',
           borderRadius: '8px',
           background: '#ffffff',
           border: '2px solid #000000',

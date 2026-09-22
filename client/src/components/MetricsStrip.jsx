@@ -5,15 +5,15 @@ export default function MetricsStrip({ stats }) {
   const metrics = [
     {
       label: 'TOTAL VALUE IN ESCROW',
-      value: `$${(stats?.tvlUsdc || 28450).toLocaleString()} USDC`,
+      value: `$${(stats?.totalEscrowedUsdc ?? stats?.tvlUsdc ?? 0).toLocaleString()} USDC`,
       detail: 'Locked in Arc Canonical USDC',
       bg: 'var(--arc-sky-sync)',
       icon: <Shield size={20} strokeWidth={2.5} />
     },
     {
       label: 'COMPLETED CREATOR PAYOUTS',
-      value: `$${(stats?.totalSettledUsdc || 142800).toLocaleString()}`,
-      detail: '164 Bounties Disbursed on Arc',
+      value: `$${(stats?.totalDistributedUsdc ?? stats?.totalSettledUsdc ?? 0).toLocaleString()}`,
+      detail: `${stats?.settledBounties ?? 0} Bounties Disbursed on Arc`,
       bg: '#ffffff',
       icon: <CheckCircle size={20} strokeWidth={2.5} />
     },

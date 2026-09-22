@@ -340,3 +340,138 @@ export async function sendRewardDisbursedEmail({ toEmail, creatorName, bountyTit
   }
 }
 
+/**
+ * Send notification to bounty creator when admin approves their bounty
+ */
+export async function sendBountyApprovedNotification(maintainerEmail, bounty) {
+  if (!maintainerEmail || !maintainerEmail.includes('@')) return null;
+
+  try {
+    const mailer = await getTransporter();
+    const subject = `Your Challenge is Now Live: "${bounty.title}" on ArcBounty`;
+
+    let prizeInfo = `$${bounty.amount} USDC`;
+    if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
+      prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
+    } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
+      prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
+            <tr>
+              <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
+                <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">Challenge Verified &amp; Published</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 24px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">Your Bounty is Live!</h2>
+                <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
+                  Platform admins have verified your escrow funding and conditions. Your bounty is now published on the ArcBounty public feed for creators to participate.
+                </p>
+                <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                  <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
+                  <div style="font-size: 13px; color: #ffcc6f; font-weight: 700;">Prize: ${prizeInfo}</div>
+                  <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Category: ${bounty.categoryName || bounty.category} &bull; Deadline: ${new Date(bounty.deadline).toLocaleDateString()}</div>
+                </div>
+                <a href="http://localhost:5173" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
+                  View Live Challenge on ArcBounty
+                </a>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Platform" <notifications@arcbounty.io>');
+    return await mailer.sendMail({
+      from: sender,
+      to: maintainerEmail,
+      subject,
+      text: `Your bounty "${bounty.title}" has been approved by admin and is now live on ArcBounty! Prize: ${prizeInfo}.`,
+      html: htmlContent
+    });
+  } catch (err) {
+    console.warn(`[Email Service] Failed to notify maintainer ${maintainerEmail}:`, err.message);
+    return null;
+  }
+}
+
+/**
+ * Send broadcast email notification to creators announcing a new live challenge
+ */
+export async function sendNewBountyBroadcastToCreators(creatorEmails, bounty) {
+  if (!Array.isArray(creatorEmails) || creatorEmails.length === 0) return null;
+
+  try {
+    const mailer = await getTransporter();
+    const validEmails = creatorEmails.filter(e => e && e.includes('@'));
+    if (validEmails.length === 0) return null;
+
+    let prizeInfo = `$${bounty.amount} USDC`;
+    if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
+      prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
+    } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
+      prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
+    }
+
+    const subject = `New Challenge Live: "${bounty.title}" (${prizeInfo})`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
+            <tr>
+              <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
+                <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
+                <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">New Creator Opportunity</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 24px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">New Challenge Published!</h2>
+                <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
+                  A new escrow-funded bounty has been verified by platform admins and is now open for creator submissions on Circle Arc.
+                </p>
+                <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                  <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
+                  <div style="font-size: 14px; color: #ffcc6f; font-weight: 800;">Prize: ${prizeInfo}</div>
+                  <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                    Category: <strong>${bounty.categoryName || bounty.category}</strong> &bull; Due: ${new Date(bounty.deadline).toLocaleDateString()}
+                  </div>
+                </div>
+                <a href="http://localhost:5173" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
+                  Participate &amp; Submit Deliverable
+                </a>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Platform" <bounties@arcbounty.io>');
+
+    // Dispatch to creator emails
+    console.log(`[Email Service] Broadcasting new challenge "${bounty.title}" to ${validEmails.length} creators...`);
+    for (const recipient of validEmails) {
+      mailer.sendMail({
+        from: sender,
+        to: recipient,
+        subject,
+        text: `New Challenge on ArcBounty: "${bounty.title}". Prize: ${prizeInfo}. Submit your deliverable to win native USDC!`,
+        html: htmlContent
+      }).catch(err => console.warn(`Broadcast error for ${recipient}:`, err.message));
+    }
+  } catch (err) {
+    console.warn('[Email Service] Failed to broadcast new bounty to creators:', err.message);
+  }
+}
+

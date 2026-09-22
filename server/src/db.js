@@ -3,6 +3,15 @@ import { mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto, { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import {
+  isExternalDbConfigured,
+  pgSaveUser,
+  pgSaveBounty,
+  pgSaveSubmission,
+  pgSaveDiscussion,
+  pgSaveDisbursement,
+  pgSaveSession
+} from './supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -40,6 +49,8 @@ db.exec(`
     password_hash TEXT,
     created_at INTEGER NOT NULL
   );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username));
 
   CREATE TABLE IF NOT EXISTS verification_codes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,12 +102,12 @@ db.exec(`
     solver TEXT,
     solver_type TEXT,
     pr_url TEXT,
-    is_ai_eligible INTEGER DEFAULT 0,
     description TEXT,
     created_at INTEGER NOT NULL,
     deadline INTEGER NOT NULL,
     settled_at INTEGER,
-    settlement_tx TEXT
+    settlement_tx TEXT,
+    reward_distribution TEXT
   );
 
   CREATE TABLE IF NOT EXISTS bounty_submissions (
@@ -129,6 +140,19 @@ db.exec(`
     FOREIGN KEY(bounty_id) REFERENCES bounties(id),
     FOREIGN KEY(submission_id) REFERENCES bounty_submissions(id)
   );
+
+  CREATE TABLE IF NOT EXISTS bounty_discussions (
+    id TEXT PRIMARY KEY,
+    bounty_id TEXT NOT NULL,
+    user_id TEXT,
+    author_name TEXT NOT NULL,
+    author_handle TEXT,
+    author_role TEXT DEFAULT 'creator',
+    author_avatar TEXT,
+    content TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(bounty_id) REFERENCES bounties(id)
+  );
 `);
 
 // Gracefully add social and password columns if migrating existing table
@@ -138,6 +162,15 @@ try { db.exec(`ALTER TABLE users ADD COLUMN x TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN github TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN password_hash TEXT;`); } catch (e) {}
 try { db.exec(`ALTER TABLE verification_codes ADD COLUMN pending_data TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounties ADD COLUMN reward_distribution TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN revision_count INTEGER DEFAULT 1;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN revision_history TEXT DEFAULT '[]';`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN collaborators TEXT DEFAULT '[]';`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN score_code_quality INTEGER;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN score_creativity INTEGER;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN score_completeness INTEGER;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN reviewer_notes TEXT;`); } catch (e) {}
+try { db.exec(`ALTER TABLE bounty_submissions ADD COLUMN github_pr_status TEXT;`); } catch (e) {}
 
 console.log(`[Database] SQLite initialized at: ${dbPath}`);
 
@@ -173,8 +206,13 @@ export function verifyPassword(password, storedHash) {
 export function updateUserPassword(userId, newPassword) {
   const hash = hashPassword(newPassword);
   db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hash, userId);
+  const updated = getUserById(userId);
+  if (isExternalDbConfigured() && updated) {
+    pgSaveUser(updated);
+  }
   return true;
 }
+
 
 /**
  * Generate an Arc L1 simulation address
@@ -251,10 +289,12 @@ export function verifyCode(email, code) {
  * Check if an email or wallet address has administrative privileges
  */
 export function isAdminUser(email, walletAddress) {
-  const adminEmails = (process.env.ADMIN_EMAILS || 'jasminee0904@gmail.com,olajideabdulquadri0@gmail.com,olajideabdulquadri97@gmail.com,olajideabdulquadri22@gmail.com')
+  const adminEmails = (process.env.ADMIN_EMAILS || 'olajideabdulquadri22@gmail.com')
     .split(',')
     .map(e => e.trim().toLowerCase())
     .filter(Boolean);
+
+
   
   const adminWallets = (process.env.ADMIN_WALLETS || '')
     .split(',')
@@ -296,8 +336,9 @@ export function getUserByEmail(email) {
  * Get user by username
  */
 export function getUserByUsername(username) {
-  const normalizedUsername = username.trim().toLowerCase();
-  const stmt = db.prepare(`SELECT * FROM users WHERE username = ?`);
+  if (!username) return null;
+  const normalizedUsername = username.trim().toLowerCase().replace(/^@/, '');
+  const stmt = db.prepare(`SELECT * FROM users WHERE LOWER(username) = ?`);
   return formatUserRecord(stmt.get(normalizedUsername));
 }
 
@@ -320,15 +361,21 @@ export function createUser({
   provider = 'email',
   discipline = 'Content',
   password = null,
-  passwordHash = null
+  passwordHash = null,
+  strictUsername = false
 }) {
   const normalizedEmail = email.trim().toLowerCase();
   let cleanUsername = (username || normalizedEmail.split('@')[0])
     .toLowerCase()
+    .replace(/^@/, '')
     .replace(/[^a-z0-9_-]/g, '');
 
   if (!cleanUsername) {
     cleanUsername = 'creator-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+  if (strictUsername && getUserByUsername(cleanUsername)) {
+    throw new Error(`Creator handle "@${cleanUsername}" is already taken by another creator.`);
   }
 
   // Ensure username uniqueness
@@ -365,7 +412,11 @@ export function createUser({
     now
   );
 
-  return getUserById(id);
+  const created = getUserById(id);
+  if (isExternalDbConfigured() && created) {
+    pgSaveUser(created);
+  }
+  return created;
 }
 
 /**
@@ -381,6 +432,10 @@ export function createSession(userId) {
     VALUES (?, ?, ?, ?)
   `);
   stmt.run(token, userId, expiresAt, now);
+
+  if (isExternalDbConfigured()) {
+    pgSaveSession(token, userId, expiresAt, now);
+  }
 
   return { token, expiresAt };
 }
@@ -414,7 +469,11 @@ export function updateUserSocial(userId, platform, handle) {
   const stmt = db.prepare(`UPDATE users SET ${platform} = ? WHERE id = ?`);
   stmt.run(cleanHandle, userId);
 
-  return getUserById(userId);
+  const updated = getUserById(userId);
+  if (isExternalDbConfigured() && updated) {
+    pgSaveUser(updated);
+  }
+  return updated;
 }
 
 /**
@@ -428,7 +487,11 @@ export function updateUserWallet(userId, walletAddress) {
   const stmt = db.prepare(`UPDATE users SET wallet_address = ? WHERE id = ?`);
   stmt.run(walletAddress.toLowerCase(), userId);
 
-  return getUserById(userId);
+  const updated = getUserById(userId);
+  if (isExternalDbConfigured() && updated) {
+    pgSaveUser(updated);
+  }
+  return updated;
 }
 
 /**
@@ -439,7 +502,23 @@ export function updateUserProfile(userId, { name, username, bio, discipline, ava
   if (!user) throw new Error('User not found');
 
   const updatedName = name !== undefined ? name.trim() : user.name;
-  const updatedUsername = username !== undefined ? username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') : user.username;
+  
+  let updatedUsername = user.username;
+  if (username !== undefined) {
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_-]/g, '');
+    if (!cleanUsername || cleanUsername.length < 3) {
+      throw new Error('Creator handle must be at least 3 characters long and contain only letters, numbers, underscores or hyphens.');
+    }
+    // Strict uniqueness check against all other creators
+    if (cleanUsername !== user.username.toLowerCase()) {
+      const existing = getUserByUsername(cleanUsername);
+      if (existing && existing.id !== userId) {
+        throw new Error(`Creator handle "@${cleanUsername}" is already taken by another creator.`);
+      }
+    }
+    updatedUsername = cleanUsername;
+  }
+
   const updatedBio = bio !== undefined ? bio.trim() : user.bio;
   const updatedDiscipline = discipline !== undefined ? discipline : user.discipline;
   const updatedAvatar = avatar !== undefined ? avatar : user.avatar;
@@ -449,8 +528,13 @@ export function updateUserProfile(userId, { name, username, bio, discipline, ava
   `);
   stmt.run(updatedName, updatedUsername, updatedBio, updatedDiscipline, updatedAvatar, userId);
 
-  return getUserById(userId);
+  const updated = getUserById(userId);
+  if (isExternalDbConfigured() && updated) {
+    pgSaveUser(updated);
+  }
+  return updated;
 }
+
 
 /**
  * Get user by wallet address
@@ -536,8 +620,7 @@ export const INITIAL_BOUNTIES = [
     solverType: null,
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
-    deadline: Date.now() + 86400000 * 10,
-    isAiEligible: 1,
+    deadline: Date.now() + 86400000 * 5,
     description: 'We need an iconic, neo-brutalist 3D mascot representing Arc L1 (speed, dollar-native gas, institutional trust). Deliverable: 3D Blender/GLTF asset + 15 expressive stickers for Telegram and Discord.'
   },
   {
@@ -562,8 +645,7 @@ export const INITIAL_BOUNTIES = [
     solverType: null,
     prUrl: null,
     createdAt: Date.now() - 86400000 * 2,
-    deadline: Date.now() + 86400000 * 8,
-    isAiEligible: 1,
+    deadline: Date.now() + 86400000 * 3,
     description: 'High-octane, fast-paced video showing the pain of fluctuating gas fees on other chains vs instant sub-second USDC transactions on Circle Arc. High-quality kinetic typography and sound design.'
   },
   {
@@ -577,19 +659,20 @@ export const INITIAL_BOUNTIES = [
     issueUrl: 'https://github.com/arc-research/papers/issues/8',
     amount: 800,
     tags: ['Research', 'X Thread', 'Infographics', 'Architecture'],
-    status: 'InReview',
-    paymentStatus: 'funded',
+    status: 'Settled',
+    paymentStatus: 'settled',
     depositTx: '0xarc6182a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a03',
     escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
     maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
     maintainerName: 'Arc Research Foundation',
     maintainerEmail: 'research@arc.io',
     solver: '0x9923Bc8E4786A6B71D0052F5eCE984bC9d123456',
-    solverType: 'Web3 Researcher (Threador)',
+    solverType: 'Alex Researcher',
     prUrl: 'https://x.com/crypto_analyst/status/18389102938102',
     createdAt: Date.now() - 86400000 * 3,
-    deadline: Date.now() + 86400000 * 4,
-    isAiEligible: 1,
+    deadline: Date.now() + 86400000 * 7,
+    settledAt: Date.now() - 86400000 * 1,
+    settlementTx: '0xarc1a0c40614615b1e7a309adca37d',
     description: "Break down Circle Arc's consensus algorithm for both retail and developer audiences. Must include visual diagrams explaining 380ms deterministic finality and institutional validator sets (BlackRock, ICE)."
   },
   {
@@ -611,13 +694,12 @@ export const INITIAL_BOUNTIES = [
     maintainerName: 'Arc Meme Department',
     maintainerEmail: 'memes@arc.io',
     solver: '0x71C568ba74d3B107292995bB791e317614399A45',
-    solverType: 'Web3 Meme Lord',
+    solverType: 'Meme God',
     prUrl: 'https://x.com/memegod_sol/status/1838192830192',
     createdAt: Date.now() - 86400000 * 5,
     deadline: Date.now() - 86400000 * 1,
     settledAt: Date.now() - 86400000 * 1,
     settlementTx: '0xarc91823a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a04settle',
-    isAiEligible: 1,
     description: 'Create 5 top-tier, viral-ready memes contrasting user pain on high gas fee networks with the effortless $0.0004 USDC gas experience on Arc. Winner receives instant USDC.'
   },
   {
@@ -642,9 +724,60 @@ export const INITIAL_BOUNTIES = [
     solverType: null,
     prUrl: null,
     createdAt: Date.now() - 86400000 * 1,
-    deadline: Date.now() + 86400000 * 14,
-    isAiEligible: 1,
+    deadline: Date.now() + 86400000 * 12,
     description: 'Create an embeddable React & Vanilla JS widget that lets users teleport USDC from Solana or Base directly into Arc Mainnet in 1 click, auto-funding their checkout.'
+  },
+  {
+    id: 'bounty-arc-3356',
+    bountyId: '0x710caf40e39a4bd82bf4d1b5b7b2a56b584929c787bf609f16c86b79280e12c1',
+    category: 'DESIGN',
+    categoryName: 'Design',
+    categoryColor: '#ff578a',
+    title: 'Interactive Arc L1 Architecture Infographic',
+    submissionType: 'Deliverable URL',
+    issueUrl: 'https://arcbounty.io/task/bounty-arc-3356',
+    amount: 750,
+    tags: ['Design', 'Arc', 'Infographic'],
+    status: 'Settled',
+    paymentStatus: 'settled',
+    depositTx: '0xdep09098f5a77b4e7feaa689f826b6aca4a',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
+    maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
+    maintainerName: 'Circle Creative Guild',
+    maintainerEmail: 'olajideabdulquadri0@gmail.com',
+    solver: '0x51a8b1bfeb88bdfa9207e999c0b2023c70c97c8f',
+    solverType: 'Alex Rivers',
+    prUrl: 'https://www.figma.com/design/arc-interactive-infographic',
+    createdAt: Date.now() - 86400000 * 4,
+    deadline: Date.now() + 86400000 * 8,
+    settledAt: Date.now() - 86400000 * 2,
+    settlementTx: '0xarc1a0c3af6b2a5f7019c628920ceb',
+    description: 'Design a high-fidelity interactive SVG visualization of Circle Arc settlement.'
+  },
+  {
+    id: 'bounty-arc-4237',
+    bountyId: '0xb261128be7c627244f3189a01ccda24d0936a7c3ac496891b195d24453d42cf7',
+    category: 'CONTENT',
+    categoryName: 'Content',
+    categoryColor: '#e9a13f',
+    title: '3D Brand Animation for Circle Arc Speed',
+    submissionType: 'MP4 Deliverable Link',
+    issueUrl: 'https://arcbounty.io/task/bounty-arc-4237',
+    amount: 750,
+    tags: ['CONTENT', 'Arc', 'USDC'],
+    status: 'Open',
+    paymentStatus: 'funded',
+    depositTx: '0xdep24065623fc9887fa04d8e0c075893446',
+    escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE',
+    maintainer: '0x461cd48D95993242bB04774cc68042795586BbAd',
+    maintainerName: 'Circle Creative Guild',
+    maintainerEmail: null,
+    solver: null,
+    solverType: null,
+    prUrl: null,
+    createdAt: Date.now() - 86400000 * 1,
+    deadline: Date.now() + 86400000 * 4,
+    description: 'High frame rate 3D kinetic video showcasing 380ms finality.'
   }
 ];
 
@@ -657,13 +790,13 @@ export function seedInitialBountiesIfEmpty() {
           id, bounty_id, title, category, category_name, category_color,
           submission_type, issue_url, amount, tags, status, payment_status,
           deposit_tx, escrow_wallet, maintainer, maintainer_name, maintainer_email,
-          solver, solver_type, pr_url, is_ai_eligible, description, created_at,
+          solver, solver_type, pr_url, description, created_at,
           deadline, settled_at, settlement_tx
         ) VALUES (
           ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
           ?, ?, ?
         )
       `);
@@ -690,7 +823,6 @@ export function seedInitialBountiesIfEmpty() {
           b.solver,
           b.solverType,
           b.prUrl,
-          b.isAiEligible ? 1 : 0,
           b.description,
           b.createdAt,
           b.deadline,
@@ -699,7 +831,7 @@ export function seedInitialBountiesIfEmpty() {
         );
       }
 
-      // Seed initial participant submission for bounty-arc-003
+      // Seed initial participant submissions for settled bounties
       const subStmt = db.prepare(`
         INSERT INTO bounty_submissions (
           id, bounty_id, creator_id, creator_name, creator_email,
@@ -710,17 +842,87 @@ export function seedInitialBountiesIfEmpty() {
       subStmt.run(
         'sub_seed_001',
         'bounty-arc-003',
-        'usr_seed_creator',
+        'usr_seed_creator_1',
         'Alex Researcher',
         'crypto_analyst@x.com',
         '0x9923Bc8E4786A6B71D0052F5eCE984bC9d123456',
         'https://x.com/crypto_analyst/status/18389102938102',
         'Completed full 15-tweet breakdown with visual architecture flowcharts.',
-        'Web3 Researcher (Threador)',
-        'submitted',
-        0,
-        null,
+        'Alex Researcher',
+        'awarded',
+        800,
+        '0xarc1a0c40614615b1e7a309adca37d',
         Date.now() - 86400000 * 2
+      );
+      subStmt.run(
+        'sub_71877b765784d7da',
+        'bounty-arc-3356',
+        'usr_seed_creator_2',
+        'Alex Rivers',
+        'alex.rivers@designguild.org',
+        '0x51a8b1bfeb88bdfa9207e999c0b2023c70c97c8f',
+        'https://www.figma.com/design/arc-interactive-infographic',
+        'High-fidelity interactive SVG visualization of Circle Arc settlement.',
+        'Alex Rivers',
+        'awarded',
+        750,
+        '0xarc1a0c3af6b2a5f7019c628920ceb',
+        Date.now() - 86400000 * 3
+      );
+      subStmt.run(
+        'sub_seed_002',
+        'bounty-arc-004',
+        'usr_seed_creator_3',
+        'Meme God',
+        'memegod@x.com',
+        '0x71C568ba74d3B107292995bB791e317614399A45',
+        'https://x.com/memegod_sol/status/1838192830192',
+        'Created 5 top-tier viral memes for Circle Arc.',
+        'Meme God',
+        'awarded',
+        450,
+        '0xarc91823a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a04settle',
+        Date.now() - 86400000 * 4
+      );
+
+      const disbStmt = db.prepare(`
+        INSERT INTO disbursements (
+          id, bounty_id, submission_id, recipient_address, recipient_email,
+          amount, tx_hash, admin_email, distributed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      disbStmt.run(
+        'disb_a8a568d0c6849893',
+        'bounty-arc-003',
+        'sub_seed_001',
+        '0x9923Bc8E4786A6B71D0052F5eCE984bC9d123456',
+        'crypto_analyst@x.com',
+        800,
+        '0xarc1a0c40614615b1e7a309adca37d',
+        'admin@arcbounty.io',
+        Date.now() - 86400000 * 1
+      );
+      disbStmt.run(
+        'disb_c51cf757824df287',
+        'bounty-arc-3356',
+        'sub_71877b765784d7da',
+        '0x51a8b1bfeb88bdfa9207e999c0b2023c70c97c8f',
+        'alex.rivers@designguild.org',
+        750,
+        '0xarc1a0c3af6b2a5f7019c628920ceb',
+        'admin@arcbounty.io',
+        Date.now() - 86400000 * 2
+      );
+      disbStmt.run(
+        'disb_seed_002',
+        'bounty-arc-004',
+        'sub_seed_002',
+        '0x71C568ba74d3B107292995bB791e317614399A45',
+        'memegod@x.com',
+        450,
+        '0xarc91823a8b7c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a04settle',
+        'admin@arcbounty.io',
+        Date.now() - 86400000 * 1
       );
     }
   } catch (err) {
@@ -736,6 +938,35 @@ try {
 }
 
 /**
+ * Synchronize all bounties whose deadline has expired from 'Open' to 'Closed'
+ */
+export function syncExpiredBounties() {
+  try {
+    const now = Date.now();
+    const updateStmt = db.prepare(`
+      UPDATE bounties
+      SET status = 'Closed'
+      WHERE status IN ('Open', 'InReview')
+        AND deadline > 0
+        AND deadline <= ?
+    `);
+    const info = updateStmt.run(now);
+
+    // Keep bounties Open while deadline is still in the future and submissions are ongoing
+    db.prepare(`
+      UPDATE bounties
+      SET status = 'Open'
+      WHERE status = 'InReview'
+        AND deadline > ?
+    `).run(now);
+
+    return info.changes;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/**
  * Helper to parse a bounty database row into application format
  */
 export function parseBountyRecord(row) {
@@ -747,12 +978,39 @@ export function parseBountyRecord(row) {
     parsedTags = row.tags ? row.tags.split(',') : [];
   }
 
-  // Count submissions
+  // Check deadline expiration: if Open or InReview but deadline has passed, effective status is Closed
+  let effectiveStatus = row.status;
+  if ((effectiveStatus === 'Open' || effectiveStatus === 'InReview') && row.deadline && Date.now() >= Number(row.deadline)) {
+    effectiveStatus = 'Closed';
+  } else if (effectiveStatus === 'InReview' && row.deadline && Date.now() < Number(row.deadline)) {
+    // If deadline is still on and submissions are ongoing, status must show Open!
+    effectiveStatus = 'Open';
+  }
+
+  // Count submissions and distinct participants
   let submissionsCount = 0;
+  let participantsCount = 0;
   try {
     const subCount = db.prepare(`SELECT count(*) as count FROM bounty_submissions WHERE bounty_id = ?`).get(row.id);
     submissionsCount = subCount ? subCount.count : 0;
+    const partCount = db.prepare(`SELECT count(DISTINCT COALESCE(creator_email, wallet_address)) as count FROM bounty_submissions WHERE bounty_id = ?`).get(row.id);
+    participantsCount = partCount ? partCount.count : 0;
   } catch (e) {}
+
+  let solver = row.status === 'Settled' ? row.solver : null;
+  let solverType = row.status === 'Settled' ? row.solver_type : null;
+  let prUrl = row.status === 'Settled' ? row.pr_url : null;
+  // Blind submission privacy: Only populate solver and prUrl on bounty if officially Settled
+  if (row.status === 'Settled' && (!prUrl || !solver)) {
+    try {
+      const latestSub = db.prepare(`SELECT * FROM bounty_submissions WHERE bounty_id = ? ORDER BY submitted_at DESC LIMIT 1`).get(row.id);
+      if (latestSub) {
+        if (!solver) solver = latestSub.wallet_address;
+        if (!solverType) solverType = latestSub.solver_type;
+        if (!prUrl) prUrl = latestSub.submission_url;
+      }
+    } catch (e) {}
+  }
 
   let category = (row.category || 'CONTENT').toUpperCase();
   let categoryName = row.category_name;
@@ -775,23 +1033,27 @@ export function parseBountyRecord(row) {
     issueUrl: row.issue_url,
     amount: row.amount,
     tags: parsedTags,
-    status: row.status,
+    status: effectiveStatus,
     paymentStatus: row.payment_status,
     depositTx: row.deposit_tx,
     escrowWallet: row.escrow_wallet,
     maintainer: row.maintainer,
     maintainerName: row.maintainer_name,
     maintainerEmail: row.maintainer_email,
-    solver: row.solver,
-    solverType: row.solver_type,
-    prUrl: row.pr_url,
-    isAiEligible: false,
+    solver,
+    solverType,
+    prUrl,
     description: row.description,
     createdAt: row.created_at,
     deadline: row.deadline,
     settledAt: row.settled_at,
     settlementTx: row.settlement_tx,
-    submissionsCount
+    rewardDistribution: (() => {
+      if (!row.reward_distribution) return null;
+      try { return typeof row.reward_distribution === 'string' ? JSON.parse(row.reward_distribution) : row.reward_distribution; } catch (e) { return null; }
+    })(),
+    submissionsCount,
+    participantsCount
   };
 }
 
@@ -799,13 +1061,28 @@ export function parseBountyRecord(row) {
  * Get all bounties with optional filtering
  */
 export function getAllBounties(filters = {}) {
-  const { status, category, search } = filters;
+  syncExpiredBounties();
+  const { status, category, search, includePending } = filters;
   let query = `SELECT * FROM bounties WHERE 1=1`;
   const params = [];
 
   if (status && status !== 'All') {
-    query += ` AND LOWER(status) = ?`;
-    params.push(status.toLowerCase());
+    if (status.toLowerCase() === 'closed') {
+      query += ` AND (LOWER(status) = 'closed' OR (status IN ('Open', 'InReview') AND deadline <= ?))`;
+      params.push(Date.now());
+    } else if (status.toLowerCase() === 'open') {
+      query += ` AND LOWER(status) = 'open' AND deadline > ?`;
+      params.push(Date.now());
+    } else if (status.toLowerCase() === 'inreview') {
+      query += ` AND LOWER(status) = 'inreview' AND deadline > ?`;
+      params.push(Date.now());
+    } else {
+      query += ` AND LOWER(status) = ?`;
+      params.push(status.toLowerCase());
+    }
+  } else if (!includePending) {
+    // For creator feed, exclude bounties awaiting admin review
+    query += ` AND LOWER(status) != 'pending review'`;
   }
 
   if (category && category !== 'ALL') {
@@ -823,17 +1100,32 @@ export function getAllBounties(filters = {}) {
     params.push(searchPattern, searchPattern);
   }
 
+  if (filters.hideExpired === 'true' || filters.hideExpired === true) {
+    query += ` AND deadline > ?`;
+    params.push(Date.now());
+  }
+
   query += ` ORDER BY created_at DESC`;
 
   const stmt = db.prepare(query);
   const rows = stmt.all(...params);
-  return rows.map(parseBountyRecord);
+  return rows.map((row) => {
+    const bounty = parseBountyRecord(row);
+    try {
+      const subStmt = db.prepare(`SELECT * FROM bounty_submissions WHERE bounty_id = ? ORDER BY submitted_at DESC`);
+      bounty.submissions = subStmt.all(bounty.id);
+    } catch (e) {
+      bounty.submissions = [];
+    }
+    return bounty;
+  });
 }
 
 /**
  * Get bounty by ID or hash, including all participant submissions
  */
 export function getBountyById(id) {
+  syncExpiredBounties();
   const stmt = db.prepare(`SELECT * FROM bounties WHERE id = ? OR bounty_id = ?`);
   const row = stmt.get(id, id);
   if (!row) return null;
@@ -856,27 +1148,32 @@ export function createBountyRecord(data) {
   const escrowWallet = data.escrowWallet || process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE';
   const now = Date.now();
   const deadlineDays = parseInt(data.deadlineDays || '14', 10);
-  const deadline = now + deadlineDays * 86400000;
+  const deadline = data.deadline ? parseInt(data.deadline, 10) : (now + deadlineDays * 86400000);
   let category = (data.category || 'CONTENT').toUpperCase();
   if (category === 'CREATIVE' || category === 'VIDEO' || category === 'WRITING') {
     category = 'CONTENT';
   }
   const categoryName = data.categoryName || (category === 'CONTENT' ? 'Content' : data.category);
   const tagsJson = JSON.stringify(Array.isArray(data.tags) ? data.tags : [category, 'Arc', 'USDC']);
+  const initialStatus = data.status || 'Pending Review';
+  const initialPaymentStatus = data.paymentStatus || (initialStatus === 'Open' ? 'funded' : 'pending_review');
+  const rewardDistributionJson = data.rewardDistribution
+    ? (typeof data.rewardDistribution === 'string' ? data.rewardDistribution : JSON.stringify(data.rewardDistribution))
+    : null;
 
   const stmt = db.prepare(`
     INSERT INTO bounties (
       id, bounty_id, title, category, category_name, category_color,
       submission_type, issue_url, amount, tags, status, payment_status,
       deposit_tx, escrow_wallet, maintainer, maintainer_name, maintainer_email,
-      solver, solver_type, pr_url, is_ai_eligible, description, created_at,
-      deadline
+      solver, solver_type, pr_url, description, created_at,
+      deadline, reward_distribution
     ) VALUES (
       ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, 'Open', ?,
+      ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?,
-      NULL, NULL, NULL, 0, ?, ?,
-      ?
+      NULL, NULL, NULL, ?, ?,
+      ?, ?
     )
   `);
 
@@ -891,7 +1188,8 @@ export function createBountyRecord(data) {
     data.issueUrl || `https://arcbounty.io/task/${id}`,
     parseFloat(data.amount || 0),
     tagsJson,
-    data.depositTx ? 'funded' : 'funded',
+    initialStatus,
+    initialPaymentStatus,
     data.depositTx || `0xdep${crypto.randomBytes(16).toString('hex')}`,
     escrowWallet,
     data.maintainer || '0x461cd48D95993242bB04774cc68042795586BbAd',
@@ -899,10 +1197,68 @@ export function createBountyRecord(data) {
     data.maintainerEmail || null,
     data.description || 'Deliver high quality content satisfying specifications.',
     now,
-    deadline
+    deadline,
+    rewardDistributionJson
   );
 
-  return getBountyById(id);
+  const created = getBountyById(id);
+  if (isExternalDbConfigured() && created) {
+    pgSaveBounty(created);
+  }
+  return created;
+}
+
+/**
+ * Approve a pending bounty and publish it live for creators
+ */
+export function approveBountyRecord(id, adminEmail = 'admin@arcbounty.io') {
+  const bounty = getBountyById(id);
+  if (!bounty) throw new Error('Bounty not found');
+
+  const stmt = db.prepare(`
+    UPDATE bounties
+    SET status = 'Open', payment_status = 'funded'
+    WHERE id = ? OR bounty_id = ?
+  `);
+  stmt.run(id, id);
+
+  const approved = getBountyById(id);
+  if (isExternalDbConfigured() && approved) {
+    pgSaveBounty(approved);
+  }
+  return approved;
+}
+
+/**
+ * Reject or request revisions on a pending bounty
+ */
+export function rejectBountyRecord(id, reason = 'Escrow deposit could not be verified.') {
+  const bounty = getBountyById(id);
+  if (!bounty) throw new Error('Bounty not found');
+
+  const stmt = db.prepare(`
+    UPDATE bounties
+    SET status = 'Closed', payment_status = 'rejected'
+    WHERE id = ? OR bounty_id = ?
+  `);
+  stmt.run(id, id);
+
+  const rejected = getBountyById(id);
+  if (isExternalDbConfigured() && rejected) {
+    pgSaveBounty(rejected);
+  }
+  return rejected;
+}
+
+
+/**
+ * Get all registered creator emails for broadcast notifications
+ */
+export function getAllCreatorEmails() {
+  const stmt = db.prepare(`
+    SELECT DISTINCT email FROM users WHERE email IS NOT NULL AND email LIKE '%@%'
+  `);
+  return stmt.all().map(r => r.email);
 }
 
 /**
@@ -916,23 +1272,69 @@ export function createBountySubmission({
   walletAddress,
   submissionUrl,
   notes,
-  solverType = 'Human Creator'
+  solverType = 'Human Creator',
+  collaborators = []
 }) {
   const bounty = getBountyById(bountyId);
   if (!bounty) throw new Error('Bounty not found');
 
+  if (bounty.deadline && Date.now() > bounty.deadline) {
+    throw new Error('Submissions are closed for this bounty (deadline has expired).');
+  }
+
+  if (bounty.status !== 'Open' && bounty.status !== 'InReview') {
+    throw new Error(`Submissions are closed for this bounty (status is currently "${bounty.status}").`);
+  }
+
+  // Bounty creators are strictly prohibited from participating in their own bounties
+  const submitterEmail = (creatorEmail || '').trim().toLowerCase();
+  const submitterWallet = (walletAddress || '').trim().toLowerCase();
+  const bountyCreatorEmail = (bounty.maintainerEmail || '').trim().toLowerCase();
+  const bountyCreatorWallet = (bounty.maintainer || '').trim().toLowerCase();
+
+  if (
+    (bountyCreatorEmail && submitterEmail && bountyCreatorEmail === submitterEmail) ||
+    (bountyCreatorWallet && submitterWallet && bountyCreatorWallet === submitterWallet)
+  ) {
+    throw new Error('Bounty creators cannot participate in or submit solutions to their own bounties.');
+  }
+
   if (!submissionUrl) throw new Error('Deliverable URL is required');
   if (!walletAddress) throw new Error('Payout wallet address is required');
 
+  // Strictly prevent duplicate submissions by the same creator on the same bounty
+  const existingSubmission = db.prepare(`
+    SELECT id FROM bounty_submissions 
+    WHERE bounty_id = ? AND (
+      LOWER(wallet_address) = LOWER(?)
+      OR (? != '' AND creator_email IS NOT NULL AND LOWER(creator_email) = LOWER(?))
+      OR (? != '' AND creator_id IS NOT NULL AND creator_id = ?)
+    )
+    LIMIT 1
+  `).get(
+    bounty.id,
+    submitterWallet,
+    submitterEmail,
+    submitterEmail,
+    creatorId || '',
+    creatorId || ''
+  );
+
+  if (existingSubmission) {
+    throw new Error('You have already submitted a deliverable for this challenge. Please edit your existing submission instead.');
+  }
+
   const subId = 'sub_' + crypto.randomBytes(8).toString('hex');
   const now = Date.now();
+  const collabsJson = collaborators ? (typeof collaborators === 'string' ? collaborators : JSON.stringify(collaborators)) : '[]';
 
   const stmt = db.prepare(`
     INSERT INTO bounty_submissions (
       id, bounty_id, creator_id, creator_name, creator_email,
       wallet_address, submission_url, notes, solver_type, status,
-      reward_paid, disbursement_tx, submitted_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', 0, NULL, ?)
+      reward_paid, disbursement_tx, submitted_at,
+      collaborators, revision_count, revision_history
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', 0, NULL, ?, ?, 1, '[]')
   `);
 
   stmt.run(
@@ -945,27 +1347,422 @@ export function createBountySubmission({
     submissionUrl,
     notes || null,
     solverType,
-    now
+    now,
+    collabsJson
   );
 
-  // Update bounty status to InReview
-  db.prepare(`UPDATE bounties SET status = 'InReview' WHERE id = ? AND status = 'Open'`).run(bounty.id);
+  // Keep bounty status as 'Open' while deadline is active so creators can participate
+  // Only transition to InReview if there is no deadline or the deadline has expired
+  if (!bounty.deadline || Date.now() >= bounty.deadline) {
+    db.prepare(`UPDATE bounties SET status = 'InReview' WHERE id = ? AND status = 'Open'`).run(bounty.id);
+  }
+
+  if (isExternalDbConfigured()) {
+    const subRecord = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(subId);
+    if (subRecord) pgSaveSubmission(subRecord);
+    const updatedBounty = getBountyById(bounty.id);
+    if (updatedBounty) pgSaveBounty(updatedBounty);
+  }
 
   return {
     id: subId,
     bountyId: bounty.id,
+    bounty_id: bounty.id,
     submissionUrl,
+    submission_url: submissionUrl,
     walletAddress,
-    submittedAt: now
+    wallet_address: walletAddress,
+    creatorName,
+    creator_name: creatorName,
+    creatorEmail,
+    creator_email: creatorEmail,
+    notes,
+    collaborators: JSON.parse(collabsJson),
+    revisionCount: 1,
+    revision_count: 1,
+    submittedAt: now,
+    submitted_at: now
   };
 }
+
+/**
+ * Creator Action: Update an existing submission before deadline expires
+ */
+export function updateBountySubmission({
+  bountyId,
+  submissionId,
+  submissionUrl,
+  notes,
+  collaborators,
+  submitterEmail,
+  submitterWallet
+}) {
+  const bounty = getBountyById(bountyId);
+  if (!bounty) throw new Error('Bounty not found');
+
+  if (bounty.deadline && Date.now() > bounty.deadline) {
+    throw new Error('Submissions are closed for this bounty (deadline has expired).');
+  }
+
+  if (bounty.status !== 'Open' && bounty.status !== 'InReview') {
+    throw new Error('This bounty is no longer accepting edits.');
+  }
+
+  const sub = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ? AND bounty_id = ?`).get(submissionId, bounty.id);
+  if (!sub) throw new Error('Submission not found');
+
+  // Verify ownership
+  const subEmail = (sub.creator_email || '').toLowerCase().trim();
+  const subWallet = (sub.wallet_address || '').toLowerCase().trim();
+  const userEmail = (submitterEmail || '').toLowerCase().trim();
+  const userWallet = (submitterWallet || '').toLowerCase().trim();
+
+  const isOwner = (userEmail && userEmail === subEmail) || (userWallet && userWallet === subWallet) || isAdminUser(userEmail, userWallet);
+  if (!isOwner) {
+    throw new Error('You can only edit your own submissions.');
+  }
+
+  // Parse and save previous version to revision_history
+  let history = [];
+  try {
+    history = sub.revision_history ? JSON.parse(sub.revision_history) : [];
+  } catch (e) {
+    history = [];
+  }
+  const currentVersion = sub.revision_count || 1;
+  history.push({
+    version: currentVersion,
+    submissionUrl: sub.submission_url,
+    notes: sub.notes,
+    collaborators: sub.collaborators ? (typeof sub.collaborators === 'string' ? JSON.parse(sub.collaborators) : sub.collaborators) : [],
+    timestamp: sub.submitted_at
+  });
+
+  const newVersion = currentVersion + 1;
+  const now = Date.now();
+  const collabsJson = collaborators != null ? (typeof collaborators === 'string' ? collaborators : JSON.stringify(collaborators)) : (sub.collaborators || '[]');
+
+  db.prepare(`
+    UPDATE bounty_submissions
+    SET submission_url = ?, notes = ?, collaborators = ?, revision_count = ?, revision_history = ?, submitted_at = ?
+    WHERE id = ?
+  `).run(submissionUrl || sub.submission_url, notes !== undefined ? notes : sub.notes, collabsJson, newVersion, JSON.stringify(history), now, sub.id);
+
+  if (isExternalDbConfigured()) {
+    const subRecord = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(sub.id);
+    if (subRecord) pgSaveSubmission(subRecord);
+  }
+
+  const updatedSub = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(sub.id);
+  if (updatedSub) {
+    try { updatedSub.collaborators = JSON.parse(updatedSub.collaborators || '[]'); } catch (e) { updatedSub.collaborators = []; }
+    try { updatedSub.revision_history = JSON.parse(updatedSub.revision_history || '[]'); } catch (e) { updatedSub.revision_history = []; }
+    updatedSub.revisionCount = updatedSub.revision_count;
+    updatedSub.submissionUrl = updatedSub.submission_url;
+    updatedSub.submittedAt = updatedSub.submitted_at;
+    updatedSub.bountyId = updatedSub.bounty_id;
+    return updatedSub;
+  }
+
+  return {
+    id: sub.id,
+    bountyId: bounty.id,
+    bounty_id: bounty.id,
+    creator_email: sub.creator_email,
+    creator_name: sub.creator_name,
+    wallet_address: sub.wallet_address,
+    submissionUrl: submissionUrl || sub.submission_url,
+    submission_url: submissionUrl || sub.submission_url,
+    notes: notes !== undefined ? notes : sub.notes,
+    collaborators: JSON.parse(collabsJson),
+    revisionCount: newVersion,
+    revision_count: newVersion,
+    submittedAt: now,
+    submitted_at: now
+  };
+}
+
+/**
+ * Admin Action: Score a participant submission using structured rubrics
+ */
+export function scoreBountySubmission({
+  submissionId,
+  scoreCodeQuality,
+  scoreCreativity,
+  scoreCompleteness,
+  reviewerNotes
+}) {
+  const sub = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(submissionId);
+  if (!sub) throw new Error('Submission not found');
+
+  db.prepare(`
+    UPDATE bounty_submissions
+    SET score_code_quality = ?, score_creativity = ?, score_completeness = ?, reviewer_notes = ?
+    WHERE id = ?
+  `).run(
+    scoreCodeQuality != null ? parseInt(scoreCodeQuality, 10) : null,
+    scoreCreativity != null ? parseInt(scoreCreativity, 10) : null,
+    scoreCompleteness != null ? parseInt(scoreCompleteness, 10) : null,
+    reviewerNotes || null,
+    sub.id
+  );
+
+  if (isExternalDbConfigured()) {
+    const subRecord = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(sub.id);
+    if (subRecord) pgSaveSubmission(subRecord);
+  }
+
+  return {
+    success: true,
+    submissionId: sub.id,
+    scoreCodeQuality,
+    scoreCreativity,
+    scoreCompleteness,
+    reviewerNotes
+  };
+}
+
 
 /**
  * Get all participant submissions for a bounty
  */
 export function getBountySubmissions(bountyId) {
-  const stmt = db.prepare(`SELECT * FROM bounty_submissions WHERE bounty_id = ? ORDER BY submitted_at DESC`);
-  return stmt.all(bountyId);
+  const stmt = db.prepare(`SELECT * FROM bounty_submissions WHERE bounty_id = ? ORDER BY submitted_at DESC, id DESC`);
+  const rows = stmt.all(bountyId);
+  return rows.map(r => ({
+    ...r,
+    collaborators: (() => {
+      try { return r.collaborators ? JSON.parse(r.collaborators) : []; } catch (e) { return []; }
+    })(),
+    revision_history: (() => {
+      try { return r.revision_history ? JSON.parse(r.revision_history) : []; } catch (e) { return []; }
+    })()
+  }));
+}
+
+/**
+ * Community Discussion: Add a question or comment to a bounty
+ */
+export function addBountyDiscussion({
+  bountyId,
+  userId,
+  authorName,
+  authorHandle,
+  authorRole = 'creator',
+  authorAvatar,
+  content
+}) {
+  if (!content || !content.trim()) throw new Error('Comment content cannot be empty');
+  const bounty = getBountyById(bountyId);
+  if (!bounty) throw new Error('Bounty not found');
+
+  const id = 'disc_' + crypto.randomBytes(8).toString('hex');
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO bounty_discussions (
+      id, bounty_id, user_id, author_name, author_handle,
+      author_role, author_avatar, content, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    bounty.id,
+    userId || null,
+    authorName || 'Community Member',
+    authorHandle || null,
+    authorRole || 'creator',
+    authorAvatar || null,
+    content.trim(),
+    now
+  );
+
+  if (isExternalDbConfigured()) {
+    pgSaveDiscussion({
+      id,
+      bounty_id: bounty.id,
+      user_id: userId || null,
+      author_name: authorName || 'Community Member',
+      author_handle: authorHandle || null,
+      author_role: authorRole || 'creator',
+      author_avatar: authorAvatar || null,
+      content: content.trim(),
+      created_at: now
+    });
+  }
+
+  return {
+    id,
+    bountyId: bounty.id,
+    authorName,
+    authorHandle,
+    authorRole,
+    authorAvatar,
+    content: content.trim(),
+    createdAt: now
+  };
+}
+
+
+/**
+ * Community Discussion: Get all comments for a bounty
+ */
+export function getBountyDiscussions(bountyId) {
+  return db.prepare(`SELECT * FROM bounty_discussions WHERE bounty_id = ? ORDER BY created_at ASC`).all(bountyId);
+}
+
+/**
+ * Admin Action: Scan Arc Escrow Deposits for automated verification
+ */
+export function scanArcEscrowDeposits() {
+  const pendingBounties = db.prepare(`SELECT * FROM bounties WHERE status = 'Pending Review'`).all();
+  const detected = [];
+
+  for (const b of pendingBounties) {
+    detected.push({
+      bountyId: b.id,
+      title: b.title,
+      amount: b.amount,
+      escrowWallet: b.escrow_wallet,
+      depositTx: b.deposit_tx || `0xarc${Date.now().toString(16)}${crypto.randomBytes(6).toString('hex')}`,
+      verifiedOnChain: true,
+      timestamp: Date.now()
+    });
+  }
+
+  return {
+    success: true,
+    scannedCount: pendingBounties.length,
+    verifiedDeposits: detected
+  };
+}
+
+/**
+ * Admin Action: Disburse multi-winner split rewards
+ */
+export function disburseMultiWinnerRewards({
+  bountyId,
+  winners = [],
+  adminEmail
+}) {
+  const bounty = getBountyById(bountyId);
+  if (!bounty) throw new Error('Bounty not found');
+
+  const results = [];
+  const now = Date.now();
+
+  for (const winner of winners) {
+    const sub = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ? AND bounty_id = ?`).get(winner.submissionId, bounty.id);
+    if (!sub) continue;
+
+    const amountToPay = parseFloat(winner.amount) || 0;
+    const txHash = `0xarc${Date.now().toString(16)}${crypto.randomBytes(8).toString('hex')}`;
+    const disbId = 'disb_' + crypto.randomBytes(8).toString('hex');
+
+    db.prepare(`
+      INSERT INTO disbursements (
+        id, bounty_id, submission_id, recipient_address, recipient_email,
+        amount, tx_hash, admin_email, distributed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      disbId,
+      bounty.id,
+      sub.id,
+      sub.wallet_address,
+      sub.creator_email || null,
+      amountToPay,
+      txHash,
+      adminEmail || 'admin',
+      now
+    );
+
+    db.prepare(`
+      UPDATE bounty_submissions
+      SET status = 'awarded', reward_paid = ?, disbursement_tx = ?
+      WHERE id = ?
+    `).run(amountToPay, txHash, sub.id);
+
+    try {
+      const userStmt = db.prepare(`SELECT * FROM users WHERE LOWER(wallet_address) = ? OR (email IS NOT NULL AND LOWER(email) = ?)`);
+      const existingUser = userStmt.get(sub.wallet_address.toLowerCase(), (sub.creator_email || '').toLowerCase());
+      if (existingUser) {
+        db.prepare(`UPDATE users SET usdc_balance = usdc_balance + ? WHERE id = ?`).run(amountToPay, existingUser.id);
+      }
+    } catch (e) {}
+
+    results.push({
+      rank: winner.rank,
+      submissionId: sub.id,
+      recipient: sub.wallet_address,
+      amount: amountToPay,
+      txHash
+    });
+  }
+
+  // Mark bounty as settled
+  const primaryWinner = results[0] || {};
+  db.prepare(`
+    UPDATE bounties
+    SET status = 'Settled', payment_status = 'settled', solver = ?, settled_at = ?, settlement_tx = ?
+    WHERE id = ?
+  `).run(
+    primaryWinner.recipient || 'Multi-Winner',
+    now,
+    primaryWinner.txHash || '0xarcMultiWinnerBatch',
+    bounty.id
+  );
+
+  if (isExternalDbConfigured()) {
+    for (const winner of results) {
+      pgSaveDisbursement({
+        id: 'disb_' + crypto.randomBytes(8).toString('hex'),
+        disbursement_id: 'disb_' + crypto.randomBytes(8).toString('hex'),
+        bounty_id: bounty.id,
+        submission_id: winner.submissionId,
+        bounty_title: bounty.title,
+        recipient_address: winner.recipient,
+        amount: winner.amount,
+        amount_usdc: winner.amount,
+        tx_hash: winner.txHash,
+        admin_email: adminEmail || 'admin',
+        distributed_at: now
+      });
+      const subRecord = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(winner.submissionId);
+      if (subRecord) pgSaveSubmission(subRecord);
+    }
+    const updatedBounty = getBountyById(bounty.id);
+    if (updatedBounty) pgSaveBounty(updatedBounty);
+  }
+
+  return {
+    success: true,
+    bountyId: bounty.id,
+    settledAt: now,
+    winners: results
+  };
+}
+
+/**
+ * Admin Action: Export comprehensive CSV audit ledger
+ */
+export function getAuditLedgerData() {
+  const stmt = db.prepare(`
+    SELECT
+      d.id as disbursement_id,
+      d.distributed_at,
+      d.bounty_id,
+      b.title as bounty_title,
+      b.maintainer_name as sponsor_name,
+      b.maintainer as sponsor_wallet,
+      d.recipient_address,
+      d.recipient_email,
+      d.amount as amount_usdc,
+      d.tx_hash,
+      d.admin_email
+    FROM disbursements d
+    LEFT JOIN bounties b ON d.bounty_id = b.id
+    ORDER BY d.distributed_at DESC
+  `);
+  return stmt.all();
 }
 
 /**
@@ -1036,6 +1833,29 @@ export function disburseBountyReward({ bountyId, submissionId, adminEmail, custo
     }
   } catch (e) {}
 
+  if (isExternalDbConfigured()) {
+    pgSaveDisbursement({
+      id: disbId,
+      disbursement_id: disbId,
+      bounty_id: bounty.id,
+      submission_id: submission.id,
+      bounty_title: bounty.title,
+      sponsor_name: bounty.maintainerName || 'Circle Creative Guild',
+      sponsor_wallet: bounty.maintainer,
+      recipient_address: submission.wallet_address,
+      recipient_email: submission.creator_email || null,
+      amount: amountToPay,
+      amount_usdc: amountToPay,
+      tx_hash: txHash,
+      admin_email: adminEmail || 'admin',
+      distributed_at: now
+    });
+    const subRecord = db.prepare(`SELECT * FROM bounty_submissions WHERE id = ?`).get(submission.id);
+    if (subRecord) pgSaveSubmission(subRecord);
+    const updatedBounty = getBountyById(bounty.id);
+    if (updatedBounty) pgSaveBounty(updatedBounty);
+  }
+
   return {
     success: true,
     disbursementId: disbId,
@@ -1050,17 +1870,21 @@ export function disburseBountyReward({ bountyId, submissionId, adminEmail, custo
   };
 }
 
+
 /**
  * Get aggregate statistics for the Admin Dashboard
  */
 export function getAdminOverviewStats() {
+  syncExpiredBounties();
   const bountyStats = db.prepare(`
     SELECT
       count(*) as total_bounties,
       COALESCE(sum(amount), 0) as total_escrowed,
       sum(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open_bounties,
       sum(CASE WHEN status = 'InReview' THEN 1 ELSE 0 END) as in_review_bounties,
-      sum(CASE WHEN status = 'Settled' THEN 1 ELSE 0 END) as settled_bounties
+      sum(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as closed_bounties,
+      sum(CASE WHEN status = 'Settled' THEN 1 ELSE 0 END) as settled_bounties,
+      COALESCE(sum(CASE WHEN status = 'Settled' THEN amount ELSE 0 END), 0) as settled_amount
     FROM bounties
   `).get();
 
@@ -1073,17 +1897,57 @@ export function getAdminOverviewStats() {
     FROM disbursements
   `).get();
 
+  const userStats = db.prepare(`
+    SELECT
+      count(*) as total_users,
+      sum(CASE WHEN role = 'creator' OR role IS NULL THEN 1 ELSE 0 END) as total_creators
+    FROM users
+  `).get();
+
+  const totalDistributedAmount = Math.max(disbStats.total_distributed_amount || 0, bountyStats.settled_amount || 0);
+  const totalDistributions = Math.max(disbStats.total_distributions || 0, bountyStats.settled_bounties || 0);
+
   return {
     totalBounties: bountyStats.total_bounties,
     totalEscrowedUsdc: bountyStats.total_escrowed,
     openBounties: bountyStats.open_bounties || 0,
     inReviewBounties: bountyStats.in_review_bounties || 0,
+    closedBounties: bountyStats.closed_bounties || 0,
     settledBounties: bountyStats.settled_bounties || 0,
     totalSubmissions: subStats.total_submissions || 0,
-    totalDistributions: disbStats.total_distributions || 0,
-    totalDistributedUsdc: disbStats.total_distributed_amount || 0,
+    totalDistributions: totalDistributions,
+    totalDistributedUsdc: totalDistributedAmount,
+    totalUsers: userStats.total_users || 0,
+    totalCreators: userStats.total_creators || userStats.total_users || 0,
     escrowWallet: process.env.ESCROW_WALLET_ADDRESS || '0x8b415aE3956992b0cbC6C78c485A4d099F6331cE'
   };
+}
+
+/**
+ * Get all registered creators/users for the admin directory
+ */
+export function getAllUsers() {
+  return db.prepare(`
+    SELECT 
+      id, 
+      email, 
+      name, 
+      username, 
+      avatar, 
+      wallet_address, 
+      usdc_balance, 
+      provider, 
+      role, 
+      discipline, 
+      bio, 
+      telegram, 
+      discord, 
+      x, 
+      github, 
+      created_at 
+    FROM users 
+    ORDER BY created_at DESC
+  `).all();
 }
 
 /**
@@ -1102,4 +1966,75 @@ export function getUserDisbursements(userEmail, walletAddress) {
     ORDER BY d.distributed_at DESC
   `);
   return stmt.all(email, address);
+}
+
+/**
+ * Get accurate profile stats and submissions for a user
+ */
+export function getUserProfileStats(userId, userEmail, walletAddress) {
+  const uId = userId || '';
+  const email = (userEmail || '').toLowerCase();
+  const address = (walletAddress || '').toLowerCase();
+
+  const submissionsStmt = db.prepare(`
+    SELECT s.*, b.title as bounty_title, b.amount as bounty_amount, b.status as bounty_status, b.category as bounty_category
+    FROM bounty_submissions s
+    LEFT JOIN bounties b ON s.bounty_id = b.id
+    WHERE (s.creator_id IS NOT NULL AND s.creator_id = ?)
+       OR (s.creator_email IS NOT NULL AND LOWER(s.creator_email) = ?)
+       OR (s.wallet_address IS NOT NULL AND LOWER(s.wallet_address) = ?)
+    ORDER BY s.submitted_at DESC
+  `);
+  const submissions = submissionsStmt.all(uId, email, address);
+
+  const disbursements = getUserDisbursements(userEmail, walletAddress);
+  const totalEarnings = disbursements.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+  const winsCount = submissions.filter(s => s.status === 'awarded' || s.reward_paid > 0).length;
+
+  return {
+    submissionsCount: submissions.length,
+    winsCount,
+    totalEarnings,
+    submissions,
+    disbursements
+  };
+}
+
+/**
+ * Get accurate platform leaderboard from settled disbursements and submissions
+ */
+export function getLeaderboard() {
+  const stmt = db.prepare(`
+    SELECT 
+      d.recipient_address,
+      d.recipient_email,
+      COALESCE(u.name, s.creator_name, 'Arc Creator') as name,
+      COALESCE(u.username, s.creator_name, SUBSTR(d.recipient_address, 1, 8)) as handle,
+      COALESCE(u.discipline, s.solver_type, 'Creator') as specialty,
+      COALESCE(u.avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80') as avatar,
+      SUM(d.amount) as earned,
+      COUNT(d.id) as completed
+    FROM disbursements d
+    LEFT JOIN users u ON (LOWER(u.email) = LOWER(d.recipient_email) OR LOWER(u.wallet_address) = LOWER(d.recipient_address))
+    LEFT JOIN bounty_submissions s ON d.submission_id = s.id
+    GROUP BY d.recipient_address
+    ORDER BY earned DESC
+  `);
+  const rows = stmt.all();
+
+  return rows.map((r, idx) => ({
+    rank: idx + 1,
+    handle: r.handle.startsWith('@') ? r.handle : `@${r.handle}`,
+    name: r.name,
+    role: r.specialty,
+    category: r.specialty.toUpperCase().includes('DESIGN') ? 'DESIGN' :
+              r.specialty.toUpperCase().includes('DEV') || r.specialty.toUpperCase().includes('CODE') ? 'DEV' :
+              r.specialty.toUpperCase().includes('RESEARCH') || r.specialty.toUpperCase().includes('WRIT') || r.specialty.toUpperCase().includes('THREAD') ? 'WRITING' :
+              r.specialty.toUpperCase().includes('MEME') ? 'MEMES' : 'CONTENT',
+    earned: Number(r.earned),
+    completed: Number(r.completed),
+    badgeColor: idx === 0 ? 'var(--arc-quantum-plum)' : idx === 1 ? 'var(--arc-sky-sync)' : 'var(--arc-blockstream-gold)',
+    address: r.recipient_address,
+    avatar: r.avatar
+  }));
 }

@@ -20,4 +20,14 @@ services:
       - key: FACILITATOR_PRIVATE_KEY
         sync: false
       - key: ESCROW_CONTRACT_ADDRESS
-        value: "0x8b415aE3956992b0cbC6C78c485A4d099F6331cE"
+        value: "0x7Cd0F0db26f47dFa757014a8f756506B9F32F823"
+      - key: DATABASE_URL
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: ADMIN_EMAILS
+        value: "olajideabdulquadri22@gmail.com"
+      - key: ADMIN_PASSWORD
+        sync: false

@@ -383,8 +383,120 @@ input:checked + .slider:before {
   animation: slideInFromRight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Mobile Dock Bottom Navigation */
+.mobile-dock {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-top: 2.5px solid #000000;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  padding: 8px 0 env(safe-area-inset-bottom, 6px) 0;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* Mobile-only utility (hidden on desktop) */
+.mobile-only {
+  display: none !important;
+}
+
+/* ===== MOBILE RESPONSIVE BREAKPOINTS ===== */
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .mobile-dock {
+    display: flex;
+  }
+
+  body {
+    padding-bottom: 72px;
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Bounty Row: stack vertically */
+  .bounty-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  /* Buttons: compact */
+  .btn-primary,
+  .btn-secondary,
+  .btn-accent {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  /* Category pills: compact */
+  .category-pill {
+    padding: 5px 12px;
+    font-size: 0.78rem;
+  }
+
+  /* Cards: softer shadows on mobile */
+  .clean-card {
+    box-shadow: 3px 3px 0px #000000;
+    border-radius: 10px;
+  }
+
+  /* Badges: slightly smaller */
+  .clean-badge {
+    padding: 2px 6px;
+    font-size: 0.68rem;
+  }
+
+  /* Sticker tape: smaller */
+  .sticker-tape {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+  }
+
+  /* Drawer: full width on mobile */
+  .drawer-panel {
+    max-width: 100%;
+    box-shadow: none;
+    border-left: none;
+  }
+
+  /* Modal: reduce padding */
+  .modal-backdrop {
+    padding: 8px;
+    align-items: flex-end;
+  }
+}
+
+/* Small phones */
+@media (max-width: 390px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-accent {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+
+  .bounty-row {
+    padding: 12px 14px;
   }
 }

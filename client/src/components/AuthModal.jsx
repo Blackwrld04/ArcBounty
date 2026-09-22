@@ -25,8 +25,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { getWalletProvider, getDetectedWallets } from '../utils/wallet';
+import { API_BASE as SERVER_API_BASE } from '../utils/api';
 
-const API_BASE = 'http://localhost:4050/api/auth';
+const API_BASE = `${SERVER_API_BASE}/api/auth`;
 
 const DISCIPLINES = [
   {
@@ -77,6 +79,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
   // Signup Profile
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
+  const [handleStatus, setHandleStatus] = useState({ state: 'idle', message: '' });
   const [discipline, setDiscipline] = useState('Content');
 
   // OTP Verification
@@ -125,6 +128,30 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }, 1000);
     return () => clearInterval(timer);
   }, [resendCooldown]);
+
+  // Live handle availability checking
+  useEffect(() => {
+    const clean = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_-]/g, '');
+    if (!clean || clean.length < 3) {
+      setHandleStatus({ state: 'idle', message: '' });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetch(`${API_BASE}/check-username?username=${clean}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.available) {
+            setHandleStatus({ state: 'available', message: `@${clean} is available!` });
+          } else {
+            setHandleStatus({ state: 'taken', message: `@${clean} is already taken.` });
+          }
+        })
+        .catch(() => setHandleStatus({ state: 'idle', message: '' }));
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [username]);
 
   if (!isOpen) return null;
 
@@ -212,10 +239,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
   };
 
   // Slide 1 Next Validation
-  const handleSlide1Next = (e) => {
+  const handleSlide1Next = async (e) => {
     e.preventDefault();
     const cleanName = name.trim();
-    const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_-]/g, '');
 
     if (!cleanName) {
       setErrorMessage('Please enter your full name.');
@@ -224,6 +251,27 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     if (!cleanUsername || cleanUsername.length < 3) {
       setErrorMessage('Please choose a handle with at least 3 characters.');
       return;
+    }
+
+    if (handleStatus.state === 'taken') {
+      setErrorMessage(`Creator handle "@${cleanUsername}" is already taken. Please choose another handle.`);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const res = await fetch(`${API_BASE}/check-username?username=${cleanUsername}`);
+      const data = await res.json();
+      if (data && !data.available) {
+        setErrorMessage(data.message || `Creator handle "@${cleanUsername}" is already taken. Please choose another handle.`);
+        setIsLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Check username error:', err);
+    } finally {
+      setIsLoading(false);
     }
 
     setErrorMessage('');
@@ -401,16 +449,23 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     setIsLoading(true);
     setErrorMessage('');
 
-    if (typeof window === 'undefined' || !window.ethereum) {
-      setErrorMessage('No Web3 wallet extension found. Please install Rabby Wallet or MetaMask.');
+    // Check detected wallet provider (Phantom, Rabby, MetaMask, Coinbase, or any)
+    const provider = getWalletProvider('phantom') ||
+      getWalletProvider('rabby') ||
+      getWalletProvider('metamask') ||
+      getWalletProvider('coinbase') ||
+      (typeof window !== 'undefined' ? (window.phantom?.ethereum || window.ethereum) : null);
+
+    if (!provider) {
+      setErrorMessage('No Web3 wallet extension found. Please install Phantom, Rabby Wallet, or MetaMask.');
       setIsLoading(false);
       return;
     }
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
       if (!accounts || !accounts[0]) {
-        throw new Error('No accounts selected in Web3 wallet.');
+        throw new Error('No accounts selected in Web3 wallet extension.');
       }
       const address = accounts[0];
 
@@ -420,7 +475,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         throw new Error(challengeData.error || 'Failed to generate cryptographic challenge');
       }
 
-      const signature = await window.ethereum.request({
+      const signature = await provider.request({
         method: 'personal_sign',
         params: [challengeData.message, address]
       });
@@ -503,21 +558,23 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
   const currentStepNumber = mode === 'login' ? 1 : step === 'otp' ? 4 : signupSlide;
 
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="clean-card"
         style={{
           width: '100%',
-          maxWidth: '860px',
+          maxWidth: isMobile ? '100%' : '860px',
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: isMobile ? 'column' : 'row',
           overflow: 'hidden',
-          borderRadius: '14px',
+          borderRadius: isMobile ? '14px 14px 0 0' : '14px',
           border: '2.5px solid #000000',
-          boxShadow: '6px 6px 0px #000000',
+          boxShadow: isMobile ? '0 -4px 20px rgba(0,0,0,0.15)' : '6px 6px 0px #000000',
           position: 'relative',
-          maxHeight: '92vh',
+          maxHeight: isMobile ? '95vh' : '92vh',
           background: '#ffffff'
         }}
         onClick={(e) => e.stopPropagation()}
@@ -562,24 +619,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#ffffff',
-                  border: '1.5px solid #000000',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Zap size={18} fill="#e9a13f" color="#e9a13f" />
-              </div>
               <span
                 className="font-space"
                 style={{
-                  fontSize: '1.2rem',
+                  fontSize: '1.45rem',
                   fontWeight: 900,
                   letterSpacing: '-0.02em',
                   color: '#ffffff',
@@ -652,11 +695,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         <div
           style={{
             flex: 1,
-            padding: '30px 28px',
+            padding: isMobile ? '20px 16px' : '30px 28px',
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
-            maxHeight: '92vh'
+            maxHeight: isMobile ? '95vh' : '92vh'
           }}
         >
           {/* Error Banner */}
@@ -1137,6 +1180,16 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '4px' }}>
                       Your unique link: arcbounty.io/@{username || 'handle'}
                     </span>
+                    {handleStatus.state === 'available' && (
+                      <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 800, display: 'block', marginTop: '2px' }}>
+                        {handleStatus.message}
+                      </span>
+                    )}
+                    {handleStatus.state === 'taken' && (
+                      <span style={{ fontSize: '0.74rem', color: '#dc2626', fontWeight: 800, display: 'block', marginTop: '2px' }}>
+                        {handleStatus.message}
+                      </span>
+                    )}
                   </div>
 
                   <button

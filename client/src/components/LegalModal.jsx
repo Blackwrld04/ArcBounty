@@ -1,32 +1,286 @@
-import React from 'react';
-import { X, FileText, Shield, HelpCircle, Mail, MessageSquare, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, FileText, Shield, HelpCircle, Mail, MessageSquare, ExternalLink, BookOpen, CheckCircle, AlertTriangle, Coins, Zap, Terminal } from 'lucide-react';
 
 export default function LegalModal({ type, onClose }) {
+  const [activeDocsTab, setActiveDocsTab] = useState('overview');
+
   if (!type) return null;
 
   const contentMap = {
     terms: {
       title: 'Terms of Service',
-      subtitle: 'ArcBounty Institutional Challenge & Escrow Protocol Rules',
+      subtitle: 'ArcBounty Protocol Rules, On-Chain Escrow & Circle Arc L1 Alignment',
       icon: <FileText size={20} color="#1b3158" />,
       body: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.84rem', color: '#334155', lineHeight: 1.6 }}>
-          <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>1. Bounty Creation &amp; Escrow Funding</strong>
-            Sponsors post challenges by depositing USDC into the designated platform escrow wallet (0x8b415aE3956992b0cbC6C78c485A4d099F6331cE). All funds remain securely locked in escrow until deliverable approval and distribution.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.84rem', color: '#334155', lineHeight: 1.65 }}>
+          <div style={{ background: '#f1f5f9', border: '1.5px solid #000000', borderRadius: '8px', padding: '10px 14px', fontSize: '0.78rem', color: '#1e293b' }}>
+            <strong>Protocol Notice:</strong> ArcBounty operates natively on <strong>Circle Arc L1</strong> (Chain ID 5042 / 5042002) with native USDC gas and EIP-3009 transfer authorizations. All settled disbursements are permanent and governed by on-chain consensus.
           </div>
+
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>2. Deliverable Submissions &amp; Work Ownership</strong>
-            Creators submitting deliverables retain copyright until winner selection and reward payout. Upon distribution of USDC from escrow, full commercial usage rights transfer to the challenge sponsor.
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>1. Acceptance of Terms</strong>
+            By accessing ArcBounty (arcbounty.io), authenticating via email OTP, connecting a Web3 wallet, creating a challenge, or submitting deliverable proofs, you enter into a binding agreement with the protocol maintainers. If you do not agree to these terms, you must discontinue using the platform immediately.
           </div>
+
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>3. Payout Settlement &amp; Malachite BFT Finality</strong>
-            Payouts are disbursed directly by the platform admin from the escrow contract to the creator's designated wallet address with deterministic &lt;400ms finality.
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>2. Circle Arc Network &amp; Native USDC Standard</strong>
+            ArcBounty is architected specifically for Circle Arc. All platform values, security deposits, prize allocations, and solver settlements are executed in <strong>Canonical Circle USDC</strong> (<code>0x3600000000000000000000000000000000000000</code>). In accordance with the Circle Arc specification, network gas is paid natively in USDC, avoiding volatile multi-token gas mechanics.
           </div>
+
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>4. Code of Conduct</strong>
-            Plagiarism, misleading work, or fraudulent activity results in immediate platform disqualification and forfeiture of challenge payouts.
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>3. Eligibility &amp; Compliance</strong>
+            Users must be at least 18 years of age. Users must not be residents of, or accessing ArcBounty from, any jurisdiction subject to comprehensive OFAC sanctions (including Cuba, Iran, North Korea, Syria, or sanctioned Ukrainian territories). Users are solely responsible for local freelance tax reporting.
           </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>4. Challenge Creation &amp; Escrow Verification</strong>
+            Sponsors establish bounties by depositing the exact USDC prize pool into the platform escrow address (<code>0x7Cd0F0db26f47dFa757014a8f756506B9F32F823</code>) or locking funds via <code>ArcBountyEscrow.sol</code>. Challenges remain in <strong>Pending Review</strong> until platform administrators verify the deposit on ArcScan to prevent unbacked listings.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>5. Strict Self-Participation Prohibition</strong>
+            To protect ecosystem integrity and prevent sybil fee extraction, a bounty creator or maintainer is <strong>strictly prohibited</strong> from submitting deliverables to or claiming rewards from their own bounties. Attempts to bypass this rule result in immediate account suspension and reward forfeiture.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>6. Submissions, Deadlines &amp; Deliverables</strong>
+            Creators must submit genuine, original proof of work (GitHub PRs, Figma links, live URLs) prior to the challenge deadline. Once a deadline timestamp expires, submissions are immutably locked and no further entries are permitted.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>7. Intellectual Property &amp; License Transfer</strong>
+            Creators retain copyright over their submitted work until winner selection. Upon on-chain release and settlement of the USDC reward, full commercial license or copyright transfers to the challenge sponsor, subject to open-source repository licenses (e.g. MIT, Apache 2.0).
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>8. No-Refund Policy for Disbursed Funds</strong>
+            <div style={{ background: '#fff1f2', border: '1.5px solid #f43f5e', borderRadius: '8px', padding: '10px 14px', marginTop: '6px', color: '#9f1239' }}>
+              <strong>On-Chain Finality Warning:</strong> Due to the irreversible nature of blockchain transactions, all USDC payments released from escrow to a solver's wallet are final, non-reversible, and non-refundable. Sponsors must thoroughly evaluate deliverables prior to approving release.
+            </div>
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>9. Unfulfilled Challenge Expiration Refunds</strong>
+            If a bounty reaches its deadline with zero qualifying submissions, the sponsor is entitled to a full, non-custodial refund of the escrowed USDC balance via <code>refundBounty()</code> after the expiration timestamp has elapsed.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>10. Autonomous AI Agent Participation</strong>
+            Autonomous AI agents and automated solvers may participate in designated AI-eligible challenges. Operators of automated agents bear full legal and financial responsibility for their agents' outputs, code quality, and compliance with anti-spam rate limits.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>11. Prohibited Conduct</strong>
+            Users must not submit plagiarized work, insert backdoors or malicious code, operate sybil accounts, engage in wash bounties, or attempt to exploit smart contract interfaces. Violators will be blacklisted across the ArcBounty relayer network.
+          </div>
+
+          <div>
+            <strong style={{ color: '#0f172a', display: 'block', fontSize: '0.92rem', marginBottom: '4px' }}>12. Limitation of Liability</strong>
+            To the maximum extent permitted by law, ArcBounty maintainers and affiliates shall not be liable for any indirect, incidental, or consequential damages resulting from smart contract bugs, Circle Arc network halts, RPC latency, or wallet credential losses.
+          </div>
+        </div>
+      )
+    },
+    docs: {
+      title: 'ArcBounty Documentation',
+      subtitle: 'Developer & Creator Protocol Guide for Circle Arc L1',
+      icon: <BookOpen size={20} color="#2563eb" />,
+      body: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.84rem', color: '#334155', lineHeight: 1.65 }}>
+          {/* Sub-navigation tabs */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', borderBottom: '2px solid #000000', paddingBottom: '10px' }}>
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'arc-engine', label: 'Arc Engine' },
+              { id: 'creators', label: 'For Creators' },
+              { id: 'sponsors', label: 'For Sponsors' },
+              { id: 'ai-agents', label: 'AI Agents' },
+              { id: 'faq', label: 'FAQ' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveDocsTab(tab.id)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1.5px solid #000000',
+                  background: activeDocsTab === tab.id ? '#1b3158' : '#ffffff',
+                  color: activeDocsTab === tab.id ? '#ffffff' : '#000000',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  boxShadow: activeDocsTab === tab.id ? '2px 2px 0px #000000' : 'none'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab 1: Overview */}
+          {activeDocsTab === 'overview' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ background: '#f8fafc', border: '1.5px solid #000000', borderRadius: '8px', padding: '12px', boxShadow: '2px 2px 0px #000000' }}>
+                <h4 className="font-space" style={{ margin: '0 0 6px 0', fontSize: '1rem', color: '#0f172a' }}>The ArcBounty Manifesto</h4>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#475569' }}>
+                  Anyone with demonstrable skills should have an instant, frictionless path to earn in programmable digital dollars. ArcBounty connects ambitious Web3 protocols with world-class developers, designers, researchers, and AI agents.
+                </p>
+              </div>
+
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>Why Circle Arc?</strong>
+                Legacy bounty platforms require participants to hold volatile tokens just to pay gas. ArcBounty leverages <strong>Circle Arc</strong> where <strong>USDC is the native gas token</strong>, enabling sub-second finality (&lt;400ms) and zero-gas payouts via EIP-3009.
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '6px' }}>
+                <div style={{ border: '1.5px solid #000000', padding: '10px', borderRadius: '6px', background: '#eef2ff' }}>
+                  <Coins size={18} color="#1b3158" style={{ marginBottom: '4px' }} />
+                  <strong style={{ display: 'block', fontSize: '0.82rem', color: '#0f172a' }}>Canonical USDC</strong>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Every challenge is priced and funded in verified USDC.</span>
+                </div>
+                <div style={{ border: '1.5px solid #000000', padding: '10px', borderRadius: '6px', background: '#f0fdf4' }}>
+                  <Zap size={18} color="#166534" style={{ marginBottom: '4px' }} />
+                  <strong style={{ display: 'block', fontSize: '0.82rem', color: '#0f172a' }}>Sub-Second Finality</strong>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>Malachite BFT consensus settles transactions in &lt;400ms.</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Arc Engine */}
+          {activeDocsTab === 'arc-engine' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ border: '1.5px solid #000000', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+                <strong style={{ display: 'block', color: '#0f172a', marginBottom: '6px' }}>Circle Arc Network Parameters</strong>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem' }}>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '4px 0', fontWeight: 700 }}>Chain ID (Testnet)</td>
+                      <td style={{ padding: '4px 0', fontFamily: 'monospace' }}>5042002 (0x4CEF52)</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '4px 0', fontWeight: 700 }}>Chain ID (Mainnet)</td>
+                      <td style={{ padding: '4px 0', fontFamily: 'monospace' }}>5042 (0x13B2)</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '4px 0', fontWeight: 700 }}>Native Gas Currency</td>
+                      <td style={{ padding: '4px 0' }}>USDC (6 decimals)</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '4px 0', fontWeight: 700 }}>Canonical USDC</td>
+                      <td style={{ padding: '4px 0', fontFamily: 'monospace' }}>0x3600...0000</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '4px 0', fontWeight: 700 }}>Block Explorer</td>
+                      <td style={{ padding: '4px 0' }}><a href="https://testnet.arcscan.app" target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>testnet.arcscan.app ↗</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>EIP-3009 Transfer Authorizations</strong>
+                ArcBounty implements <code>transferWithAuthorization</code>. Solvers sign an off-chain authorization message, and the platform facilitator relayer submits the transaction on Arc L1. Solvers receive their full reward without paying gas.
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: For Creators */}
+          {activeDocsTab === 'creators' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#000000', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>1</span>
+                  <div>
+                    <strong style={{ color: '#0f172a' }}>Connect Wallet &amp; Authenticate:</strong> Connect via Phantom, MetaMask, Coinbase, Rabby, or OKX, then verify your email with a 6-digit OTP code.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#000000', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>2</span>
+                  <div>
+                    <strong style={{ color: '#0f172a' }}>Choose a Challenge:</strong> Filter by Design, Content, Development, or Growth. Review task scope, deliverables, and countdown timers.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#000000', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>3</span>
+                  <div>
+                    <strong style={{ color: '#0f172a' }}>Submit Proof of Work:</strong> Submit your PR link, Figma design, or live demo along with detailed implementation notes. <em>(Note: You cannot submit to bounties you personally authored).</em>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#000000', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>4</span>
+                  <div>
+                    <strong style={{ color: '#0f172a' }}>Get Paid in USDC:</strong> Once the sponsor reviews and approves your submission, USDC is transferred directly to your designated Arc wallet.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: For Sponsors */}
+          {activeDocsTab === 'sponsors' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>How to Post a Challenge</strong>
+                <ol style={{ margin: '0 0 10px 0', paddingLeft: '20px' }}>
+                  <li>Click <strong>Create Bounty</strong> and use the AI Prompt Assistant to draft clear acceptance criteria.</li>
+                  <li>Set prize distribution amounts (1st, 2nd, 3rd place tiers) and deadline duration.</li>
+                  <li>Transfer the total USDC reward to the designated platform escrow wallet (<code>0x7Cd0F0db26f47dFa757014a8f756506B9F32F823</code>).</li>
+                  <li>Platform admins verify the transaction on ArcScan and move the bounty from Pending Review to Open.</li>
+                </ol>
+              </div>
+
+              <div style={{ background: '#f8fafc', border: '1.5px solid #000000', borderRadius: '6px', padding: '10px' }}>
+                <strong style={{ color: '#0f172a', fontSize: '0.82rem', display: 'block' }}>Review &amp; Settlement</strong>
+                Inspect submissions in the Admin Console. Once satisfied with a creator's work, disburse the reward with a single click. If no submissions meet the criteria before the deadline, you can reclaim unfulfilled escrow.
+              </div>
+            </div>
+          )}
+
+          {/* Tab 5: AI Agents */}
+          {activeDocsTab === 'ai-agents' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ background: '#f8fafc', border: '1.5px solid #000000', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <Terminal size={18} color="#000000" />
+                  <strong style={{ color: '#0f172a' }}>Autonomous Solver Integration</strong>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>
+                  ArcBounty challenges can be solved by autonomous coding agents and LLM-driven software bots.
+                </p>
+              </div>
+
+              <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li><strong>PR Automation:</strong> Automated agents authenticate via API tokens and submit PR links directly through REST endpoints.</li>
+                <li><strong>Proof of Work:</strong> Agent submissions must include executable code, automated test suites, and documentation. Hallucinated or non-compiling entries are automatically rejected.</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Tab 6: FAQ */}
+          {activeDocsTab === 'faq' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block' }}>Q: What currency is used on ArcBounty?</strong>
+                <span style={{ color: '#475569' }}>All rewards and gas fees are settled natively in Canonical Circle USDC (0x3600...0000).</span>
+              </div>
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block' }}>Q: Do creators pay gas fees?</strong>
+                <span style={{ color: '#475569' }}>No. Thanks to EIP-3009 gasless authorizations, solvers receive rewards without paying gas fees.</span>
+              </div>
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block' }}>Q: Can creators participate in their own bounties?</strong>
+                <span style={{ color: '#475569' }}>No. Sponsors cannot submit to or claim rewards from their own bounties.</span>
+              </div>
+              <div>
+                <strong style={{ color: '#0f172a', display: 'block' }}>Q: Where can I learn more about Circle Arc?</strong>
+                <span style={{ color: '#475569' }}>Explore the official documentation at <a href="https://docs.arc.io" target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>docs.arc.io ↗</a>.</span>
+              </div>
+            </div>
+          )}
         </div>
       )
     },
@@ -41,16 +295,16 @@ export default function LegalModal({ type, onClose }) {
             ArcBounty adheres to strict Web3 data minimization. We only store your public creator handle, display name, designated payout address, and primary specialty craft.
           </div>
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>2. Email &amp; Gmail Verification</strong>
+            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>2. Email &amp; Verification Storage</strong>
             Your email is used solely to authenticate your creator account and dispatch single-use 6-digit verification codes via authenticated Gmail SMTP. We never sell, rent, or spam your inbox.
           </div>
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>3. On-Chain Cryptographic Privacy</strong>
-            Wallet connections utilize EIP-4361 Sign-In with Ethereum (SIWE). No private keys or seed phrases ever leave your browser wallet extension.
+            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>3. Public Ledger Transparency</strong>
+            Transactions, disbursements, and smart contract calls conducted on Circle Arc are public by design. Your public wallet address and on-chain transaction history can be inspected on the Arc block explorer.
           </div>
           <div>
-            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>4. Persistent SQLite Storage</strong>
-            User records and payout transactions are securely persisted in encrypted SQLite storage with WAL journaling.
+            <strong style={{ color: '#0f172a', display: 'block', marginBottom: '4px' }}>4. Persistent Storage Architecture</strong>
+            User records and payout logs are securely maintained in encrypted SQLite storage with WAL (Write-Ahead Logging) journaling.
           </div>
         </div>
       )
@@ -138,7 +392,7 @@ export default function LegalModal({ type, onClose }) {
         className="clean-card slide-step"
         style={{
           width: '100%',
-          maxWidth: '540px',
+          maxWidth: type === 'docs' || type === 'terms' ? '680px' : '540px',
           padding: '28px',
           borderRadius: '12px',
           border: '2.5px solid #000000',

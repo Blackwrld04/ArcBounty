@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// ArcBountyEscrow.sol
+
 /**
  * @title ArcBountyEscrow
  * @notice Native USDC Developer & AI Agent Bounty Escrow on Circle's Arc Mainnet & Testnet.

@@ -1,62 +1,75 @@
-import React, { useState } from 'react';
-import { X, Check, Wallet, ArrowRight, ShieldCheck, ExternalLink, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Check, Wallet, ArrowRight, ShieldCheck, ExternalLink, Download, AlertCircle } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
+import {
+  initWalletDetection,
+  subscribeWalletDetection,
+  getDetectedWallets,
+  getWalletProvider,
+  getWalletDownloadUrl,
+  isWalletInstalled
+} from '../utils/wallet';
+import { API_BASE } from '../utils/api';
 
 const WALLETS = [
+  {
+    id: 'phantom',
+    name: 'Phantom',
+    url: 'https://phantom.app/download',
+    desc: 'EVM & Solana multi-chain wallet with built-in Ethereum provider.',
+    icon: (
+      <img
+        src="/wallets/phantom.svg"
+        alt="Phantom"
+        width="32"
+        height="32"
+        style={{ width: '32px', height: '32px', borderRadius: '7px', objectFit: 'contain', flexShrink: 0 }}
+      />
+    )
+  },
   {
     id: 'rabby',
     name: 'Rabby Wallet',
     url: 'https://rabby.io',
     desc: 'Optimal support for multi-chain routing & sub-400ms Malachite BFT finality.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#8697FF" />
-        <path d="M7 21.5C9 14.5 16 11 25 10.5C21.5 14 20 18.5 20.5 23.5C18.5 21 16 19.5 13.5 19.5C10.5 19.5 8.5 20.5 7 21.5Z" fill="white" />
-      </svg>
+      <img
+        src="/wallets/rabby.svg"
+        alt="Rabby Wallet"
+        width="32"
+        height="32"
+        style={{ width: '32px', height: '32px', borderRadius: '7px', objectFit: 'contain', flexShrink: 0 }}
+      />
     )
   },
   {
     id: 'metamask',
     name: 'MetaMask',
-    url: 'https://metamask.io',
+    url: 'https://metamask.io/download/',
     desc: 'Connect using MetaMask browser extension or mobile app.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#F6851B" />
-        <path d="M24.7 8.5L17.2 13.9L18.6 9.8L24.7 8.5Z" fill="#E2761B" stroke="#E2761B" strokeWidth="0.5" />
-        <path d="M7.3 8.5L14.7 13.9L13.4 9.8L7.3 8.5Z" fill="#E4751F" stroke="#E4751F" strokeWidth="0.5" />
-        <path d="M22.8 20.3L20.8 23.3L24.4 24.3L25.4 20.4L22.8 20.3Z" fill="#E4751F" stroke="#E4751F" strokeWidth="0.5" />
-        <path d="M6.6 20.4L7.6 24.3L11.2 23.3L9.2 20.3L6.6 20.4Z" fill="#E4751F" stroke="#E4751F" strokeWidth="0.5" />
-        <path d="M11 16.5L9.6 18.4L13.6 18.6L13.5 14.1L11 16.5Z" fill="#E4751F" stroke="#E4751F" strokeWidth="0.5" />
-        <path d="M21 16.5L18.4 14.1L18.4 18.6L22.4 18.4L21 16.5Z" fill="#E4751F" stroke="#E4751F" strokeWidth="0.5" />
-      </svg>
+      <img
+        src="/wallets/metamask.svg"
+        alt="MetaMask"
+        width="32"
+        height="32"
+        style={{ width: '32px', height: '32px', borderRadius: '7px', objectFit: 'contain', flexShrink: 0 }}
+      />
     )
   },
   {
     id: 'coinbase',
     name: 'Coinbase Wallet',
-    url: 'https://www.coinbase.com/wallet',
+    url: 'https://www.coinbase.com/wallet/downloads',
     desc: 'Passkey-ready with zero transaction gas sponsor on Arc.',
     icon: (
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#0052FF" />
-        <circle cx="16" cy="16" r="8" fill="white" />
-        <rect x="13.5" y="13.5" width="5" height="5" rx="1" fill="#0052FF" />
-      </svg>
-    )
-  },
-  {
-    id: 'phantom',
-    name: 'Phantom',
-    url: 'https://phantom.app',
-    desc: 'EVM & Solana multi-chain wallet with integrated token swap.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#AB9FF2" />
-        <path d="M24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16Z" fill="white" />
-        <circle cx="13.5" cy="15" r="1.5" fill="#AB9FF2" />
-        <circle cx="18.5" cy="15" r="1.5" fill="#AB9FF2" />
-      </svg>
+      <img
+        src="/wallets/coinbase.svg"
+        alt="Coinbase Wallet"
+        width="32"
+        height="32"
+        style={{ width: '32px', height: '32px', borderRadius: '7px', objectFit: 'contain', flexShrink: 0 }}
+      />
     )
   }
 ];
@@ -68,55 +81,99 @@ export default function ConnectWalletModal({
   wallet,
   onWalletConnected
 }) {
-  const [selectedWallet, setSelectedWallet] = useState('rabby');
+  const [selectedWallet, setSelectedWallet] = useState('phantom');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
-  const [needsExtension, setNeedsExtension] = useState(false);
+  const [detectedWallets, setDetectedWallets] = useState(getDetectedWallets());
+
+  // Subscribe to EIP-6963 provider announcements & window provider detection
+  useEffect(() => {
+    if (!isOpen) return;
+    initWalletDetection();
+
+    const updateDetection = () => {
+      const detected = getDetectedWallets();
+      setDetectedWallets(detected);
+    };
+
+    updateDetection();
+    const unsubscribe = subscribeWalletDetection(updateDetection);
+
+    // Continuous check every 800ms for dynamically injected extensions
+    const interval = setInterval(updateDetection, 800);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [isOpen]);
+
+  // If a wallet is installed, auto-select it if current selected is not installed
+  useEffect(() => {
+    if (!isOpen) return;
+    if (detectedWallets.phantom && !isWalletInstalled(selectedWallet)) {
+      setSelectedWallet('phantom');
+    } else if (detectedWallets.rabby && !isWalletInstalled(selectedWallet)) {
+      setSelectedWallet('rabby');
+    } else if (detectedWallets.metamask && !isWalletInstalled(selectedWallet)) {
+      setSelectedWallet('metamask');
+    } else if (detectedWallets.coinbase && !isWalletInstalled(selectedWallet)) {
+      setSelectedWallet('coinbase');
+    }
+  }, [detectedWallets, isOpen]);
 
   if (!isOpen) return null;
 
   const handleConnect = async (walletId) => {
     setIsConnecting(true);
     setError('');
-    setNeedsExtension(false);
 
-    // Check if user has an active EVM provider in browser
-    if (typeof window === 'undefined' || !window.ethereum) {
-      setNeedsExtension(true);
-      setError('No Web3 wallet extension detected in your browser. Install Rabby Wallet or MetaMask below.');
+    const targetWalletObj = WALLETS.find((w) => w.id === walletId) || WALLETS[0];
+    const provider = getWalletProvider(walletId);
+
+    // Check if target provider is available
+    if (!provider) {
+      setError(
+        `${targetWalletObj.name} extension was not detected or is not active in this browser. Please make sure the ${targetWalletObj.name} extension is enabled, or click "Install ${targetWalletObj.name}" below.`
+      );
       setIsConnecting(false);
       return;
     }
 
     try {
       // 1. Request account from browser extension
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
       if (!accounts || !accounts[0]) {
-        throw new Error('No account selected in your Web3 wallet extension.');
+        throw new Error(`No account authorized in your ${targetWalletObj.name} extension. Please unlock your wallet and approve the connection.`);
       }
       const address = accounts[0];
 
       // 2. Request single-use cryptographic challenge nonce from ArcBounty server
-      const nonceRes = await fetch(`http://localhost:4050/api/auth/wallet-nonce?address=${address}`);
+      const nonceRes = await fetch(`${API_BASE}/api/auth/wallet-nonce?address=${address}`);
       const challenge = await nonceRes.json();
       if (!challenge.success) {
         throw new Error(challenge.error || 'Failed to obtain cryptographic challenge from Arc server');
       }
 
-      // 3. Request user's cryptographic personal_sign signature
-      const signature = await window.ethereum.request({
+      // 3. Request user's cryptographic personal_sign signature via the selected provider
+      const signature = await provider.request({
         method: 'personal_sign',
         params: [challenge.message, address]
       });
 
       // 4. Verify signature on Arc server with viem
-      const verifyRes = await fetch('http://localhost:4050/api/auth/wallet-verify', {
+      const sessionToken = localStorage.getItem('arcbounty_session_token');
+      const verifyRes = await fetch(`${API_BASE}/api/auth/wallet-verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {})
+        },
         body: JSON.stringify({
           address,
           signature,
-          nonce: challenge.nonce
+          nonce: challenge.nonce,
+          userId: user?.id || null
         })
       });
 
@@ -136,13 +193,18 @@ export default function ConnectWalletModal({
       onClose();
     } catch (err) {
       console.error('Wallet cryptographic connection error:', err);
-      setError(err.message || 'Failed to cryptographically connect Web3 wallet');
+      if (err.code === 4001 || err.message?.toLowerCase().includes('reject') || err.message?.toLowerCase().includes('denied')) {
+        setError(`Connection request was cancelled in ${targetWalletObj.name}.`);
+      } else {
+        setError(err.message || `Failed to connect with ${targetWalletObj.name}`);
+      }
     } finally {
       setIsConnecting(false);
     }
   };
 
   const selectedWalletObj = WALLETS.find((w) => w.id === selectedWallet) || WALLETS[0];
+  const isSelectedWalletInstalled = isWalletInstalled(selectedWallet);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -206,9 +268,10 @@ export default function ConnectWalletModal({
           </div>
         </div>
 
-        <p style={{ fontSize: '0.84rem', color: '#4b5563', lineHeight: 1.45, marginBottom: '20px' }}>
-          Connect your Web3 wallet via cryptographic personal_sign signature to lock bounty escrow as a sponsor or receive deterministic USDC payouts.
+        <p style={{ fontSize: '0.84rem', color: '#4b5563', lineHeight: 1.45, marginBottom: '16px' }}>
+          Connect your Web3 browser extension via cryptographic personal_sign signature to receive deterministic USDC payouts on Circle Arc L1.
         </p>
+
 
         {error && (
           <div
@@ -216,54 +279,18 @@ export default function ConnectWalletModal({
               background: '#fee2e2',
               border: '2px solid #000000',
               borderRadius: '8px',
-              padding: '10px 12px',
+              padding: '12px 14px',
               fontSize: '0.82rem',
               color: '#991b1b',
               fontWeight: 700,
-              marginBottom: '16px'
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px'
             }}
           >
-            {error}
-          </div>
-        )}
-
-        {/* If extension is missing, offer direct install links */}
-        {needsExtension && (
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '2px solid #000000',
-              boxShadow: '2px 2px 0px #000000',
-              borderRadius: '8px',
-              padding: '14px',
-              marginBottom: '16px'
-            }}
-          >
-            <p style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', margin: '0 0 10px 0' }}>
-              Install a verified Web3 wallet extension:
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <a
-                href="https://rabby.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-                style={{ flex: 1, padding: '8px', fontSize: '0.8rem', justifyContent: 'center', textDecoration: 'none' }}
-              >
-                <Download size={14} />
-                <span>Install Rabby</span>
-              </a>
-              <a
-                href="https://metamask.io/download/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary"
-                style={{ flex: 1, padding: '8px', fontSize: '0.8rem', justifyContent: 'center', textDecoration: 'none' }}
-              >
-                <Download size={14} />
-                <span>Install MetaMask</span>
-              </a>
-            </div>
+            <AlertCircle size={16} color="#991b1b" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div>{error}</div>
           </div>
         )}
 
@@ -272,6 +299,7 @@ export default function ConnectWalletModal({
           {WALLETS.map((w) => {
             const isSelected = selectedWallet === w.id;
             const isCurrentlyActive = wallet && wallet.connected && wallet.type === w.id;
+            const isInstalled = isWalletInstalled(w.id);
 
             return (
               <div
@@ -279,7 +307,6 @@ export default function ConnectWalletModal({
                 onClick={() => {
                   setSelectedWallet(w.id);
                   setError('');
-                  setNeedsExtension(false);
                 }}
                 style={{
                   padding: '12px 16px',
@@ -297,9 +324,40 @@ export default function ConnectWalletModal({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   {w.icon}
                   <div>
-                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
-                      {w.name}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
+                        {w.name}
+                      </span>
+                      {isInstalled ? (
+                        <span style={{
+                          background: '#dcfce7',
+                          color: '#166534',
+                          border: '1.5px solid #16a34a',
+                          borderRadius: '4px',
+                          padding: '1px 6px',
+                          fontSize: '0.68rem',
+                          fontWeight: 900,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}>
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#16a34a' }} />
+                          <span>Detected</span>
+                        </span>
+                      ) : (
+                        <span style={{
+                          background: '#f1f5f9',
+                          color: '#64748b',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '4px',
+                          padding: '1px 6px',
+                          fontSize: '0.68rem',
+                          fontWeight: 700
+                        }}>
+                          Not Installed
+                        </span>
+                      )}
+                    </div>
                     <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>
                       {w.desc}
                     </p>
@@ -307,7 +365,7 @@ export default function ConnectWalletModal({
                 </div>
 
                 {isCurrentlyActive ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 800 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0 }}>
                     <Check size={14} strokeWidth={3} />
                     <span>CONNECTED</span>
                   </span>
@@ -318,7 +376,8 @@ export default function ConnectWalletModal({
                       height: '18px',
                       borderRadius: '50%',
                       border: isSelected ? '5px solid #1b3158' : '2px solid #cbd5e1',
-                      background: '#ffffff'
+                      background: '#ffffff',
+                      flexShrink: 0
                     }}
                   />
                 )}
@@ -327,23 +386,68 @@ export default function ConnectWalletModal({
           })}
         </div>
 
-        {/* Connect Action Button */}
-        <button
-          type="button"
-          disabled={isConnecting}
-          onClick={() => handleConnect(selectedWallet)}
-          className="btn-primary"
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '0.92rem',
-            justifyContent: 'center',
-            cursor: isConnecting ? 'wait' : 'pointer'
-          }}
-        >
-          <span>{isConnecting ? 'Verifying Cryptographic Signature...' : `Sign In with ${selectedWalletObj.name}`}</span>
-          <ArrowRight size={16} />
-        </button>
+        {/* Action Buttons */}
+        {isSelectedWalletInstalled ? (
+          <button
+            type="button"
+            disabled={isConnecting}
+            onClick={() => handleConnect(selectedWallet)}
+            className="btn-primary"
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '0.92rem',
+              justifyContent: 'center',
+              cursor: isConnecting ? 'wait' : 'pointer'
+            }}
+          >
+            <span>{isConnecting ? 'Verifying Cryptographic Signature...' : `Connect with ${selectedWalletObj.name}`}</span>
+            <ArrowRight size={16} />
+          </button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a
+              href={getWalletDownloadUrl(selectedWallet)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '0.92rem',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                background: 'var(--arc-validator-blue)'
+              }}
+            >
+              <Download size={16} />
+              <span>Download & Install {selectedWalletObj.name} Extension</span>
+              <ExternalLink size={14} />
+            </a>
+
+            {detectedWallets.any && (
+              <button
+                type="button"
+                disabled={isConnecting}
+                onClick={() => {
+                  const fallbackId = detectedWallets.phantom ? 'phantom' : (detectedWallets.rabby ? 'rabby' : (detectedWallets.metamask ? 'metamask' : 'coinbase'));
+                  handleConnect(fallbackId);
+                }}
+                className="btn-secondary"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '0.86rem',
+                  justifyContent: 'center',
+                  cursor: isConnecting ? 'wait' : 'pointer'
+                }}
+              >
+                <span>Connect via Detected Wallet</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Security / Network info footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', fontSize: '0.72rem', color: '#64748b' }}>
