@@ -18,18 +18,68 @@ async function getTransporter() {
 
 /**
  * Centralized Email Dispatch Engine
- * Uses Resend HTTPS REST API (Port 443) as primary production engine:
- * - Sub-second delivery (~150ms)
- * - Complete, rich HTML neo-brutalist responsive styling
- * - Bypasses cloud SMTP port restrictions (ports 25, 465, 587)
+ * Multi-Engine Architecture:
+ * 1. Vercel Serverless Email Relay (Gmail SMTP via Port 465 SSL):
+ *    - Sends to ANY inbox on earth without domain verification or sandbox blocks.
+ *    - Bypasses Render free tier port blocks (25/465/587).
+ * 2. Resend HTTPS REST API (Port 443):
+ *    - Instant sub-second delivery (~150ms).
+ *    - Used for account owner email (olajideabdulquadri22@gmail.com) or verified custom domains.
+ * 3. Local In-Memory Fallback:
+ *    - 0ms JSON transport for automated test suites.
  */
 async function dispatchEmail({ to, subject, html, text }) {
+  const recipients = Array.isArray(to) ? to : [to];
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  const relaySecret = process.env.EMAIL_RELAY_SECRET || 'arcbounty-relay-auth-2026';
+  const relayUrl = `${CLIENT_URL}/api/send-email`;
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.FROM_EMAIL || 'ArcBounty <onboarding@resend.dev>';
-  const recipients = Array.isArray(to) ? to : [to];
 
-  // 1. Primary: Resend HTTPS REST API (Ultra-fast, full HTML support, never blocked)
-  if (resendKey) {
+  // Check if Resend sandbox restriction applies:
+  // onboarding@resend.dev can ONLY send to the registered Resend account owner (olajideabdulquadri22@gmail.com).
+  // Any other recipient will trigger HTTP 403 validation_error.
+  const isResendSandboxRestricted =
+    fromEmail.includes('onboarding@resend.dev') &&
+    recipients.some(r => r.toLowerCase().trim() !== 'olajideabdulquadri22@gmail.com');
+
+  // STRATEGY 1: Vercel Serverless Relay (Sends to any email inbox on earth)
+  if (gmailUser && gmailPass && (isResendSandboxRestricted || !resendKey)) {
+    try {
+      const relayRes = await fetch(relayUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-relay-secret': relaySecret
+        },
+        body: JSON.stringify({
+          to: recipients,
+          subject,
+          html,
+          text,
+          auth: {
+            user: gmailUser,
+            pass: gmailPass
+          }
+        }),
+        signal: AbortSignal.timeout(12000)
+      });
+
+      const relayData = await relayRes.json().catch(() => ({}));
+      if (relayRes.ok && relayData.success) {
+        console.log(`[Email Service - Vercel Relay] Successfully dispatched to ${recipients.join(', ')} | ID: ${relayData.messageId}`);
+        return { messageId: relayData.messageId, dispatched: true };
+      } else {
+        console.warn(`[Email Service - Vercel Relay Warning] Relay returned ${relayRes.status}:`, relayData);
+      }
+    } catch (e) {
+      console.warn(`[Email Service - Vercel Relay Network Warning]:`, e.message);
+    }
+  }
+
+  // STRATEGY 2: Resend HTTPS REST API (Port 443)
+  if (resendKey && !isResendSandboxRestricted) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -43,10 +93,11 @@ async function dispatchEmail({ to, subject, html, text }) {
           subject,
           html,
           text
-        })
+        }),
+        signal: AbortSignal.timeout(8000)
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         console.log(`[Email Service - Resend] Fast HTTPS dispatch to ${recipients.join(', ')} | ID: ${data.id}`);
         return { messageId: data.id, dispatched: true };
@@ -58,7 +109,39 @@ async function dispatchEmail({ to, subject, html, text }) {
     }
   }
 
-  // 2. Local Development / Test Fallback
+  // STRATEGY 3: Fallback to Vercel Relay if Resend was attempted and failed
+  if (gmailUser && gmailPass && !isResendSandboxRestricted) {
+    try {
+      const relayRes = await fetch(relayUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-relay-secret': relaySecret
+        },
+        body: JSON.stringify({
+          to: recipients,
+          subject,
+          html,
+          text,
+          auth: {
+            user: gmailUser,
+            pass: gmailPass
+          }
+        }),
+        signal: AbortSignal.timeout(12000)
+      });
+
+      const relayData = await relayRes.json().catch(() => ({}));
+      if (relayRes.ok && relayData.success) {
+        console.log(`[Email Service - Vercel Relay Fallback] Successfully dispatched to ${recipients.join(', ')} | ID: ${relayData.messageId}`);
+        return { messageId: relayData.messageId, dispatched: true };
+      }
+    } catch (e) {
+      console.warn(`[Email Service - Vercel Relay Fallback Warning]:`, e.message);
+    }
+  }
+
+  // STRATEGY 4: Local Development / Test Suite Fallback (0ms JSON transport)
   try {
     const mailer = await getTransporter();
     const sender = process.env.FROM_EMAIL || '"ArcBounty Security" <security@arcbounty.io>';

@@ -10,5 +10,8 @@
     "preview": "npm run preview --prefix client",
     "server": "npm run dev --prefix server",
     "test": "npm test --prefix server"
+  },
+  "dependencies": {
+    "nodemailer": "^10.0.10"
   }
 }
