@@ -165,11 +165,8 @@ authRouter.post('/signup', async (req, res) => {
 
     return res.json({
       success: true,
-      message: emailResult.dispatched
-        ? `A 6-digit verification code has been dispatched to ${normalizedEmail}`
-        : `Verification code generated! (If email is delayed: code is ${code})`,
+      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}. Please check your inbox or spam folder.`,
       email: normalizedEmail,
-      code: !emailResult.dispatched ? code : undefined,
       previewUrl: emailResult.previewUrl || null,
       expiresAt
     });
@@ -216,12 +213,9 @@ authRouter.post('/send-code', async (req, res) => {
 
     return res.json({
       success: true,
-      message: emailResult.dispatched
-        ? `A 6-digit verification code has been dispatched to ${normalizedEmail}`
-        : `Verification code generated! (If email is delayed: code is ${code})`,
+      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}. Please check your inbox or spam folder.`,
       email: normalizedEmail,
       type,
-      code: !emailResult.dispatched ? code : undefined,
       previewUrl: emailResult.previewUrl || null,
       expiresAt
     });

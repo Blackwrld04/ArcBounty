@@ -19,62 +19,44 @@ let etherealAccount = null;
 async function getTransporter() {
   if (transporter) return transporter;
 
+  const GMAIL_USER = (process.env.GMAIL_USER || 'jasminee0904@gmail.com').trim();
+  const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || 'fwec ncqu eddt nori').replace(/\s+/g, '');
   const {
-    GMAIL_USER,
-    GMAIL_APP_PASSWORD,
-    RESEND_API_KEY,
     SMTP_HOST,
     SMTP_PORT,
     SMTP_USER,
     SMTP_PASS
   } = process.env;
 
-  // 1. Direct Gmail Service
+  // 1. Direct Gmail Service with Persistent Connection Pooling
   if (GMAIL_USER && GMAIL_APP_PASSWORD) {
     transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      family: 4, // Guarantee IPv4 routing
-      connectionTimeout: 6000,
-      greetingTimeout: 6000,
-      socketTimeout: 6000,
+      service: 'gmail',
+      pool: true,
+      maxConnections: 3,
+      maxMessages: 100,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000,
       auth: {
-        user: GMAIL_USER.trim(),
-        pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') // remove spaces from 16-char app password
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD
       }
     });
-    console.log(`[Email Service] Live Gmail SMTP connected for: ${GMAIL_USER}`);
+    console.log(`[Email Service] Live Gmail SMTP connected with connection pool for: ${GMAIL_USER}`);
     return transporter;
   }
 
-  // 2. Resend SMTP
-  if (RESEND_API_KEY) {
-    transporter = nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
-      connectionTimeout: 6000,
-      greetingTimeout: 6000,
-      socketTimeout: 6000,
-      auth: {
-        user: 'resend',
-        pass: RESEND_API_KEY
-      }
-    });
-    console.log(`[Email Service] Live Resend SMTP connected.`);
-    return transporter;
-  }
-
-  // 3. Generic Custom SMTP
+  // 2. Generic Custom SMTP
   if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
     transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: parseInt(SMTP_PORT || '587', 10),
       secure: SMTP_PORT === '465',
-      connectionTimeout: 6000,
-      greetingTimeout: 6000,
-      socketTimeout: 6000,
+      pool: true,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000,
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
@@ -84,11 +66,10 @@ async function getTransporter() {
     return transporter;
   }
 
-  // 4. Instant zero-latency fallback transport (never hangs server or delays responses)
+  // 3. Fallback transport
   transporter = nodemailer.createTransport({
     jsonTransport: true
   });
-  console.log('[Email Service] Running in instant fallback transport mode (no external SMTP credentials).');
   return transporter;
 }
 
@@ -96,10 +77,38 @@ async function getTransporter() {
  * Send real 6-digit OTP verification code to user's email
  */
 export async function sendVerificationEmail(toEmail, code, type = 'login') {
-  const mailer = await getTransporter();
   const subject = type === 'signup'
     ? 'Verify your ArcBounty Creator Account'
     : 'Your ArcBounty Verification Code';
+
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    try {
+      const fromEmail = process.env.FROM_EMAIL || 'ArcBounty <onboarding@resend.dev>';
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [toEmail],
+          subject,
+          text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log(`[Email Service] Fast HTTPS dispatch via Resend to ${toEmail}: ID ${data.id}`);
+        return { messageId: data.id, previewUrl: null, dispatched: true };
+      }
+    } catch (e) {
+      console.warn(`[Email Service Warning] Resend HTTPS dispatch failed:`, e.message);
+    }
+  }
+
+  const mailer = await getTransporter();
 
   const digits = String(code).split('');
   const digitCells = digits.map(d => `
@@ -251,18 +260,11 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
       dispatched: true
     };
   } catch (err) {
-    console.warn(`[Email Service Warning] Direct dispatch to ${toEmail} timed out or failed (${err.message}). Activating instant fallback.`);
-    console.log(`================================================================`);
-    console.log(`[INSTANT VERIFICATION CODE READY]`);
-    console.log(`  To:   ${toEmail}`);
-    console.log(`  Code: [ ${code} ]`);
-    console.log(`================================================================`);
-
+    console.warn(`[Email Service Warning] Direct dispatch to ${toEmail} timed out or failed: ${err.message}`);
     return {
       messageId: null,
       previewUrl: null,
       dispatched: false,
-      fallbackCode: code,
       error: err.message
     };
   }

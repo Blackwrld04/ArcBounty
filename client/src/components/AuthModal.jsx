@@ -336,10 +336,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       if (data.previewUrl) {
         setEmailPreviewUrl(data.previewUrl);
       }
-      if (data.code) {
-        const digits = String(data.code).split('');
-        setOtp(digits);
-      }
+      setOtp(['', '', '', '', '', '']);
       setResendCooldown(45);
       setStep('otp');
       setTimeout(() => {
@@ -384,10 +381,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       if (data.previewUrl) {
         setEmailPreviewUrl(data.previewUrl);
       }
-      if (data.code) {
-        const digits = String(data.code).split('');
-        setOtp(digits);
-      }
+      setOtp(['', '', '', '', '', '']);
       setResendCooldown(45);
       setStep('otp');
       setTimeout(() => {
