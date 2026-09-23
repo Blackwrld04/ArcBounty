@@ -15,11 +15,22 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/', authRouter); // Also mount at root for direct /signup, /login, /verify-code compatibility
 app.use('/api/bounties', bountyRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/admin', adminRouter);
 
-// Health check
+// Health check & Root status
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'ArcBounty Facilitator API is running',
+    network: 'Circle Arc (5042)',
+    health: '/health',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',

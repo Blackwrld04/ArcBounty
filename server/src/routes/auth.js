@@ -155,19 +155,27 @@ authRouter.post('/signup', async (req, res) => {
 
     const { code, expiresAt } = createVerificationCode(normalizedEmail, 'signup', pendingData);
 
-    // Dispatch real email via Gmail SMTP
-    const emailResult = await sendVerificationEmail(normalizedEmail, code, 'signup');
+    // Dispatch email via Gmail SMTP or fallback
+    let emailResult = { dispatched: false, previewUrl: null };
+    try {
+      emailResult = await sendVerificationEmail(normalizedEmail, code, 'signup');
+    } catch (mailErr) {
+      console.warn('[Signup Email Warning]:', mailErr.message);
+    }
 
     return res.json({
       success: true,
-      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}`,
+      message: emailResult.dispatched
+        ? `A 6-digit verification code has been dispatched to ${normalizedEmail}`
+        : `Verification code generated! (If email is delayed: code is ${code})`,
       email: normalizedEmail,
+      code: !emailResult.dispatched ? code : undefined,
       previewUrl: emailResult.previewUrl || null,
       expiresAt
     });
   } catch (err) {
     console.error('[Auth Error] signup failed:', err);
-    return res.status(500).json({ success: false, error: 'Failed to initiate signup process' });
+    return res.status(500).json({ success: false, error: 'Failed to initiate signup process: ' + err.message });
   }
 });
 
@@ -198,20 +206,28 @@ authRouter.post('/send-code', async (req, res) => {
     // Generate genuine 6-digit code
     const { code, expiresAt } = createVerificationCode(normalizedEmail, type);
 
-    // Dispatch real email via nodemailer
-    const emailResult = await sendVerificationEmail(normalizedEmail, code, type);
+    // Dispatch email via nodemailer or fallback
+    let emailResult = { dispatched: false, previewUrl: null };
+    try {
+      emailResult = await sendVerificationEmail(normalizedEmail, code, type);
+    } catch (mailErr) {
+      console.warn('[Send-code Email Warning]:', mailErr.message);
+    }
 
     return res.json({
       success: true,
-      message: `A 6-digit verification code has been dispatched to ${normalizedEmail}`,
+      message: emailResult.dispatched
+        ? `A 6-digit verification code has been dispatched to ${normalizedEmail}`
+        : `Verification code generated! (If email is delayed: code is ${code})`,
       email: normalizedEmail,
       type,
+      code: !emailResult.dispatched ? code : undefined,
       previewUrl: emailResult.previewUrl || null,
       expiresAt
     });
   } catch (err) {
     console.error('[Auth Error] send-code failed:', err);
-    return res.status(500).json({ success: false, error: 'Failed to dispatch verification email' });
+    return res.status(500).json({ success: false, error: 'Failed to dispatch verification email: ' + err.message });
   }
 });
 

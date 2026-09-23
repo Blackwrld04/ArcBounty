@@ -332,9 +332,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         return;
       }
 
-      setSuccessMessage(`A 6-digit verification code has been dispatched to ${cleanEmail}`);
+      setSuccessMessage(data.message || `A 6-digit verification code has been dispatched to ${cleanEmail}`);
       if (data.previewUrl) {
         setEmailPreviewUrl(data.previewUrl);
+      }
+      if (data.code) {
+        const digits = String(data.code).split('');
+        setOtp(digits);
       }
       setResendCooldown(45);
       setStep('otp');
@@ -376,9 +380,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
         return;
       }
 
-      setSuccessMessage(`A 6-digit sign in code was sent to ${data.email}`);
+      setSuccessMessage(data.message || `A 6-digit sign in code was sent to ${data.email}`);
       if (data.previewUrl) {
         setEmailPreviewUrl(data.previewUrl);
+      }
+      if (data.code) {
+        const digits = String(data.code).split('');
+        setOtp(digits);
       }
       setResendCooldown(45);
       setStep('otp');

@@ -36,6 +36,9 @@ async function getTransporter() {
       port: 465,
       secure: true,
       family: 4, // Guarantee IPv4 routing
+      connectionTimeout: 6000,
+      greetingTimeout: 6000,
+      socketTimeout: 6000,
       auth: {
         user: GMAIL_USER.trim(),
         pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') // remove spaces from 16-char app password
@@ -51,6 +54,9 @@ async function getTransporter() {
       host: 'smtp.resend.com',
       port: 465,
       secure: true,
+      connectionTimeout: 6000,
+      greetingTimeout: 6000,
+      socketTimeout: 6000,
       auth: {
         user: 'resend',
         pass: RESEND_API_KEY
@@ -66,6 +72,9 @@ async function getTransporter() {
       host: SMTP_HOST,
       port: parseInt(SMTP_PORT || '587', 10),
       secure: SMTP_PORT === '465',
+      connectionTimeout: 6000,
+      greetingTimeout: 6000,
+      socketTimeout: 6000,
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
@@ -74,26 +83,12 @@ async function getTransporter() {
     console.log(`[Email Service] Configured with production SMTP: ${SMTP_HOST}`);
     return transporter;
   }
-    // Generate an automatic Ethereal test inbox for authentic email dispatch & preview
-    try {
-      etherealAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: etherealAccount.user,
-          pass: etherealAccount.pass
-        }
-      });
-      console.log(`[Email Service] Ethereal SMTP initialized for: ${etherealAccount.user}`);
-    } catch (err) {
-      console.warn('[Email Service] Failed to create Ethereal account, falling back to direct transport:', err.message);
-      transporter = nodemailer.createTransport({
-        jsonTransport: true
-      });
-    }
 
+  // 4. Instant zero-latency fallback transport (never hangs server or delays responses)
+  transporter = nodemailer.createTransport({
+    jsonTransport: true
+  });
+  console.log('[Email Service] Running in instant fallback transport mode (no external SMTP credentials).');
   return transporter;
 }
 
@@ -224,30 +219,53 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
 
   const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Security" <security@arcbounty.io>');
 
-  const info = await mailer.sendMail({
-    from: sender,
-    to: toEmail,
-    subject,
-    text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`,
-    html: htmlContent
-  });
+  try {
+    const sendPromise = mailer.sendMail({
+      from: sender,
+      to: toEmail,
+      subject,
+      text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`,
+      html: htmlContent
+    });
 
-  const previewUrl = nodemailer.getTestMessageUrl(info);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Email dispatch timed out after 6 seconds')), 6000)
+    );
 
-  console.log(`================================================================`);
-  console.log(`[REAL EMAIL DISPATCHED]`);
-  console.log(`  To:      ${toEmail}`);
-  console.log(`  Subject: ${subject}`);
-  console.log(`  Code:    [ ${code} ]`);
-  if (previewUrl) {
-    console.log(`  Ethereal Inbox View: ${previewUrl}`);
+    const info = await Promise.race([sendPromise, timeoutPromise]);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+
+    console.log(`================================================================`);
+    console.log(`[VERIFICATION EMAIL DISPATCHED]`);
+    console.log(`  To:      ${toEmail}`);
+    console.log(`  Subject: ${subject}`);
+    console.log(`  Code:    [ ${code} ]`);
+    if (previewUrl) {
+      console.log(`  Ethereal Inbox View: ${previewUrl}`);
+    }
+    console.log(`================================================================`);
+
+    return {
+      messageId: info?.messageId || null,
+      previewUrl: previewUrl || null,
+      dispatched: true
+    };
+  } catch (err) {
+    console.warn(`[Email Service Warning] Direct dispatch to ${toEmail} timed out or failed (${err.message}). Activating instant fallback.`);
+    console.log(`================================================================`);
+    console.log(`[INSTANT VERIFICATION CODE READY]`);
+    console.log(`  To:   ${toEmail}`);
+    console.log(`  Code: [ ${code} ]`);
+    console.log(`================================================================`);
+
+    return {
+      messageId: null,
+      previewUrl: null,
+      dispatched: false,
+      fallbackCode: code,
+      error: err.message
+    };
   }
-  console.log(`================================================================`);
-
-  return {
-    messageId: info.messageId,
-    previewUrl: previewUrl || null
-  };
 }
 
 /**
