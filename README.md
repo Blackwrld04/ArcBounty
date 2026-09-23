@@ -4,7 +4,7 @@
 
 ### The Open Bounty & Proof-of-Work Protocol for Web3 Creators & Builders on Circle Arc
 
-[![Live Web App](https://img.shields.io/badge/live_app-arcbounty.netlify.app-00ff66?style=flat-square)](https://arcbounty.netlify.app/)
+[![Live Web App](https://img.shields.io/badge/live_app-arc--bounty--pi.vercel.app-00ff66?style=flat-square)](https://arc-bounty-pi.vercel.app/)
 [![Escrow Protocol: EIP-3009](https://img.shields.io/badge/Escrow_Protocol-EIP--3009_Gasless-00ff66?style=flat-square)](https://eips.ethereum.org/EIPS/eip-3009)
 [![Arc Mainnet: 5042](https://img.shields.io/badge/network-Arc_Mainnet_(5042)-4f46e5?style=flat-square)](https://arc.io)
 [![USDC Native Gas](https://img.shields.io/badge/gas-Native_USDC-2775ca?style=flat-square)](https://arc.io)
@@ -16,7 +16,7 @@ ArcBounty is a decentralized, non-custodial bounty escrow and proof-of-work prot
 
 **Lock canonical USDC in escrow. Deliver high-impact proof of work. Settle instantly with zero creator gas.**
 
-[🌐 Live Web App](https://arcbounty.netlify.app/) · [Admin Telemetry GUI](https://arcbounty.netlify.app/) · [Live API Health](http://localhost:4050/health) · [Deployment Guide](#deployment-guide-render--netlify) · [Verify it yourself](#verify-it-yourself) · [Arc Explorer](https://explorer.arc.io/address/0x7Cd0F0db26f47dFa757014a8f756506B9F32F823)
+[🌐 Live Web App](https://arc-bounty-pi.vercel.app/) · [Admin Telemetry GUI](https://arc-bounty-pi.vercel.app/admin) · [Live API Health](https://arcbounty.onrender.com/health) · [Deployment Guide](#deployment-guide-render--vercel) · [Verify it yourself](#verify-it-yourself) · [Arc Explorer](https://explorer.arc.io/address/0x7Cd0F0db26f47dFa757014a8f756506B9F32F823)
 
 **Decentralized Talent Infrastructure — Dollar-settled creator bounties without intermediary commissions or payment delays.**
 
@@ -50,7 +50,7 @@ Circle Arc Mainnet (Chain 5042) · Node.js & Viem · Dual SQLite / Supabase Post
 - [How It Was Built (Full Tech Stack & Tools)](#how-it-was-built-full-tech-stack--tools)
 - [The Smart Contract & Settlement Specification](#the-smart-contract--settlement-specification)
 - [Verify it yourself](#verify-it-yourself)
-- [Deployment Guide (Render & Netlify)](#deployment-guide-render--netlify)
+- [Deployment Guide (Render & Vercel)](#deployment-guide-render--vercel)
 - [Engineering decisions](#engineering-decisions)
 - [Repository map](#repository-map)
 - [Disclosures & license](#disclosures--license)
@@ -297,7 +297,7 @@ npm run build
 
 ---
 
-## Deployment Guide (Render & Netlify)
+## Deployment Guide (Render & Vercel)
 
 ### 1. Deploy the Backend on Render
 
@@ -321,19 +321,20 @@ The repository includes a ready-to-use [`render.yaml`](render.yaml) blueprint:
 | `ESCROW_CONTRACT_ADDRESS` | Deployed ArcBountyEscrow contract | `0x7Cd0F0db26f47dFa757014a8f756506B9F32F823` |
 | `FACILITATOR_PRIVATE_KEY` | Relayer private key on Arc L1 | `0x[64_hex_characters]` |
 
-### 2. Deploy the Frontend on Netlify
+### 2. Deploy the Frontend on Vercel
 
-The repository includes a pre-configured [`netlify.toml`](netlify.toml):
+The repository includes pre-configured [`client/vercel.json`](client/vercel.json) and [`vercel.json`](vercel.json) for instant SPA routing:
 
-1. In the **Netlify Dashboard**, click **Add new site** &rarr; **Import an existing project**.
-2. Choose **GitHub** and authorize `Blackwrld04/ArcBounty`.
-3. Build settings will automatically populate:
-   - **Base directory**: `client`
-   - **Build command**: `npm run build`
-   - **Publish directory**: `dist`
-4. In **Site configuration** &rarr; **Environment variables**, add:
-   - `VITE_API_URL`: Your deployed Render backend URL (e.g. `https://arcbounty-facilitator.onrender.com`).
-5. Click **Deploy site**.
+1. In the **Vercel Dashboard**, click **Add New...** &rarr; **Project**.
+2. Choose **GitHub** and import `Blackwrld04/ArcBounty`.
+3. Configure project settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `client`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Under **Environment Variables**, add:
+   - `VITE_API_URL`: Your deployed Render backend URL (e.g. `https://arcbounty.onrender.com`).
+5. Click **Deploy**.
 
 ---
 
@@ -356,12 +357,13 @@ The repository includes a pre-configured [`netlify.toml`](netlify.toml):
 arcbounty/
 ├── .gitignore                     # Strict exclusion of .env, database files, and build outputs
 ├── package.json                   # Root workspace scripts (dev, build, server, test)
-├── netlify.toml                   # Netlify Edge CDN build configuration & SPA rewrites
+├── vercel.json                    # Vercel Edge CDN configuration, security headers & SPA rewrites
 ├── render.yaml                    # Render Web Service Blueprint for the Facilitator API
 ├── README.md                      # Complete system documentation & architectural reference
 │
 ├── client/                        # React 19 Frontend Application
 │   ├── index.html                 # HTML5 shell with Google Fonts typography
+│   ├── vercel.json                # Client-scoped SPA rewrites and immutable asset caching
 │   ├── vite.config.js             # Vite 8 bundler configuration
 │   └── src/
 │       ├── App.jsx                # Main application state, navigation, and modal coordinator
