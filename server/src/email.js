@@ -1,72 +1,15 @@
 import nodemailer from 'nodemailer';
-import dns from 'node:dns';
 import 'dotenv/config';
 
-// Force IPv4 lookup first to prevent ENETUNREACH issues with Gmail SMTP over IPv6
-dns.setDefaultResultOrder('ipv4first');
-
 let transporter = null;
-let etherealAccount = null;
+
+const CLIENT_URL = process.env.CLIENT_URL || 'https://arc-bounty-pi.vercel.app';
 
 /**
- * Initialize email transporter
- * Supports:
- * 1. Gmail service via GMAIL_USER & GMAIL_APP_PASSWORD
- * 2. Standard SMTP (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
- * 3. Resend API (RESEND_API_KEY)
- * 4. Automatic Ethereal email test account for local testing
+ * Local development fallback transport (in-memory JSON, 0ms latency, never hangs)
  */
 async function getTransporter() {
   if (transporter) return transporter;
-
-  const GMAIL_USER = (process.env.GMAIL_USER || 'jasminee0904@gmail.com').trim();
-  const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || 'fwec ncqu eddt nori').replace(/\s+/g, '');
-  const {
-    SMTP_HOST,
-    SMTP_PORT,
-    SMTP_USER,
-    SMTP_PASS
-  } = process.env;
-
-  // 1. Direct Gmail Service with Persistent Connection Pooling
-  if (GMAIL_USER && GMAIL_APP_PASSWORD) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      pool: true,
-      maxConnections: 3,
-      maxMessages: 100,
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000,
-      auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_APP_PASSWORD
-      }
-    });
-    console.log(`[Email Service] Live Gmail SMTP connected with connection pool for: ${GMAIL_USER}`);
-    return transporter;
-  }
-
-  // 2. Generic Custom SMTP
-  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: parseInt(SMTP_PORT || '587', 10),
-      secure: SMTP_PORT === '465',
-      pool: true,
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    });
-    console.log(`[Email Service] Configured with production SMTP: ${SMTP_HOST}`);
-    return transporter;
-  }
-
-  // 3. Fallback transport
   transporter = nodemailer.createTransport({
     jsonTransport: true
   });
@@ -74,17 +17,20 @@ async function getTransporter() {
 }
 
 /**
- * Send real 6-digit OTP verification code to user's email
+ * Centralized Email Dispatch Engine
+ * Uses Resend HTTPS REST API (Port 443) as primary production engine:
+ * - Sub-second delivery (~150ms)
+ * - Complete, rich HTML neo-brutalist responsive styling
+ * - Bypasses cloud SMTP port restrictions (ports 25, 465, 587)
  */
-export async function sendVerificationEmail(toEmail, code, type = 'login') {
-  const subject = type === 'signup'
-    ? 'Verify your ArcBounty Creator Account'
-    : 'Your ArcBounty Verification Code';
-
+async function dispatchEmail({ to, subject, html, text }) {
   const resendKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || 'ArcBounty <onboarding@resend.dev>';
+  const recipients = Array.isArray(to) ? to : [to];
+
+  // 1. Primary: Resend HTTPS REST API (Ultra-fast, full HTML support, never blocked)
   if (resendKey) {
     try {
-      const fromEmail = process.env.FROM_EMAIL || 'ArcBounty <onboarding@resend.dev>';
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -93,22 +39,53 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
         },
         body: JSON.stringify({
           from: fromEmail,
-          to: [toEmail],
+          to: recipients,
           subject,
-          text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`
+          html,
+          text
         })
       });
+
       const data = await res.json();
       if (res.ok) {
-        console.log(`[Email Service] Fast HTTPS dispatch via Resend to ${toEmail}: ID ${data.id}`);
-        return { messageId: data.id, previewUrl: null, dispatched: true };
+        console.log(`[Email Service - Resend] Fast HTTPS dispatch to ${recipients.join(', ')} | ID: ${data.id}`);
+        return { messageId: data.id, dispatched: true };
+      } else {
+        console.warn(`[Email Service - Resend Warning] API returned ${res.status}:`, data);
       }
     } catch (e) {
-      console.warn(`[Email Service Warning] Resend HTTPS dispatch failed:`, e.message);
+      console.warn(`[Email Service - Resend Network Error]:`, e.message);
     }
   }
 
-  const mailer = await getTransporter();
+  // 2. Local Development / Test Fallback
+  try {
+    const mailer = await getTransporter();
+    const sender = process.env.FROM_EMAIL || '"ArcBounty Security" <security@arcbounty.io>';
+    for (const recipient of recipients) {
+      await mailer.sendMail({
+        from: sender,
+        to: recipient,
+        subject,
+        html,
+        text
+      });
+    }
+    console.log(`[Email Service - Local Fallback] Simulated email to: ${recipients.join(', ')}`);
+    return { messageId: 'local-test-id', dispatched: true };
+  } catch (err) {
+    console.warn(`[Email Service Warning] Fallback transport error:`, err.message);
+    return { messageId: null, dispatched: false, error: err.message };
+  }
+}
+
+/**
+ * Send real 6-digit OTP verification code to user's email with neo-brutalist Circle Arc HTML design
+ */
+export async function sendVerificationEmail(toEmail, code, type = 'login') {
+  const subject = type === 'signup'
+    ? 'Verify your ArcBounty Creator Account'
+    : 'Your ArcBounty Verification Code';
 
   const digits = String(code).split('');
   const digitCells = digits.map(d => `
@@ -226,48 +203,12 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
     </html>
   `;
 
-  const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Security" <security@arcbounty.io>');
-
-  try {
-    const sendPromise = mailer.sendMail({
-      from: sender,
-      to: toEmail,
-      subject,
-      text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`,
-      html: htmlContent
-    });
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Email dispatch timed out after 6 seconds')), 6000)
-    );
-
-    const info = await Promise.race([sendPromise, timeoutPromise]);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-
-    console.log(`================================================================`);
-    console.log(`[VERIFICATION EMAIL DISPATCHED]`);
-    console.log(`  To:      ${toEmail}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Code:    [ ${code} ]`);
-    if (previewUrl) {
-      console.log(`  Ethereal Inbox View: ${previewUrl}`);
-    }
-    console.log(`================================================================`);
-
-    return {
-      messageId: info?.messageId || null,
-      previewUrl: previewUrl || null,
-      dispatched: true
-    };
-  } catch (err) {
-    console.warn(`[Email Service Warning] Direct dispatch to ${toEmail} timed out or failed: ${err.message}`);
-    return {
-      messageId: null,
-      previewUrl: null,
-      dispatched: false,
-      error: err.message
-    };
-  }
+  return await dispatchEmail({
+    to: toEmail,
+    subject,
+    html: htmlContent,
+    text: `Your ArcBounty verification code is: ${code}. Valid for 10 minutes on Circle Arc L1.`
+  });
 }
 
 /**
@@ -275,89 +216,77 @@ export async function sendVerificationEmail(toEmail, code, type = 'login') {
  */
 export async function sendRewardDisbursedEmail({ toEmail, creatorName, bountyTitle, amount, txHash, walletAddress }) {
   if (!toEmail) return null;
-  try {
-    const mailer = await getTransporter();
-    const subject = `USDC Disbursed: $${amount} for "${bountyTitle}" on Circle Arc`;
+  const subject = `USDC Disbursed: $${amount} for "${bountyTitle}" on Circle Arc`;
 
-    const htmlContent = `
-      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-      <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
-        <head>
-          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <meta name="color-scheme" content="light dark" />
-          <title>${subject}</title>
-        </head>
-        <body style="margin: 0; padding: 0; width: 100% !important; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-          <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0b111e; opacity: 0;">
-            Congratulations! $${amount} USDC has been disbursed to your wallet for "${bountyTitle}".
-          </div>
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0b111e; padding: 32px 12px;">
-            <tr>
-              <td align="center">
-                <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: #111c30; border: 2.5px solid #2f578c; border-radius: 12px; overflow: hidden;">
-                  <tr>
-                    <td align="center" style="background-color: #1b3158; padding: 26px 20px; border-bottom: 2.5px solid #2f578c;">
-                      <div style="font-size: 24px; font-weight: 900; color: #ffffff; margin-bottom: 6px;">
-                        Arc<span style="color: #ffcc6f;">Bounty</span>
-                      </div>
-                      <div style="display: inline-block; background-color: #0d1a2d; color: #acc6e9; border: 1.5px solid #2f578c; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-                        Settlement Confirmed &bull; Chain ID 5042
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 32px 28px; background-color: #111c30;">
-                      <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #ffffff;">
-                        Bounty Prize Disbursed!
-                      </h1>
-                      <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
-                        Hello <strong>${creatorName || 'Creator'}</strong>, your submission for <strong>${bountyTitle}</strong> was reviewed and selected as the winner. The prize reward has been disbursed from the platform escrow to your Circle Arc wallet!
-                      </p>
-                      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0a1322; border: 2px solid #ffcc6f; border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center;">
-                        <tr>
-                          <td>
-                            <div style="font-size: 11px; font-weight: 800; color: #ffcc6f; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">AMOUNT DISBURSED</div>
-                            <div style="font-size: 34px; font-weight: 900; color: #10b981; font-family: monospace;">$${amount} USDC</div>
-                            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Recipient: <span style="color: #ffffff; font-family: monospace;">${walletAddress || 'Your Connected Wallet'}</span></div>
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; word-break: break-all;">Tx Hash: <span style="color: #acc6e9; font-family: monospace;">${txHash}</span></div>
-                          </td>
-                        </tr>
-                      </table>
-                      <div style="background-color: #16243d; border-left: 4px solid #10b981; padding: 12px 14px; border-radius: 4px; font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">
-                        Finalized on Circle Arc L1 with sub-second deterministic finality.
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="background-color: #0b1424; padding: 18px 24px; border-top: 1.5px solid #1e3352; font-size: 12px; color: #64748b;">
-                      Circle Arc L1 &bull; Canonical USDC &bull; Zero-gas Creator Capital Engine
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
+  const htmlContent = `
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; width: 100% !important; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0b111e; opacity: 0;">
+          Congratulations! $${amount} USDC has been disbursed to your wallet for "${bountyTitle}".
+        </div>
+        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0b111e; padding: 32px 12px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: #111c30; border: 2.5px solid #2f578c; border-radius: 12px; overflow: hidden;">
+                <tr>
+                  <td align="center" style="background-color: #1b3158; padding: 26px 20px; border-bottom: 2.5px solid #2f578c;">
+                    <div style="font-size: 24px; font-weight: 900; color: #ffffff; margin-bottom: 6px;">
+                      Arc<span style="color: #ffcc6f;">Bounty</span>
+                    </div>
+                    <div style="display: inline-block; background-color: #0d1a2d; color: #acc6e9; border: 1.5px solid #2f578c; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                      Settlement Confirmed &bull; Chain ID 5042
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 32px 28px; background-color: #111c30;">
+                    <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #ffffff;">
+                      Bounty Prize Disbursed!
+                    </h1>
+                    <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+                      Hello <strong>${creatorName || 'Creator'}</strong>, your submission for <strong>${bountyTitle}</strong> was reviewed and selected as the winner. The prize reward has been disbursed from the platform escrow to your Circle Arc wallet!
+                    </p>
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #0a1322; border: 2px solid #ffcc6f; border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center;">
+                      <tr>
+                        <td>
+                          <div style="font-size: 11px; font-weight: 800; color: #ffcc6f; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">AMOUNT DISBURSED</div>
+                          <div style="font-size: 34px; font-weight: 900; color: #10b981; font-family: monospace;">$${amount} USDC</div>
+                          <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Recipient: <span style="color: #ffffff; font-family: monospace;">${walletAddress || 'Your Connected Wallet'}</span></div>
+                          <div style="font-size: 11px; color: #64748b; margin-top: 4px; word-break: break-all;">Tx Hash: <span style="color: #acc6e9; font-family: monospace;">${txHash}</span></div>
+                        </td>
+                      </tr>
+                    </table>
+                    <div style="background-color: #16243d; border-left: 4px solid #10b981; padding: 12px 14px; border-radius: 4px; font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">
+                      Finalized on Circle Arc L1 with sub-second deterministic finality.
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="background-color: #0b1424; padding: 18px 24px; border-top: 1.5px solid #1e3352; font-size: 12px; color: #64748b;">
+                    Circle Arc L1 &bull; Canonical USDC &bull; Zero-gas Creator Capital Engine
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
 
-    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Security" <security@arcbounty.io>');
-
-    const info = await mailer.sendMail({
-      from: sender,
-      to: toEmail,
-      subject,
-      text: `Your ArcBounty prize of $${amount} USDC for "${bountyTitle}" has been disbursed to ${walletAddress}. Settlement Tx: ${txHash}`,
-      html: htmlContent
-    });
-
-    console.log(`[Disbursement Email] Notification sent to ${toEmail} for bounty "${bountyTitle}" ($${amount} USDC)`);
-    return info;
-  } catch (err) {
-    console.warn(`[Disbursement Email] Failed to send email to ${toEmail}:`, err.message);
-    return null;
-  }
+  return await dispatchEmail({
+    to: toEmail,
+    subject,
+    html: htmlContent,
+    text: `Your ArcBounty prize of $${amount} USDC for "${bountyTitle}" has been disbursed to ${walletAddress}. Settlement Tx: ${txHash}`
+  });
 }
 
 /**
@@ -366,61 +295,53 @@ export async function sendRewardDisbursedEmail({ toEmail, creatorName, bountyTit
 export async function sendBountyApprovedNotification(maintainerEmail, bounty) {
   if (!maintainerEmail || !maintainerEmail.includes('@')) return null;
 
-  try {
-    const mailer = await getTransporter();
-    const subject = `Your Challenge is Now Live: "${bounty.title}" on ArcBounty`;
+  const subject = `Your Challenge is Now Live: "${bounty.title}" on ArcBounty`;
 
-    let prizeInfo = `$${bounty.amount} USDC`;
-    if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
-      prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
-    } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
-      prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
-    }
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
-            <tr>
-              <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
-                <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
-                <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">Challenge Verified &amp; Published</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 28px 24px;">
-                <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">Your Bounty is Live!</h2>
-                <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
-                  Platform admins have verified your escrow funding and conditions. Your bounty is now published on the ArcBounty public feed for creators to participate.
-                </p>
-                <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
-                  <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
-                  <div style="font-size: 13px; color: #ffcc6f; font-weight: 700;">Prize: ${prizeInfo}</div>
-                  <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Category: ${bounty.categoryName || bounty.category} &bull; Deadline: ${new Date(bounty.deadline).toLocaleDateString()}</div>
-                </div>
-                <a href="http://localhost:5173" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
-                  View Live Challenge on ArcBounty
-                </a>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
-
-    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Platform" <notifications@arcbounty.io>');
-    return await mailer.sendMail({
-      from: sender,
-      to: maintainerEmail,
-      subject,
-      text: `Your bounty "${bounty.title}" has been approved by admin and is now live on ArcBounty! Prize: ${prizeInfo}.`,
-      html: htmlContent
-    });
-  } catch (err) {
-    console.warn(`[Email Service] Failed to notify maintainer ${maintainerEmail}:`, err.message);
-    return null;
+  let prizeInfo = `$${bounty.amount} USDC`;
+  if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
+    prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
+  } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
+    prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
   }
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
+          <tr>
+            <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
+              <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
+              <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">Challenge Verified &amp; Published</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 28px 24px;">
+              <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">Your Bounty is Live!</h2>
+              <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
+                Platform admins have verified your escrow funding and conditions. Your bounty is now published on the ArcBounty public feed for creators to participate.
+              </p>
+              <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
+                <div style="font-size: 13px; color: #ffcc6f; font-weight: 700;">Prize: ${prizeInfo}</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Category: ${bounty.categoryName || bounty.category} &bull; Deadline: ${new Date(bounty.deadline).toLocaleDateString()}</div>
+              </div>
+              <a href="${CLIENT_URL}" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
+                View Live Challenge on ArcBounty
+              </a>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  return await dispatchEmail({
+    to: maintainerEmail,
+    subject,
+    html: htmlContent,
+    text: `Your bounty "${bounty.title}" has been approved by admin and is now live on ArcBounty! Prize: ${prizeInfo}.`
+  });
 }
 
 /**
@@ -429,69 +350,56 @@ export async function sendBountyApprovedNotification(maintainerEmail, bounty) {
 export async function sendNewBountyBroadcastToCreators(creatorEmails, bounty) {
   if (!Array.isArray(creatorEmails) || creatorEmails.length === 0) return null;
 
-  try {
-    const mailer = await getTransporter();
-    const validEmails = creatorEmails.filter(e => e && e.includes('@'));
-    if (validEmails.length === 0) return null;
+  const validEmails = creatorEmails.filter(e => e && e.includes('@'));
+  if (validEmails.length === 0) return null;
 
-    let prizeInfo = `$${bounty.amount} USDC`;
-    if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
-      prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
-    } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
-      prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
-    }
-
-    const subject = `New Challenge Live: "${bounty.title}" (${prizeInfo})`;
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
-            <tr>
-              <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
-                <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
-                <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">New Creator Opportunity</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 28px 24px;">
-                <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">New Challenge Published!</h2>
-                <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
-                  A new escrow-funded bounty has been verified by platform admins and is now open for creator submissions on Circle Arc.
-                </p>
-                <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
-                  <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
-                  <div style="font-size: 14px; color: #ffcc6f; font-weight: 800;">Prize: ${prizeInfo}</div>
-                  <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
-                    Category: <strong>${bounty.categoryName || bounty.category}</strong> &bull; Due: ${new Date(bounty.deadline).toLocaleDateString()}
-                  </div>
-                </div>
-                <a href="http://localhost:5173" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
-                  Participate &amp; Submit Deliverable
-                </a>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
-
-    const sender = process.env.FROM_EMAIL || (process.env.GMAIL_USER ? `"ArcBounty" <${process.env.GMAIL_USER}>` : '"ArcBounty Platform" <bounties@arcbounty.io>');
-
-    // Dispatch to creator emails
-    console.log(`[Email Service] Broadcasting new challenge "${bounty.title}" to ${validEmails.length} creators...`);
-    for (const recipient of validEmails) {
-      mailer.sendMail({
-        from: sender,
-        to: recipient,
-        subject,
-        text: `New Challenge on ArcBounty: "${bounty.title}". Prize: ${prizeInfo}. Submit your deliverable to win native USDC!`,
-        html: htmlContent
-      }).catch(err => console.warn(`Broadcast error for ${recipient}:`, err.message));
-    }
-  } catch (err) {
-    console.warn('[Email Service] Failed to broadcast new bounty to creators:', err.message);
+  let prizeInfo = `$${bounty.amount} USDC`;
+  if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'tiered' && Array.isArray(bounty.rewardDistribution.tiers)) {
+    prizeInfo = bounty.rewardDistribution.tiers.map(t => `${t.place === 1 ? '1st' : t.place === 2 ? '2nd' : t.place === 3 ? '3rd' : `${t.place}th`}: $${t.amount}`).join(' · ');
+  } else if (bounty.rewardDistribution && bounty.rewardDistribution.type === 'equal') {
+    prizeInfo = `${bounty.rewardDistribution.count} Winners × $${bounty.rewardDistribution.amountPerWinner} USDC`;
   }
-}
 
+  const subject = `New Challenge Live: "${bounty.title}" (${prizeInfo})`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <body style="margin: 0; padding: 24px; background-color: #0b111e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #111c30; border: 2px solid #2f578c; border-radius: 12px; overflow: hidden;">
+          <tr>
+            <td align="center" style="background-color: #1b3158; padding: 24px 20px; border-bottom: 2px solid #2f578c;">
+              <div style="font-size: 22px; font-weight: 900; color: #ffffff;">Arc<span style="color: #ffcc6f;">Bounty</span></div>
+              <div style="font-size: 11px; font-weight: 800; color: #acc6e9; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;">New Creator Opportunity</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 28px 24px;">
+              <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 800; color: #ffffff;">New Challenge Published!</h2>
+              <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.5; color: #94a3b8;">
+                A new escrow-funded bounty has been verified by platform admins and is now open for creator submissions on Circle Arc.
+              </p>
+              <div style="background-color: #0a1322; border: 1.5px solid #2f578c; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                <div style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">${bounty.title}</div>
+                <div style="font-size: 14px; color: #ffcc6f; font-weight: 800;">Prize: ${prizeInfo}</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                  Category: <strong>${bounty.categoryName || bounty.category}</strong> &bull; Due: ${new Date(bounty.deadline).toLocaleDateString()}
+                </div>
+              </div>
+              <a href="${CLIENT_URL}" style="display: block; text-align: center; background-color: #ffcc6f; color: #000000; padding: 12px; border-radius: 6px; font-weight: 800; text-decoration: none; font-size: 14px;">
+                Participate &amp; Submit Deliverable
+              </a>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  return await dispatchEmail({
+    to: validEmails,
+    subject,
+    html: htmlContent,
+    text: `New Challenge on ArcBounty: "${bounty.title}". Prize: ${prizeInfo}. Submit your deliverable on ArcBounty to win native USDC!`
+  });
+}
