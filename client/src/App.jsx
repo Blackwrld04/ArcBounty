@@ -90,13 +90,31 @@ export default function App() {
     totalDistributions: 2
   });
 
-  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
+  // Active views: 'explore', 'login', 'signup', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
   const getInitialView = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
         return 'admin';
+      }
+      if (path === '/login' || path === '/signin' || hash === '#/login' || hash === '#/signin') {
+        return 'login';
+      }
+      if (path === '/signup' || path === '/register' || hash === '#/signup' || hash === '#/register') {
+        return 'signup';
+      }
+      if (path === '/leaderboard' || hash === '#/leaderboard') {
+        return 'leaderboard';
+      }
+      if (path === '/profile' || hash === '#/profile') {
+        return 'profile';
+      }
+      if (path === '/account' || hash === '#/account') {
+        return 'account';
+      }
+      if (path === '/referrals' || path === '/account-referrals' || hash === '#/referrals') {
+        return 'account-referrals';
       }
     }
     return 'explore';
@@ -112,7 +130,19 @@ export default function App() {
       const hash = window.location.hash.toLowerCase();
       if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
         setActiveView('admin');
-      } else if (activeView === 'admin') {
+      } else if (path === '/login' || path === '/signin' || hash === '#/login' || hash === '#/signin') {
+        setActiveView('login');
+      } else if (path === '/signup' || path === '/register' || hash === '#/signup' || hash === '#/register') {
+        setActiveView('signup');
+      } else if (path === '/leaderboard' || hash === '#/leaderboard') {
+        setActiveView('leaderboard');
+      } else if (path === '/profile' || hash === '#/profile') {
+        setActiveView('profile');
+      } else if (path === '/account' || hash === '#/account') {
+        setActiveView('account');
+      } else if (path === '/referrals' || path === '/account-referrals' || hash === '#/referrals') {
+        setActiveView('account-referrals');
+      } else if (path === '/' || path === '' || hash === '#/' || hash === '' || hash === '#/explore') {
         setActiveView('explore');
       }
     };
@@ -123,16 +153,16 @@ export default function App() {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, [activeView]);
+  }, []);
 
   const handleBackToExplore = () => {
     syncAllData();
     triggerSync({ action: 'nav_to_explore' });
     setActiveView('explore');
     if (typeof window !== 'undefined') {
-      if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
+      if (window.location.pathname !== '/') {
         window.history.pushState({}, '', '/');
-      } else if (window.location.hash === '#/admin') {
+      } else if (window.location.hash) {
         window.location.hash = '';
       }
     }
@@ -402,6 +432,16 @@ export default function App() {
   const handleOpenAuth = (mode = 'login') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
+    if (typeof window !== 'undefined' && window.location.pathname !== `/${mode}`) {
+      window.history.pushState({}, '', `/${mode}`);
+    }
+  };
+
+  const handleCloseAuth = () => {
+    setAuthModalOpen(false);
+    if (typeof window !== 'undefined' && (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const handleLoginSuccess = (userData, token) => {
@@ -419,6 +459,13 @@ export default function App() {
       }
     } catch (e) {}
     showToast(`Welcome, ${userData.name}!`);
+    setAuthModalOpen(false);
+    if (activeView === 'login' || activeView === 'signup') {
+      setActiveView('explore');
+      if (typeof window !== 'undefined') {
+        window.history.pushState({}, '', '/');
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -434,6 +481,9 @@ export default function App() {
       localStorage.removeItem('arcbounty_session_token');
     } catch (e) {}
     setActiveView('explore');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
     showToast('Logged out successfully.');
   };
 
@@ -508,6 +558,8 @@ export default function App() {
             onBackToFeed={() => setActiveView('explore')}
             onSelectBounty={(bounty) => setSelectedBounty(bounty)}
             onOpenSettings={() => setActiveView('account')}
+            onLogout={handleLogout}
+            openAuthModal={handleOpenAuth}
           />
         )}
 
@@ -519,9 +571,21 @@ export default function App() {
             setWallet={setWallet}
             initialTab={activeView === 'account-referrals' ? 'referrals' : 'account'}
             onBackToFeed={() => setActiveView('explore')}
+            onLogout={handleLogout}
+            openAuthModal={handleOpenAuth}
           />
         )}
 
+
+        {(activeView === 'login' || activeView === 'signup') && (
+          <AuthModal
+            isOpen={true}
+            isPage={true}
+            initialMode={activeView}
+            onClose={handleBackToExplore}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        )}
 
         {activeView === 'leaderboard' && (
           <div style={{ paddingTop: '20px' }}>
@@ -564,7 +628,7 @@ export default function App() {
       <AuthModal
         isOpen={authModalOpen}
         initialMode={authModalMode}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={handleCloseAuth}
         onLoginSuccess={handleLoginSuccess}
       />
 
@@ -764,6 +828,75 @@ export default function App() {
               onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
             >
               Support
+            </button>
+
+            <span style={{ color: '#cbd5e1' }}>•</span>
+
+            <button
+              id="footer-login-btn"
+              onClick={() => handleOpenAuth('login')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Log In
+            </button>
+
+            <button
+              id="footer-signup-btn"
+              onClick={() => handleOpenAuth('signup')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              Sign Up
+            </button>
+
+            <button
+              id="footer-admin-btn"
+              onClick={() => {
+                setActiveView('admin');
+                if (typeof window !== 'undefined') window.history.pushState({}, '', '/admin');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'color 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
+            >
+              <Lock size={12} />
+              <span>Admin</span>
             </button>
 
             <span style={{ color: '#cbd5e1' }}>•</span>

@@ -64,7 +64,7 @@ const DISCIPLINES = [
   }
 ];
 
-export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess }) {
+export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess, isPage = false }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
   const [step, setStep] = useState('input'); // 'input', 'otp', 'google_auth'
   const [signupSlide, setSignupSlide] = useState(1); // 1: Name & Handle, 2: Specialty, 3: Email & Password
@@ -99,7 +99,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
   // Reset state when opened or mode changed
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || isPage) {
       setMode(initialMode);
       setStep('input');
       setSignupSlide(1);
@@ -119,7 +119,17 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       setGoogleEmail('');
       setGoogleName('');
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen, isPage, initialMode]);
+
+  const handleSwitchMode = (newMode) => {
+    setMode(newMode);
+    setStep('input');
+    setErrorMessage('');
+    if (newMode === 'signup') setSignupSlide(1);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', `/${newMode}`);
+    }
+  };
 
   // Resend countdown timer
   useEffect(() => {
@@ -154,7 +164,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     return () => clearTimeout(timer);
   }, [username]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isPage) return null;
 
   // Handle OTP digit changes
   const handleOtpChange = (index, value) => {
@@ -580,25 +590,24 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
   const isMobile = useIsMobile();
 
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="clean-card"
-        style={{
-          width: '100%',
-          maxWidth: isMobile ? '100%' : '860px',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          overflow: 'hidden',
-          borderRadius: isMobile ? '14px 14px 0 0' : '14px',
-          border: '2.5px solid #000000',
-          boxShadow: isMobile ? '0 -4px 20px rgba(0,0,0,0.15)' : '6px 6px 0px #000000',
-          position: 'relative',
-          maxHeight: isMobile ? '95vh' : '92vh',
-          background: '#ffffff'
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+  const modalBody = (
+    <div
+      className="clean-card"
+      style={{
+        width: '100%',
+        maxWidth: isMobile ? '100%' : '860px',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        overflow: 'hidden',
+        borderRadius: isMobile && !isPage ? '14px 14px 0 0' : '14px',
+        border: '2.5px solid #000000',
+        boxShadow: isMobile && !isPage ? '0 -4px 20px rgba(0,0,0,0.15)' : '6px 6px 0px #000000',
+        position: 'relative',
+        maxHeight: isPage ? 'none' : isMobile ? '95vh' : '92vh',
+        background: '#ffffff'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -790,11 +799,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           >
             <button
               type="button"
-              onClick={() => {
-                setMode('login');
-                setStep('input');
-                setErrorMessage('');
-              }}
+              id="auth-tab-login"
+              onClick={() => handleSwitchMode('login')}
               style={{
                 flex: 1,
                 padding: '8px 12px',
@@ -813,12 +819,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
             </button>
             <button
               type="button"
-              onClick={() => {
-                setMode('signup');
-                setStep('input');
-                setSignupSlide(1);
-                setErrorMessage('');
-              }}
+              id="auth-tab-signup"
+              onClick={() => handleSwitchMode('signup')}
               style={{
                 flex: 1,
                 padding: '8px 12px',
@@ -1029,6 +1031,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
                   <button
                     type="submit"
+                    id="auth-submit-login-btn"
                     disabled={isLoading}
                     className="btn-primary"
                     style={{
@@ -1042,6 +1045,17 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <span>{isLoading ? 'Verifying Credentials...' : 'Log In to ArcBounty'}</span>
                     <ArrowRight size={16} />
                   </button>
+                  <p style={{ textAlign: 'center', fontSize: '0.82rem', color: '#64748b', marginTop: '14px', marginBottom: 0 }}>
+                    Don't have an account?{' '}
+                    <button
+                      type="button"
+                      id="auth-switch-to-signup-link"
+                      onClick={() => handleSwitchMode('signup')}
+                      style={{ background: 'none', border: 'none', color: '#1b3158', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Sign up as creator
+                    </button>
+                  </p>
                 </form>
               ) : (
                 /* Fallback OTP Login */
@@ -1214,6 +1228,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
                   <button
                     type="submit"
+                    id="auth-signup-slide1-btn"
                     className="btn-primary"
                     style={{
                       width: '100%',
@@ -1225,6 +1240,17 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                     <span>Continue to Primary Specialty</span>
                     <ArrowRight size={16} />
                   </button>
+                  <p style={{ textAlign: 'center', fontSize: '0.82rem', color: '#64748b', marginTop: '14px', marginBottom: 0 }}>
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      id="auth-switch-to-login-link"
+                      onClick={() => handleSwitchMode('login')}
+                      style={{ background: 'none', border: 'none', color: '#1b3158', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Log In
+                    </button>
+                  </p>
                 </form>
               )}
 
@@ -1893,6 +1919,49 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
           )}
         </div>
       </div>
+    );
+
+  if (isPage) {
+    return (
+      <div
+        id="auth-page-container"
+        style={{
+          width: '100%',
+          minHeight: 'calc(100vh - 160px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: isMobile ? '16px 12px 60px' : '40px 20px',
+          background: 'var(--bg-canvas)'
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: '860px', marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+          <button
+            id="auth-page-back-btn"
+            onClick={onClose}
+            className="btn-secondary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.84rem',
+              padding: '6px 14px',
+              background: '#ffffff'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Bounties Feed</span>
+          </button>
+        </div>
+        {modalBody}
+      </div>
+    );
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      {modalBody}
     </div>
   );
 }

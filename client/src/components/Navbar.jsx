@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Wallet, ChevronDown, User, Settings, Bell, Share2, LogOut, Zap, CheckCircle, ExternalLink } from 'lucide-react';
+import { Search, Plus, Wallet, ChevronDown, User, Settings, Bell, Share2, LogOut, Zap, CheckCircle, ExternalLink, KeyRound, UserPlus } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 import { useIsMobile } from '../utils/useIsMobile';
 
@@ -432,9 +432,62 @@ export default function Navbar({
                       </button>
                     </div>
 
-                    {/* Logout */}
+                    {/* Switch Account & Logout */}
                     <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '6px' }}>
                       <button
+                        id="navbar-switch-account-btn"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          openAuthModal('login');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#2563eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <KeyRound size={15} color="#2563eb" />
+                        <span>Switch Account / Log In</span>
+                      </button>
+
+                      <button
+                        id="navbar-create-account-btn"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          openAuthModal('signup');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <UserPlus size={15} color="#059669" />
+                        <span>Sign Up Another Account</span>
+                      </button>
+
+                      <button
+                        id="navbar-logout-btn"
                         onClick={() => { onLogout(); setDropdownOpen(false); }}
                         style={{
                           width: '100%',

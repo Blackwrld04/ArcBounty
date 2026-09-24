@@ -15,7 +15,9 @@ import {
   Clock,
   Sparkles,
   Award,
-  Mail
+  Mail,
+  LogOut,
+  KeyRound
 } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
@@ -37,7 +39,9 @@ export default function UserProfile({
   bounties,
   onBackToFeed,
   onSelectBounty,
-  onOpenSettings
+  onOpenSettings,
+  onLogout,
+  openAuthModal
 }) {
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [profileStats, setProfileStats] = useState({
@@ -318,7 +322,7 @@ export default function UserProfile({
             </div>
 
             {/* Profile Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 className="btn-secondary"
                 style={{ padding: '8px 16px', fontSize: '0.82rem' }}
@@ -326,6 +330,30 @@ export default function UserProfile({
               >
                 <Edit3 size={14} />
                 <span>Account Settings</span>
+              </button>
+
+              <button
+                id="profile-switch-account-btn"
+                className="btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.82rem', gap: '6px' }}
+                onClick={() => {
+                  if (openAuthModal) openAuthModal('login');
+                }}
+              >
+                <KeyRound size={14} color="#2563eb" />
+                <span>Switch Account</span>
+              </button>
+
+              <button
+                id="profile-logout-btn"
+                className="btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.82rem', gap: '6px', color: '#ef4444' }}
+                onClick={() => {
+                  if (onLogout) onLogout();
+                }}
+              >
+                <LogOut size={14} color="#ef4444" />
+                <span>Log Out</span>
               </button>
 
               <button

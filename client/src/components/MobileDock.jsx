@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, User, Plus, Trophy, Wallet } from 'lucide-react';
+import { Compass, User, Plus, Trophy, Wallet, KeyRound } from 'lucide-react';
 
 export default function MobileDock({
   activeTab,
@@ -37,7 +37,7 @@ export default function MobileDock({
         <span style={{ borderBottom: activeTab === 'explore' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>EXPLORE</span>
       </button>
 
-      {/* 2. Profile */}
+      {/* 2. Profile or Log In */}
       <button
         id="mobile-dock-profile-btn"
         onClick={() => {
@@ -52,7 +52,7 @@ export default function MobileDock({
         style={{
           background: 'transparent',
           border: 'none',
-          color: activeTab === 'profile' ? '#000000' : '#6b7280',
+          color: (user ? activeTab === 'profile' : (activeTab === 'login' || activeTab === 'signup')) ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -66,8 +66,17 @@ export default function MobileDock({
           letterSpacing: '0.03em'
         }}
       >
-        <User size={21} color={activeTab === 'profile' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'profile' ? 3 : 2} />
-        <span style={{ borderBottom: activeTab === 'profile' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>PROFILE</span>
+        {user ? (
+          <>
+            <User size={21} color={activeTab === 'profile' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'profile' ? 3 : 2} />
+            <span style={{ borderBottom: activeTab === 'profile' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>PROFILE</span>
+          </>
+        ) : (
+          <>
+            <KeyRound size={21} color={(activeTab === 'login' || activeTab === 'signup') ? '#000000' : '#6b7280'} strokeWidth={(activeTab === 'login' || activeTab === 'signup') ? 3 : 2} />
+            <span style={{ borderBottom: (activeTab === 'login' || activeTab === 'signup') ? '2px solid #000' : 'none', paddingBottom: '1px' }}>LOG IN</span>
+          </>
+        )}
       </button>
 
       {/* 3. Center Action: Post Bounty */}

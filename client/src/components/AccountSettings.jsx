@@ -16,7 +16,9 @@ import {
   RotateCcw,
   Camera,
   Upload,
-  Mail
+  Mail,
+  LogOut,
+  KeyRound
 } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
@@ -30,7 +32,9 @@ export default function AccountSettings({
   wallet,
   setWallet,
   onBackToFeed,
-  initialTab = 'account'
+  initialTab = 'account',
+  onLogout,
+  openAuthModal
 }) {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(initialTab); // 'account', 'wallet', 'notifications', 'referrals'
@@ -736,6 +740,44 @@ export default function AccountSettings({
                     }}
                   >
                     {user?.github ? 'Manage' : 'Connect GitHub'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Session & Account Management */}
+              <div style={{ marginTop: '36px', paddingTop: '24px', borderTop: '2px solid #e2e8f0' }}>
+                <h3 className="font-space" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', marginBottom: '8px' }}>
+                  Session &amp; Account Switching
+                </h3>
+                <p style={{ fontSize: '0.84rem', color: '#64748b', marginBottom: '16px' }}>
+                  Switch between creator profiles or sign out of this device securely.
+                </p>
+
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    id="settings-switch-account-btn"
+                    className="btn-secondary"
+                    onClick={() => {
+                      if (openAuthModal) openAuthModal('login');
+                    }}
+                    style={{ padding: '9px 18px', fontSize: '0.84rem', gap: '6px' }}
+                  >
+                    <KeyRound size={15} color="#2563eb" />
+                    <span>Switch Account / Sign In</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="settings-logout-btn"
+                    className="btn-secondary"
+                    onClick={() => {
+                      if (onLogout) onLogout();
+                    }}
+                    style={{ padding: '9px 18px', fontSize: '0.84rem', gap: '6px', color: '#ef4444' }}
+                  >
+                    <LogOut size={15} color="#ef4444" />
+                    <span>Log Out of Session</span>
                   </button>
                 </div>
               </div>
