@@ -16,8 +16,7 @@ import {
   Sparkles,
   Award,
   Mail,
-  LogOut,
-  KeyRound
+  LogOut
 } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
@@ -330,18 +329,6 @@ export default function UserProfile({
               >
                 <Edit3 size={14} />
                 <span>Account Settings</span>
-              </button>
-
-              <button
-                id="profile-switch-account-btn"
-                className="btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '0.82rem', gap: '6px' }}
-                onClick={() => {
-                  if (openAuthModal) openAuthModal('login');
-                }}
-              >
-                <KeyRound size={14} color="#2563eb" />
-                <span>Switch Account</span>
               </button>
 
               <button
