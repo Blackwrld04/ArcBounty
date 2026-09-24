@@ -90,19 +90,13 @@ export default function App() {
     totalDistributions: 2
   });
 
-  // Active views: 'explore', 'login', 'signup', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
+  // Active views: 'explore', 'profile', 'account', 'account-referrals', 'leaderboard', 'admin'
   const getInitialView = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
         return 'admin';
-      }
-      if (path === '/login' || path === '/signin' || hash === '#/login' || hash === '#/signin') {
-        return 'login';
-      }
-      if (path === '/signup' || path === '/register' || hash === '#/signup' || hash === '#/register') {
-        return 'signup';
       }
       if (path === '/leaderboard' || hash === '#/leaderboard') {
         return 'leaderboard';
@@ -120,8 +114,26 @@ export default function App() {
     return 'explore';
   };
 
+  const getInitialAuth = () => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/login' || path === '/signin' || hash === '#/login' || hash === '#/signin') {
+        return { open: true, mode: 'login' };
+      }
+      if (path === '/signup' || path === '/register' || hash === '#/signup' || hash === '#/register') {
+        return { open: true, mode: 'signup' };
+      }
+    }
+    return { open: false, mode: 'login' };
+  };
+
   const [activeView, setActiveView] = useState(getInitialView);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const initialAuth = getInitialAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(initialAuth.open);
+  const [authModalMode, setAuthModalMode] = useState(initialAuth.mode);
 
   // Synchronize browser history and hash navigation
   useEffect(() => {
@@ -131,9 +143,13 @@ export default function App() {
       if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || window.location.search.includes('admin=true')) {
         setActiveView('admin');
       } else if (path === '/login' || path === '/signin' || hash === '#/login' || hash === '#/signin') {
-        setActiveView('login');
+        setAuthModalMode('login');
+        setAuthModalOpen(true);
+        if (activeView === 'admin') setActiveView('explore');
       } else if (path === '/signup' || path === '/register' || hash === '#/signup' || hash === '#/register') {
-        setActiveView('signup');
+        setAuthModalMode('signup');
+        setAuthModalOpen(true);
+        if (activeView === 'admin') setActiveView('explore');
       } else if (path === '/leaderboard' || hash === '#/leaderboard') {
         setActiveView('leaderboard');
       } else if (path === '/profile' || hash === '#/profile') {
@@ -143,7 +159,7 @@ export default function App() {
       } else if (path === '/referrals' || path === '/account-referrals' || hash === '#/referrals') {
         setActiveView('account-referrals');
       } else if (path === '/' || path === '' || hash === '#/' || hash === '' || hash === '#/explore') {
-        setActiveView('explore');
+        if (activeView === 'admin') setActiveView('explore');
       }
     };
 
@@ -153,7 +169,7 @@ export default function App() {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, []);
+  }, [activeView]);
 
   const handleBackToExplore = () => {
     syncAllData();
@@ -169,8 +185,6 @@ export default function App() {
   };
 
   // Modals & Drawers state
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState('login');
   const [connectWalletModalOpen, setConnectWalletModalOpen] = useState(false);
   const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -432,9 +446,6 @@ export default function App() {
   const handleOpenAuth = (mode = 'login') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
-    if (typeof window !== 'undefined' && window.location.pathname !== `/${mode}`) {
-      window.history.pushState({}, '', `/${mode}`);
-    }
   };
 
   const handleCloseAuth = () => {
@@ -460,11 +471,8 @@ export default function App() {
     } catch (e) {}
     showToast(`Welcome, ${userData.name}!`);
     setAuthModalOpen(false);
-    if (activeView === 'login' || activeView === 'signup') {
-      setActiveView('explore');
-      if (typeof window !== 'undefined') {
-        window.history.pushState({}, '', '/');
-      }
+    if (typeof window !== 'undefined' && (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
+      window.history.pushState({}, '', '/');
     }
   };
 
@@ -576,16 +584,6 @@ export default function App() {
           />
         )}
 
-
-        {(activeView === 'login' || activeView === 'signup') && (
-          <AuthModal
-            isOpen={true}
-            isPage={true}
-            initialMode={activeView}
-            onClose={handleBackToExplore}
-            onLoginSuccess={handleLoginSuccess}
-          />
-        )}
 
         {activeView === 'leaderboard' && (
           <div style={{ paddingTop: '20px' }}>
