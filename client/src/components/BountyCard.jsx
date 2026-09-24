@@ -49,9 +49,22 @@ export default function BountyCard({ bounty, onSelect, now }) {
     <div
       onClick={() => onSelect(bounty)}
       className="bounty-row"
+      style={{
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '100%'
+      }}
     >
       {/* Left: Sponsor Avatar & Discipline Icon */}
-      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '10px' : '16px', flex: 1, minWidth: 0, width: '100%' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        gap: isMobile ? '10px' : '16px',
+        flex: 1,
+        minWidth: 0,
+        maxWidth: '100%',
+        width: '100%'
+      }}>
         <div style={{
           width: isMobile ? '38px' : '46px',
           height: isMobile ? '38px' : '46px',
@@ -76,14 +89,20 @@ export default function BountyCard({ bounty, onSelect, now }) {
         </div>
 
         {/* Center: Title & Metadata */}
-        <div style={{ minWidth: 0, flex: 1, paddingRight: isMobile ? '0' : '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+        <div style={{
+          minWidth: 0,
+          flex: 1,
+          maxWidth: '100%',
+          paddingRight: isMobile ? '0' : '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap', maxWidth: '100%' }}>
             <h3 style={{
               fontSize: isMobile ? '0.94rem' : '1rem',
               fontWeight: 800,
               color: '#000000',
               margin: 0,
-              lineHeight: 1.35
+              lineHeight: 1.35,
+              wordBreak: 'break-word'
             }}>
               {bounty.title}
             </h3>
@@ -109,7 +128,15 @@ export default function BountyCard({ bounty, onSelect, now }) {
             ) : null}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px 8px' : '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#4b5563' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '6px 8px' : '12px',
+            flexWrap: 'wrap',
+            fontSize: '0.78rem',
+            color: '#4b5563',
+            maxWidth: '100%'
+          }}>
             {/* Sponsor */}
             <div style={{
               display: 'flex',
@@ -117,8 +144,9 @@ export default function BountyCard({ bounty, onSelect, now }) {
               gap: '4px',
               fontWeight: 700,
               color: '#000000',
-              maxWidth: isMobile ? '160px' : 'none',
-              minWidth: 0
+              maxWidth: isMobile ? '135px' : 'none',
+              minWidth: 0,
+              flexShrink: 1
             }}>
               <span style={{
                 overflow: 'hidden',
@@ -248,9 +276,19 @@ export default function BountyCard({ bounty, onSelect, now }) {
       </div>
 
       {/* Right: Payout Amount & Action Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '16px', flexShrink: 0, paddingLeft: isMobile ? '0' : '12px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? '10px' : '16px',
+        flexShrink: 0,
+        paddingLeft: isMobile ? '0' : '12px',
+        width: isMobile ? '100%' : 'auto',
+        maxWidth: '100%',
+        justifyContent: isMobile ? 'space-between' : 'flex-end',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', gap: '6px' }}>
             {/* Circle USDC Symbol */}
             <div style={{
               width: '20px',
@@ -263,7 +301,8 @@ export default function BountyCard({ bounty, onSelect, now }) {
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '0.7rem',
-              fontWeight: 900
+              fontWeight: 900,
+              flexShrink: 0
             }}>
               $
             </div>
@@ -276,7 +315,7 @@ export default function BountyCard({ bounty, onSelect, now }) {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
+            justifyContent: isMobile ? 'flex-start' : 'flex-end',
             gap: '4px',
             fontSize: '0.74rem',
             fontWeight: 700,
@@ -313,7 +352,8 @@ export default function BountyCard({ bounty, onSelect, now }) {
           alignItems: 'center',
           justifyContent: 'center',
           color: '#000000',
-          transition: 'all 0.15s ease'
+          transition: 'all 0.15s ease',
+          flexShrink: 0
         }}>
           <ArrowUpRight size={17} strokeWidth={2.5} />
         </div>

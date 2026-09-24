@@ -10,9 +10,11 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
         {/* Flagship Hero Grid (Inspired by Superteam Earn & Gibwork) */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 340px',
+          gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 340px',
           gap: isMobile ? '20px' : '36px',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
+          width: '100%',
+          maxWidth: '100%'
         }}>
           {/* Main Feature Banner (Left 70%) */}
           <div

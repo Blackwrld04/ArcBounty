@@ -84,6 +84,9 @@ body {
   text-decoration: none;
   color: inherit;
   margin-bottom: 12px;
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 100%;
 }
 
 .bounty-row:hover {
@@ -445,6 +448,8 @@ input:checked + .slider:before {
     gap: 12px;
     padding: 14px 14px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   /* Buttons: touch-friendly */

@@ -86,12 +86,14 @@ export default function BountyList({
         {/* 70% / 30% Dual Column Layout */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 340px',
+          gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 340px',
           gap: isMobile ? '20px' : '36px',
-          alignItems: 'start'
+          alignItems: 'start',
+          width: '100%',
+          maxWidth: '100%'
         }}>
           {/* Main Feed (Left 70%) */}
-          <div>
+          <div style={{ minWidth: 0, maxWidth: '100%', width: '100%' }}>
             {/* Header & Subtabs */}
             <div style={{
               display: 'flex',
@@ -99,9 +101,11 @@ export default function BountyList({
               justifyContent: 'space-between',
               marginBottom: '18px',
               flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? '12px' : '14px'
+              gap: isMobile ? '12px' : '14px',
+              width: '100%',
+              maxWidth: '100%'
             }}>
-              <div>
+              <div style={{ minWidth: 0, maxWidth: '100%' }}>
                 <h2 className="font-space" style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, color: '#000000', margin: 0, letterSpacing: '-0.02em' }}>
                   Browse Opportunities
                 </h2>
@@ -111,7 +115,7 @@ export default function BountyList({
               </div>
 
               {/* Status Filter Subtabs (Neo-Brutalist) */}
-              <div style={{ display: 'flex', gap: '4px', background: '#ffffff', padding: '3px', borderRadius: '8px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000', overflowX: 'auto', maxWidth: '100%', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '4px', background: '#ffffff', padding: '3px', borderRadius: '8px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000', overflowX: 'auto', maxWidth: '100%', flexShrink: 0, WebkitOverflowScrolling: 'touch' }}>
                 {['All', 'Open', 'InReview', 'Closed', 'Settled'].map((st) => (
                   <button
                     key={st}
@@ -143,7 +147,10 @@ export default function BountyList({
               gap: '8px',
               overflowX: 'auto',
               paddingBottom: '14px',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              width: '100%',
+              maxWidth: '100%',
+              WebkitOverflowScrolling: 'touch'
             }}>
               {CREATOR_CATEGORIES.map((cat) => (
                 <button
@@ -151,6 +158,7 @@ export default function BountyList({
                   id={`filter-category-${cat.id.toLowerCase()}`}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`category-pill ${activeCategory === cat.id ? 'active' : ''}`}
+                  style={{ flexShrink: 0 }}
                 >
                   <span>{cat.label}</span>
                 </button>
@@ -159,7 +167,7 @@ export default function BountyList({
 
             {/* Bounty Horizontal Rows Stream */}
             {filteredBounties.length > 0 ? (
-              <div>
+              <div style={{ width: '100%', maxWidth: '100%' }}>
                 {filteredBounties.map((bounty) => (
                   <BountyCard
                     key={bounty.id}

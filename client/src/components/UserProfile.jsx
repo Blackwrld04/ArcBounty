@@ -540,7 +540,7 @@ export default function UserProfile({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+              gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: isMobile ? '16px' : '24px',
               marginTop: isMobile ? '16px' : '24px',
               paddingTop: isMobile ? '16px' : '20px',
