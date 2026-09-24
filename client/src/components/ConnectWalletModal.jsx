@@ -8,7 +8,6 @@ import {
   ExternalLink,
   Download,
   AlertCircle,
-  Smartphone,
   Sparkles,
   Zap
 } from 'lucide-react';
@@ -21,8 +20,7 @@ import {
   getWalletDownloadUrl,
   isWalletInstalled,
   isMobileDevice,
-  isInAppWalletBrowser,
-  getMobileDeepLink
+  isInAppWalletBrowser
 } from '../utils/wallet';
 import { useIsMobile } from '../utils/useIsMobile';
 import { API_BASE } from '../utils/api';
@@ -149,12 +147,11 @@ export default function ConnectWalletModal({
     const targetWalletObj = WALLETS.find((w) => w.id === walletId) || WALLETS[0];
     const provider = getWalletProvider(walletId);
 
-    // If outside in-app browser on mobile, guide user to deep link or instant creator wallet
+    // If outside in-app browser on mobile, guide user to in-app browser or instant creator wallet
     if (!provider) {
       if (mobileDevice) {
-        const deepLink = getMobileDeepLink(walletId);
         setError(
-          `To connect your ${targetWalletObj.name} on mobile, tap "Open in ${targetWalletObj.name} App" below to launch the DApp inside your wallet, or use the "Instant Arc L1 Creator Wallet" button.`
+          `${targetWalletObj.name} is not detected in this browser. Please open ArcBounty inside the in-app browser of your wallet app, or tap "Activate Instant Arc L1 Creator Wallet" below.`
         );
       } else {
         setError(
@@ -259,15 +256,7 @@ export default function ConnectWalletModal({
     }
   };
 
-  // 2. Mobile Deep Link Launcher
-  const handleOpenMobileApp = (walletId) => {
-    const deepLink = getMobileDeepLink(walletId);
-    if (deepLink) {
-      window.location.href = deepLink;
-    }
-  };
-
-  // 3. Instant Mobile Creator Wallet (One-Tap Zero Gas Setup for mobile users)
+  // 2. Instant Mobile Creator Wallet (One-Tap Zero Gas Setup for mobile users)
   const handleInstantCreatorWallet = async () => {
     setIsConnecting(true);
     setError('');
@@ -403,30 +392,6 @@ export default function ConnectWalletModal({
           </div>
         )}
 
-        {/* Mobile Prompt if outside wallet app */}
-        {mobileDevice && !inAppBrowser && (
-          <div
-            style={{
-              background: '#eff6ff',
-              border: '2px solid #2563eb',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              marginBottom: '14px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '8px',
-              fontSize: '0.78rem',
-              color: '#1e40af',
-              fontWeight: 700
-            }}
-          >
-            <Smartphone size={16} color="#2563eb" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <span>Mobile User: Tap <strong>"Open in App"</strong> to launch ArcBounty inside MetaMask/Phantom, or use <strong>"Instant Arc L1 Wallet"</strong> below!</span>
-            </div>
-          </div>
-        )}
-
         {error && (
           <div
             style={{
@@ -498,18 +463,6 @@ export default function ConnectWalletModal({
                           <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#16a34a' }} />
                           <span>Detected</span>
                         </span>
-                      ) : mobileDevice ? (
-                        <span style={{
-                          background: '#e0f2fe',
-                          color: '#0369a1',
-                          border: '1px solid #0284c7',
-                          borderRadius: '4px',
-                          padding: '1px 5px',
-                          fontSize: '0.64rem',
-                          fontWeight: 800
-                        }}>
-                          App Link
-                        </span>
                       ) : (
                         <span style={{
                           background: '#f1f5f9',
@@ -520,7 +473,7 @@ export default function ConnectWalletModal({
                           fontSize: '0.64rem',
                           fontWeight: 700
                         }}>
-                          Extension
+                          Web3
                         </span>
                       )}
                     </div>
@@ -555,42 +508,23 @@ export default function ConnectWalletModal({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {isSelectedWalletInstalled ? (
-            <button
-              type="button"
-              disabled={isConnecting}
-              onClick={() => handleConnect(selectedWallet)}
-              className="btn-primary"
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: isMobile ? '0.86rem' : '0.92rem',
-                justifyContent: 'center',
-                cursor: isConnecting ? 'wait' : 'pointer'
-              }}
-            >
-              <span>{isConnecting ? 'Verifying Signature...' : `Connect with ${selectedWalletObj.name}`}</span>
-              <ArrowRight size={16} />
-            </button>
-          ) : mobileDevice ? (
-            /* Mobile Deep Link & Instant Fallbacks */
+          {isSelectedWalletInstalled || mobileDevice ? (
             <>
               <button
                 type="button"
-                onClick={() => handleOpenMobileApp(selectedWallet)}
+                disabled={isConnecting}
+                onClick={() => handleConnect(selectedWallet)}
                 className="btn-primary"
                 style={{
                   width: '100%',
                   padding: '12px',
-                  fontSize: '0.88rem',
+                  fontSize: isMobile ? '0.86rem' : '0.92rem',
                   justifyContent: 'center',
-                  background: 'var(--arc-validator-blue)',
-                  gap: '8px'
+                  cursor: isConnecting ? 'wait' : 'pointer'
                 }}
               >
-                <Smartphone size={16} />
-                <span>Open in {selectedWalletObj.name} App</span>
-                <ExternalLink size={14} />
+                <span>{isConnecting ? 'Verifying Signature...' : `Connect with ${selectedWalletObj.name}`}</span>
+                <ArrowRight size={16} />
               </button>
 
               <button
