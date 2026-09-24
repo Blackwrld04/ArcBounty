@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, User, Plus, Trophy, Wallet, KeyRound } from 'lucide-react';
+import { Compass, User, Plus, Trophy, Wallet } from 'lucide-react';
 
 export default function MobileDock({
   activeTab,
@@ -52,7 +52,7 @@ export default function MobileDock({
         style={{
           background: 'transparent',
           border: 'none',
-          color: (user ? activeTab === 'profile' : (activeTab === 'login' || activeTab === 'signup')) ? '#000000' : '#6b7280',
+          color: activeTab === 'profile' ? '#000000' : '#6b7280',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -66,17 +66,8 @@ export default function MobileDock({
           letterSpacing: '0.03em'
         }}
       >
-        {user ? (
-          <>
-            <User size={21} color={activeTab === 'profile' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'profile' ? 3 : 2} />
-            <span style={{ borderBottom: activeTab === 'profile' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>PROFILE</span>
-          </>
-        ) : (
-          <>
-            <KeyRound size={21} color={(activeTab === 'login' || activeTab === 'signup') ? '#000000' : '#6b7280'} strokeWidth={(activeTab === 'login' || activeTab === 'signup') ? 3 : 2} />
-            <span style={{ borderBottom: (activeTab === 'login' || activeTab === 'signup') ? '2px solid #000' : 'none', paddingBottom: '1px' }}>LOG IN</span>
-          </>
-        )}
+        <User size={21} color={activeTab === 'profile' ? '#000000' : '#6b7280'} strokeWidth={activeTab === 'profile' ? 3 : 2} />
+        <span style={{ borderBottom: activeTab === 'profile' ? '2px solid #000' : 'none', paddingBottom: '1px' }}>PROFILE</span>
       </button>
 
       {/* 3. Center Action: Post Bounty */}

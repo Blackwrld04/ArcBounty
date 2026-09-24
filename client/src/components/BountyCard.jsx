@@ -51,7 +51,7 @@ export default function BountyCard({ bounty, onSelect, now }) {
       className="bounty-row"
     >
       {/* Left: Sponsor Avatar & Discipline Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '10px' : '16px', flex: 1, minWidth: 0, width: '100%' }}>
         <div style={{
           width: isMobile ? '38px' : '46px',
           height: isMobile ? '38px' : '46px',
@@ -62,7 +62,8 @@ export default function BountyCard({ bounty, onSelect, now }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          flexShrink: 0
+          flexShrink: 0,
+          marginTop: isMobile ? '2px' : '0'
         }}>
           {bounty.category === 'DESIGN' && <Palette size={22} color="#664c88" strokeWidth={2.3} />}
           {bounty.category === 'CONTENT' && <FileText size={22} color="#c2410c" strokeWidth={2.3} />}
@@ -75,10 +76,10 @@ export default function BountyCard({ bounty, onSelect, now }) {
         </div>
 
         {/* Center: Title & Metadata */}
-        <div style={{ minWidth: 0, paddingRight: '16px' }}>
+        <div style={{ minWidth: 0, flex: 1, paddingRight: isMobile ? '0' : '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
             <h3 style={{
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.94rem' : '1rem',
               fontWeight: 800,
               color: '#000000',
               margin: 0,
@@ -108,11 +109,25 @@ export default function BountyCard({ bounty, onSelect, now }) {
             ) : null}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#4b5563' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px 8px' : '12px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#4b5563' }}>
             {/* Sponsor */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#000000' }}>
-              <span>{bounty.maintainerName || 'Arc Sponsor'}</span>
-              <CheckCircle2 size={13} color="var(--arc-validator-blue)" />
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontWeight: 700,
+              color: '#000000',
+              maxWidth: isMobile ? '160px' : 'none',
+              minWidth: 0
+            }}>
+              <span style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {bounty.maintainerName || 'Arc Sponsor'}
+              </span>
+              <CheckCircle2 size={13} color="var(--arc-validator-blue)" style={{ flexShrink: 0 }} />
             </div>
 
             {/* Category Pill */}

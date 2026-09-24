@@ -25,6 +25,7 @@ import { API_BASE } from '../utils/api';
 import { useIsMobile } from '../utils/useIsMobile';
 
 export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wallet, user }) {
+  const isMobile = useIsMobile();
   const [step, setStep] = useState(1); // 1: Category & Title, 2: Description & AI Compose, 3: Reward & Escrow, 4: Admin Review Confirmation
   const [category, setCategory] = useState('DESIGN');
   const [title, setTitle] = useState('');
@@ -209,8 +210,6 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
       setIsSubmitting(false);
     }
   };
-
-  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

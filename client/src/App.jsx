@@ -17,7 +17,7 @@ import { INITIAL_BOUNTIES } from './data/initialBounties';
 import { ARC_MAINNET, ARC_TESTNET } from './utils/arc';
 import { triggerSync, subscribeToSync } from './utils/sync';
 import { API_BASE } from './utils/api';
-import { Zap, CheckCircle2, ExternalLink, X, Lock } from 'lucide-react';
+import { Zap, CheckCircle2, ExternalLink, X } from 'lucide-react';
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
@@ -826,75 +826,6 @@ export default function App() {
               onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
             >
               Support
-            </button>
-
-            <span style={{ color: '#cbd5e1' }}>•</span>
-
-            <button
-              id="footer-login-btn"
-              onClick={() => handleOpenAuth('login')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#475569',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'inherit',
-                fontWeight: 'inherit',
-                padding: 0,
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
-            >
-              Log In
-            </button>
-
-            <button
-              id="footer-signup-btn"
-              onClick={() => handleOpenAuth('signup')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#475569',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'inherit',
-                fontWeight: 'inherit',
-                padding: 0,
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
-            >
-              Sign Up
-            </button>
-
-            <button
-              id="footer-admin-btn"
-              onClick={() => {
-                setActiveView('admin');
-                if (typeof window !== 'undefined') window.history.pushState({}, '', '/admin');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#475569',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'inherit',
-                fontWeight: 'inherit',
-                padding: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#000000')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
-            >
-              <Lock size={12} />
-              <span>Admin</span>
             </button>
 
             <span style={{ color: '#cbd5e1' }}>•</span>

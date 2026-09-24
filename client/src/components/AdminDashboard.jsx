@@ -1362,16 +1362,16 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
             style={{
               background: '#ffffff',
               border: '2.5px solid #000000',
-              boxShadow: '4px 4px 0px #000000',
+              boxShadow: isMobile ? '3px 3px 0px #000000' : '4px 4px 0px #000000',
               borderRadius: '12px',
-              padding: '24px',
+              padding: isMobile ? '16px 12px' : '24px',
               display: 'flex',
               flexDirection: 'column'
             }}
           >
             {/* Selected Bounty Details Header */}
             <div style={{ borderBottom: '2px solid #000000', paddingBottom: '16px', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
                 <span style={{
                   background: 'var(--arc-token-sand)',
                   border: '1.5px solid #000000',
@@ -1384,7 +1384,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                 </span>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>
+                  <div style={{ fontSize: isMobile ? '1.15rem' : '1.3rem', fontWeight: 900, color: '#0f172a' }}>
                     ${selectedBounty.amount} <span style={{ fontSize: '0.8rem', color: '#64748b' }}>USDC</span>
                   </div>
 
@@ -1787,8 +1787,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                           padding: '16px'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 200px' }}>
                             <span style={{
                               width: '24px',
                               height: '24px',
@@ -1799,23 +1799,24 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                               fontWeight: 800,
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              flexShrink: 0
                             }}>
                               {idx + 1}
                             </span>
-                            <div>
-                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem' }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.9rem', wordBreak: 'break-word' }}>
                                 {sub.creator_name || 'Anonymous Creator'}
                               </div>
                               {sub.creator_email && (
-                                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                <div style={{ fontSize: '0.72rem', color: '#64748b', wordBreak: 'break-all' }}>
                                   {sub.creator_email}
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                             <span style={{
                               background: '#f1f5f9',
                               color: '#0f172a',
@@ -1879,16 +1880,17 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                               color: 'var(--arc-validator-blue)',
                               fontWeight: 700,
                               fontSize: '0.85rem',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
                               textDecoration: 'none',
                               wordBreak: 'break-all',
-                              marginTop: '2px'
+                              marginTop: '2px',
+                              maxWidth: '100%'
                             }}
                           >
-                            <span>{sub.submission_url}</span>
-                            <ExternalLink size={13} />
+                            <span style={{ wordBreak: 'break-all' }}>{sub.submission_url}</span>
+                            <ExternalLink size={13} style={{ flexShrink: 0 }} />
                           </a>
                         </div>
 
@@ -2001,11 +2003,35 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
-                            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.84rem', color: '#0f172a', wordBreak: 'break-all' }}>
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: isMobile ? 'column' : 'row',
+                            alignItems: isMobile ? 'flex-start' : 'center',
+                            justifyContent: 'space-between',
+                            gap: isMobile ? '10px' : '8px',
+                            background: '#ffffff',
+                            border: '1.5px solid #cbd5e1',
+                            borderRadius: '6px',
+                            padding: isMobile ? '10px 12px' : '8px 10px'
+                          }}>
+                            <span style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 800,
+                              fontSize: isMobile ? '0.76rem' : '0.84rem',
+                              color: '#0f172a',
+                              wordBreak: 'break-all',
+                              lineHeight: 1.45
+                            }}>
                               {sub.wallet_address}
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              flexShrink: 0,
+                              width: isMobile ? '100%' : 'auto',
+                              justifyContent: isMobile ? 'flex-end' : 'flex-start'
+                            }}>
                               <button
                                 type="button"
                                 onClick={() => handleCopySubWallet(sub.id, sub.wallet_address)}
@@ -2014,7 +2040,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                                   color: copiedSubId === sub.id ? '#ffffff' : '#0f172a',
                                   border: '1.5px solid #000000',
                                   borderRadius: '5px',
-                                  padding: '4px 8px',
+                                  padding: '5px 10px',
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
                                   cursor: 'pointer',
@@ -2037,7 +2063,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                                   color: '#2f578c',
                                   border: '1.5px solid #000000',
                                   borderRadius: '5px',
-                                  padding: '4px 8px',
+                                  padding: '5px 10px',
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
                                   display: 'inline-flex',
@@ -2723,34 +2749,34 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
-          padding: '20px'
+          padding: isMobile ? '10px 8px' : '20px'
         }}>
           <div style={{
             background: '#ffffff',
             border: '3px solid #000000',
-            boxShadow: '8px 8px 0px #000000',
-            borderRadius: '16px',
+            boxShadow: isMobile ? '4px 4px 0px #000000' : '8px 8px 0px #000000',
+            borderRadius: isMobile ? '12px' : '16px',
             width: '100%',
             maxWidth: '850px',
-            maxHeight: '90vh',
+            maxHeight: isMobile ? '94vh' : '90vh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '20px 24px',
+              padding: isMobile ? '14px 14px' : '20px 24px',
               borderBottom: '2.5px solid #000000',
               background: '#f8fafc',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '16px'
+              gap: isMobile ? '10px' : '16px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', minWidth: 0, flex: 1 }}>
                 <div style={{
-                  width: '42px',
-                  height: '42px',
+                  width: isMobile ? '36px' : '42px',
+                  height: isMobile ? '36px' : '42px',
                   borderRadius: '10px',
                   background: '#1b3158',
                   color: '#ffffff',
@@ -2758,13 +2784,14 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: '2px solid #000000',
-                  boxShadow: '2px 2px 0px #000000'
+                  boxShadow: '2px 2px 0px #000000',
+                  flexShrink: 0
                 }}>
-                  <Users size={22} color="#ffffff" />
+                  <Users size={isMobile ? 18 : 22} color="#ffffff" />
                 </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
                       Registered Creators &amp; Users
                     </h2>
                     <span style={{
@@ -2774,12 +2801,13 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                       borderRadius: '6px',
                       padding: '2px 8px',
                       fontSize: '0.72rem',
-                      fontWeight: 900
+                      fontWeight: 900,
+                      flexShrink: 0
                     }}>
                       {stats ? (stats.totalUsers ?? usersList.length) : (usersList.length || 0)} TOTAL
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '3px 0 0 0', fontWeight: 600 }}>
+                  <p style={{ fontSize: isMobile ? '0.72rem' : '0.8rem', color: '#64748b', margin: '3px 0 0 0', fontWeight: 600 }}>
                     Circle Arc L1 verified creators, solvers, and community members
                   </p>
                 </div>
@@ -2799,7 +2827,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  fontWeight: 900
+                  fontWeight: 900,
+                  flexShrink: 0
                 }}
               >
                 <X size={18} />
@@ -2808,24 +2837,24 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
 
             {/* Modal Subheader: Search Filter & Telemetry */}
             <div style={{
-              padding: '16px 24px',
+              padding: isMobile ? '10px 14px' : '16px 24px',
               borderBottom: '2px solid #000000',
               background: '#f1f5f9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '14px',
+              gap: '10px',
               flexWrap: 'wrap'
             }}>
               <div style={{
                 position: 'relative',
                 flex: 1,
-                minWidth: '240px'
+                minWidth: isMobile ? '160px' : '240px'
               }}>
                 <Search size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="Search by name, @handle, email, or Arc L1 address..."
+                  placeholder={isMobile ? "Search creators..." : "Search by name, @handle, email, or Arc L1 address..."}
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
                   style={{
@@ -2866,9 +2895,9 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
 
             {/* Modal Body: Users List */}
             <div style={{
-              padding: '20px 24px',
+              padding: isMobile ? '12px 10px' : '20px 24px',
               overflowY: 'auto',
-              maxHeight: 'calc(90vh - 180px)',
+              maxHeight: isMobile ? 'calc(94vh - 150px)' : 'calc(90vh - 180px)',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
@@ -2903,7 +2932,7 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                         border: '2px solid #000000',
                         boxShadow: '3px 3px 0px #000000',
                         borderRadius: '10px',
-                        padding: '14px 18px',
+                        padding: isMobile ? '12px 10px' : '14px 18px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px'
@@ -2912,59 +2941,76 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                       {/* User Top Row: Avatar, Name, Handle, Badges */}
                       <div style={{
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: isMobile ? 'flex-start' : 'center',
                         justifyContent: 'space-between',
-                        gap: '12px',
+                        gap: '8px',
                         flexWrap: 'wrap'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', minWidth: 0, flex: '1 1 200px' }}>
                           <img
                             src={u.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username || u.id}`}
                             alt={u.name || 'User'}
                             style={{
-                              width: '42px',
-                              height: '42px',
+                              width: isMobile ? '38px' : '42px',
+                              height: isMobile ? '38px' : '42px',
                               borderRadius: '50%',
                               border: '2px solid #000000',
                               objectFit: 'cover',
-                              background: '#e2e8f0'
+                              background: '#e2e8f0',
+                              flexShrink: 0
                             }}
                             onError={(e) => {
                               e.currentTarget.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username || 'arc'}`;
                             }}
                           />
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0f172a' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: isMobile ? '0.9rem' : '0.98rem', fontWeight: 900, color: '#0f172a', wordBreak: 'break-word' }}>
                                 {u.name || 'Anonymous Creator'}
                               </span>
                               <span style={{
-                                fontSize: '0.8rem',
+                                fontSize: '0.74rem',
                                 fontWeight: 800,
                                 color: '#1b3158',
                                 background: '#e0e7ff',
                                 padding: '1px 6px',
                                 borderRadius: '4px',
-                                border: '1px solid #000000'
-                              }}>
+                                border: '1px solid #000000',
+                                maxWidth: isMobile ? '135px' : '220px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'inline-block'
+                              }} title={`@${u.username}`}>
                                 @{u.username || 'creator'}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', fontSize: '0.78rem', color: '#64748b' }}>
-                              <Mail size={12} color="#64748b" />
-                              <span>{u.email}</span>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              marginTop: '2px',
+                              fontSize: '0.74rem',
+                              color: '#64748b',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: isMobile ? '190px' : '300px'
+                            }} title={u.email}>
+                              <Mail size={12} color="#64748b" style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginTop: isMobile ? '2px' : '0' }}>
                           <span style={{
                             background: '#f1f5f9',
                             color: '#0f172a',
                             border: '1.5px solid #000000',
                             borderRadius: '6px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
+                            padding: '2px 7px',
+                            fontSize: '0.7rem',
                             fontWeight: 800,
                             textTransform: 'uppercase'
                           }}>
@@ -2975,8 +3021,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                             color: '#166534',
                             border: '1.5px solid #000000',
                             borderRadius: '6px',
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
+                            padding: '2px 7px',
+                            fontSize: '0.7rem',
                             fontWeight: 900
                           }}>
                             ${(u.usdc_balance || 0).toLocaleString()} USDC
@@ -2987,18 +3033,18 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                       {/* User Bottom Row: Arc L1 Wallet, Joined Date, Socials */}
                       <div style={{
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: isMobile ? 'flex-start' : 'center',
                         justifyContent: 'space-between',
-                        gap: '12px',
+                        gap: '8px',
                         paddingTop: '8px',
                         borderTop: '1px dashed #cbd5e1',
-                        flexWrap: 'wrap',
+                        flexDirection: isMobile ? 'column' : 'row',
                         fontSize: '0.78rem'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px' }}>
-                          <span style={{ fontWeight: 800, color: '#64748b' }}>Arc L1 Wallet:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
+                          <span style={{ fontWeight: 800, color: '#64748b', flexShrink: 0 }}>Arc L1 Wallet:</span>
                           {u.wallet_address ? (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                               <span style={{
                                 fontFamily: 'monospace',
                                 fontWeight: 800,
@@ -3006,7 +3052,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                                 background: '#f8fafc',
                                 padding: '2px 6px',
                                 borderRadius: '4px',
-                                border: '1px solid #cbd5e1'
+                                border: '1px solid #cbd5e1',
+                                fontSize: '0.74rem'
                               }}>
                                 {truncateAddress(u.wallet_address)}
                               </span>
@@ -3041,7 +3088,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                                   alignItems: 'center',
                                   gap: '2px',
                                   fontWeight: 700,
-                                  textDecoration: 'underline'
+                                  textDecoration: 'underline',
+                                  fontSize: '0.74rem'
                                 }}
                                 title="View on Arc Explorer"
                               >
@@ -3054,15 +3102,25 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748b', fontWeight: 600 }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: '#64748b',
+                          fontWeight: 600,
+                          flexWrap: 'wrap',
+                          width: isMobile ? '100%' : 'auto',
+                          justifyContent: isMobile ? 'space-between' : 'flex-end',
+                          fontSize: '0.74rem'
+                        }}>
                           {(u.x || u.github || u.telegram || u.discord) && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                               {u.x && <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '1px 5px', fontSize: '0.68rem', fontWeight: 700 }}>X: @{u.x}</span>}
                               {u.github && <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '1px 5px', fontSize: '0.68rem', fontWeight: 700 }}>GH: {u.github}</span>}
                               {u.telegram && <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '1px 5px', fontSize: '0.68rem', fontWeight: 700 }}>TG: {u.telegram}</span>}
                             </div>
                           )}
-                          <span>Joined: {joinedDate}</span>
+                          <span style={{ flexShrink: 0 }}>Joined: {joinedDate}</span>
                         </div>
                       </div>
                     </div>
@@ -3073,14 +3131,16 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
 
             {/* Modal Footer */}
             <div style={{
-              padding: '14px 24px',
+              padding: isMobile ? '12px 14px' : '14px 24px',
               borderTop: '2px solid #000000',
               background: '#f8fafc',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>
+              <span style={{ fontSize: isMobile ? '0.72rem' : '0.78rem', color: '#64748b', fontWeight: 700 }}>
                 Total Registered Creators &amp; Users: <strong style={{ color: '#0f172a' }}>{usersList.length}</strong>
               </span>
               <button

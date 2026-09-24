@@ -43,6 +43,7 @@ export default function BountyDetailModal({
   isAdmin: propIsAdmin,
   openAuthModal
 }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'discussion'
   const [submissionUrl, setSubmissionUrl] = useState('');
   const [payoutWallet, setPayoutWallet] = useState(wallet.address || user?.address || '');
@@ -404,8 +405,6 @@ export default function BountyDetailModal({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

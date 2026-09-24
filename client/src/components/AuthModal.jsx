@@ -65,6 +65,7 @@ const DISCIPLINES = [
 ];
 
 export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLoginSuccess }) {
+  const isMobile = useIsMobile();
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
   const [step, setStep] = useState('input'); // 'input', 'otp', 'google_auth'
   const [signupSlide, setSignupSlide] = useState(1); // 1: Name & Handle, 2: Specialty, 3: Email & Password
@@ -587,8 +588,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
   };
 
   const currentStepNumber = mode === 'login' ? 1 : step === 'otp' ? 4 : signupSlide;
-
-  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

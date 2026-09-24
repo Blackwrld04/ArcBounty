@@ -84,24 +84,6 @@ export default function Hero({ openCreateModal, onExploreClick, openAuthModal, u
                     >
                       <span>Explore Bounties</span>
                     </button>
-
-                    <button
-                      id="hero-login-btn"
-                      onClick={() => openAuthModal('login')}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--arc-blockstream-gold)',
-                        padding: '8px 10px',
-                        fontSize: isMobile ? '0.82rem' : '0.88rem',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        textDecoration: 'underline',
-                        textUnderlineOffset: '3px'
-                      }}
-                    >
-                      Already a creator? Log In →
-                    </button>
                   </>
                 ) : (
                   <>
