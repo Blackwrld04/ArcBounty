@@ -22,6 +22,7 @@ import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
 import SocialConnectModal from './SocialConnectModal';
 import ConnectWalletModal from './ConnectWalletModal';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function AccountSettings({
   user,
@@ -31,8 +32,8 @@ export default function AccountSettings({
   onBackToFeed,
   initialTab = 'account'
 }) {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(initialTab); // 'account', 'wallet', 'notifications', 'referrals'
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
   const [name, setName] = useState(user?.name || 'Arc Creator');
   const [username, setUsername] = useState(user?.username || 'creator');
   const [bio, setBio] = useState(user?.bio || 'Web3 Creator on Circle Arc L1');

@@ -240,6 +240,72 @@ export function getWalletProvider(walletId) {
     default:
       return window.ethereum || window.phantom?.ethereum || null;
   }
+
+  // Fallback for mobile Web3 in-app browsers (Trust Wallet, Brave, Opera, etc.)
+  if (typeof window !== 'undefined') {
+    return window.ethereum || window.phantom?.ethereum || window.coinbaseWalletExtension || window.trustwallet || null;
+  }
+  return null;
+}
+
+/**
+ * Detect if current client is a mobile device or tablet
+ */
+export function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  return isMobileUA || (window.innerWidth <= 768 && isTouch);
+}
+
+/**
+ * Check if the browser is an in-app Web3 wallet browser (MetaMask Mobile, Phantom Mobile, Trust Wallet, etc.)
+ */
+export function isInAppWalletBrowser() {
+  if (typeof window === 'undefined') return false;
+  return Boolean(
+    window.ethereum ||
+    window.phantom?.ethereum ||
+    window.coinbaseWalletExtension ||
+    window.trustwallet ||
+    window.web3?.currentProvider
+  );
+}
+
+/**
+ * Generate universal mobile deep link to open current DApp directly inside wallet app
+ */
+export function getMobileDeepLink(walletId) {
+  if (typeof window === 'undefined') return '';
+  const currentUrl = window.location.href;
+  const hostAndPath = window.location.host + window.location.pathname + window.location.search;
+
+  switch (walletId) {
+    case 'metamask':
+      // MetaMask Universal Link: opens DApp in MetaMask in-app browser
+      return `https://metamask.app.link/dapp/${hostAndPath.replace(/^https?:\/\//, '')}`;
+
+    case 'phantom':
+      // Phantom Universal Link: opens DApp in Phantom in-app browser
+      return `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}?ref=${encodeURIComponent(window.location.origin)}`;
+
+    case 'coinbase':
+      // Coinbase Wallet Universal Link
+      return `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`;
+
+    case 'trust':
+    case 'trustwallet':
+      // Trust Wallet Deep Link
+      return `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`;
+
+    case 'rainbow':
+      // Rainbow Wallet Universal Link
+      return `https://rainbow.me/dapp/${encodeURIComponent(currentUrl)}`;
+
+    default:
+      return `https://metamask.app.link/dapp/${hostAndPath.replace(/^https?:\/\//, '')}`;
+  }
 }
 
 /**

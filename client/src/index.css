@@ -320,6 +320,8 @@ body {
   justify-content: center;
   padding: 16px;
   animation: fadeIn 0.2s ease-out;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Toggle Switch (Brutalist style) */
@@ -391,11 +393,12 @@ input:checked + .slider:before {
   left: 0;
   right: 0;
   z-index: 999;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 2.5px solid #000000;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-  padding: 8px 0 env(safe-area-inset-bottom, 6px) 0;
+  padding: 6px 0 calc(env(safe-area-inset-bottom, 8px) + 2px) 0;
   align-items: center;
   justify-content: space-around;
 }
@@ -403,6 +406,13 @@ input:checked + .slider:before {
 /* Mobile-only utility (hidden on desktop) */
 .mobile-only {
   display: none !important;
+}
+
+/* Table and container responsive wrappers */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ===== MOBILE RESPONSIVE BREAKPOINTS ===== */
@@ -420,40 +430,43 @@ input:checked + .slider:before {
   }
 
   body {
-    padding-bottom: 72px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 8px));
   }
 
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
   }
 
-  /* Bounty Row: stack vertically */
+  /* Bounty Row: stack vertically on mobile */
   .bounty-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 14px 14px;
+    width: 100%;
   }
 
-  /* Buttons: compact */
+  /* Buttons: touch-friendly */
   .btn-primary,
   .btn-secondary,
   .btn-accent {
-    padding: 8px 14px;
+    padding: 9px 14px;
     font-size: 0.82rem;
+    min-height: 40px;
   }
 
   /* Category pills: compact */
   .category-pill {
-    padding: 5px 12px;
-    font-size: 0.78rem;
+    padding: 5px 10px;
+    font-size: 0.75rem;
   }
 
   /* Cards: softer shadows on mobile */
   .clean-card {
     box-shadow: 3px 3px 0px #000000;
     border-radius: 10px;
+    max-width: 100%;
   }
 
   /* Badges: slightly smaller */
@@ -466,6 +479,7 @@ input:checked + .slider:before {
   .sticker-tape {
     font-size: 0.65rem;
     padding: 3px 8px;
+    word-break: break-word;
   }
 
   /* Drawer: full width on mobile */
@@ -475,28 +489,30 @@ input:checked + .slider:before {
     border-left: none;
   }
 
-  /* Modal: reduce padding */
+  /* Modal: smooth centering and touch scrolling */
   .modal-backdrop {
-    padding: 8px;
-    align-items: flex-end;
+    padding: 10px 8px;
+    align-items: center;
   }
 }
 
-/* Small phones */
+/* Small phones (iPhone SE, Galaxy A series, etc.) */
 @media (max-width: 390px) {
   .container {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
   }
 
   .btn-primary,
   .btn-secondary,
   .btn-accent {
-    padding: 7px 12px;
+    padding: 8px 12px;
     font-size: 0.78rem;
+    min-height: 38px;
   }
 
   .bounty-row {
-    padding: 12px 14px;
+    padding: 12px 12px;
   }
 }
+

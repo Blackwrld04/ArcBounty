@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ArrowRight, Zap, Shield, Layers, Plus, CheckCircle2 } from 'lucide-react';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function Hero({ openCreateModal, onExploreClick, openAuthModal, user, stats }) {
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+  const isMobile = useIsMobile();
   return (
     <section style={{ padding: isMobile ? '20px 0 12px 0' : '32px 0 20px 0' }}>
       <div className="container">

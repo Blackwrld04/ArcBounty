@@ -31,6 +31,7 @@ import confetti from 'canvas-confetti';
 import { truncateAddress } from '../utils/arc';
 import { getRemainingTime } from '../utils/time';
 import { API_BASE } from '../utils/api';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function BountyDetailModal({
   bounty,
@@ -404,7 +405,7 @@ export default function BountyDetailModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

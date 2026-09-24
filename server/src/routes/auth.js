@@ -324,6 +324,11 @@ authRouter.post('/google', (req, res) => {
   }
 });
 
+authRouter.post('/google-callback', (req, res, next) => {
+  req.url = '/google';
+  authRouter.handle(req, res, next);
+});
+
 /**
  * POST /api/auth/wallet
  * Web3 wallet connection login

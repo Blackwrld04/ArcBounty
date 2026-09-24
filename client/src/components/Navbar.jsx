@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Wallet, ChevronDown, User, Settings, Bell, Share2, LogOut, Zap, CheckCircle, ExternalLink } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function Navbar({
   user,
@@ -19,13 +20,7 @@ export default function Navbar({
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+  const isMobile = useIsMobile();
 
   // Close dropdown on click outside
   useEffect(() => {

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
@@ -152,7 +153,7 @@ export default function UserProfile({
   };
 
   const currentAvatar = user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  const isMobile = useIsMobile();
 
   return (
     <div style={{ paddingBottom: '80px' }}>

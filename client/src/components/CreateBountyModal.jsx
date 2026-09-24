@@ -22,6 +22,7 @@ import {
 import { CREATOR_CATEGORIES } from '../data/initialBounties';
 import { truncateAddress } from '../utils/arc';
 import { API_BASE } from '../utils/api';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wallet, user }) {
   const [step, setStep] = useState(1); // 1: Category & Title, 2: Description & AI Compose, 3: Reward & Escrow, 4: Admin Review Confirmation
@@ -209,7 +210,7 @@ export default function CreateBountyModal({ isOpen, onClose, onCreateBounty, wal
     }
   };
 
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

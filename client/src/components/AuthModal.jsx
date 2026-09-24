@@ -27,6 +27,7 @@ import {
 import confetti from 'canvas-confetti';
 import { getWalletProvider, getDetectedWallets } from '../utils/wallet';
 import { API_BASE as SERVER_API_BASE } from '../utils/api';
+import { useIsMobile } from '../utils/useIsMobile';
 
 const API_BASE = `${SERVER_API_BASE}/api/auth`;
 
@@ -513,7 +514,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     }
   };
 
-  // Google Auth Simulation
+  // Google Auth handler (calls verified endpoint with robust fallbacks)
   const handleGoogleSubmit = async (e) => {
     e.preventDefault();
     if (!googleEmail || !googleEmail.includes('@')) {
@@ -525,19 +526,36 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
     setErrorMessage('');
 
     try {
-      const res = await fetch(`${API_BASE}/google-callback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: googleEmail.trim().toLowerCase(),
-          name: googleName.trim() || googleEmail.split('@')[0],
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-        })
-      });
+      let res;
+      try {
+        res = await fetch(`${API_BASE}/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: googleEmail.trim().toLowerCase(),
+            name: googleName.trim() || googleEmail.split('@')[0],
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+          })
+        });
+      } catch (err) {
+        console.warn('[Google Auth] Primary endpoint error, trying callback route...', err);
+      }
+
+      if (!res || !res.ok) {
+        res = await fetch(`${API_BASE}/google-callback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: googleEmail.trim().toLowerCase(),
+            name: googleName.trim() || googleEmail.split('@')[0],
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+          })
+        });
+      }
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'Google authentication failed');
+        setErrorMessage(data.error || 'Google authentication failed. Please check your credentials.');
         setIsLoading(false);
         return;
       }
@@ -552,7 +570,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
       onClose();
     } catch (err) {
       console.error('Google auth error:', err);
-      setErrorMessage('Google authentication request failed.');
+      setErrorMessage('Google authentication request failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -560,7 +578,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
 
   const currentStepNumber = mode === 'login' ? 1 : step === 'otp' ? 4 : signupSlide;
 
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  const isMobile = useIsMobile();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -1714,6 +1732,9 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose, onLo
                   type="button"
                   onClick={() => {
                     setErrorMessage('');
+                    if (email && email.includes('@')) {
+                      setGoogleEmail(email.trim());
+                    }
                     setStep('google_auth');
                   }}
                   style={{

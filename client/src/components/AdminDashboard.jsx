@@ -37,8 +37,10 @@ import confetti from 'canvas-confetti';
 import { truncateAddress } from '../utils/arc';
 import { triggerSync, subscribeToSync } from '../utils/sync';
 import { API_BASE } from '../utils/api';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function AdminDashboard({ user, wallet, onBackToExplore, onDataChanged }) {
+  const isMobile = useIsMobile();
   // Master Administrator Password Authentication State
   const [adminToken, setAdminToken] = useState(() => {
     return sessionStorage.getItem('arcbounty_admin_token') || '';
@@ -922,8 +924,8 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
       {/* Top Telemetry Metric Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(210px, 1fr))',
-        gap: typeof window !== 'undefined' && window.innerWidth <= 768 ? '10px' : '16px',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: isMobile ? '10px' : '16px',
         marginBottom: '28px'
       }}>
         {/* Total Escrowed USDC */}
@@ -1139,15 +1141,15 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
       </div>
 
       {/* Main Content: Bounties Table & Participant Review */}
-      <div style={{ display: 'grid', gridTemplateColumns: typeof window !== 'undefined' && window.innerWidth <= 768 ? '1fr' : (selectedBounty ? '1fr 1.15fr' : '1fr'), gap: typeof window !== 'undefined' && window.innerWidth <= 768 ? '16px' : '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (selectedBounty ? '1fr 1.15fr' : '1fr'), gap: isMobile ? '16px' : '24px' }}>
         
         {/* Left Column: Bounties Table */}
         <div style={{
           background: '#ffffff',
           border: '2.5px solid #000000',
-          boxShadow: typeof window !== 'undefined' && window.innerWidth <= 768 ? '3px 3px 0px #000000' : '4px 4px 0px #000000',
+          boxShadow: isMobile ? '3px 3px 0px #000000' : '4px 4px 0px #000000',
           borderRadius: '12px',
-          padding: typeof window !== 'undefined' && window.innerWidth <= 768 ? '14px' : '24px',
+          padding: isMobile ? '14px' : '24px',
           overflow: 'hidden'
         }}>
           {/* Filter Bar */}

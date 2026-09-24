@@ -15,9 +15,10 @@ import {
   Users
 } from 'lucide-react';
 import { getRemainingTime } from '../utils/time';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function BountyCard({ bounty, onSelect, now }) {
-  const [isMobile] = React.useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const isMobile = useIsMobile();
   const effectiveDeadline = bounty.deadline || (bounty.createdAt && bounty.deadlineDays ? (bounty.createdAt + bounty.deadlineDays * 86400000) : null);
   const remaining = getRemainingTime(effectiveDeadline, now || Date.now());
   const isSettled = bounty.status === 'Settled' || bounty.status === 'Closed';

@@ -6,6 +6,7 @@ export default function MobileDock({
   setActiveTab,
   openCreateModal,
   openWalletModal,
+  openAuthModal,
   wallet,
   user
 }) {
@@ -27,6 +28,8 @@ export default function MobileDock({
           fontWeight: 900,
           cursor: 'pointer',
           flex: 1,
+          minHeight: '44px',
+          justifyContent: 'center',
           letterSpacing: '0.03em'
         }}
       >
@@ -37,7 +40,15 @@ export default function MobileDock({
       {/* 2. Profile */}
       <button
         id="mobile-dock-profile-btn"
-        onClick={() => setActiveTab(user ? 'profile' : 'explore')}
+        onClick={() => {
+          if (user) {
+            setActiveTab('profile');
+          } else if (openAuthModal) {
+            openAuthModal('login');
+          } else {
+            setActiveTab('explore');
+          }
+        }}
         style={{
           background: 'transparent',
           border: 'none',
@@ -50,6 +61,8 @@ export default function MobileDock({
           fontWeight: 900,
           cursor: 'pointer',
           flex: 1,
+          minHeight: '44px',
+          justifyContent: 'center',
           letterSpacing: '0.03em'
         }}
       >

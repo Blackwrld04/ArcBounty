@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Wallet, Zap, Plus, ExternalLink, CheckCircle } from 'lucide-react';
 import { ARC_MAINNET, ARC_TESTNET, truncateAddress } from '../utils/arc';
 import { getWalletProvider } from '../utils/wallet';
+import { useIsMobile } from '../utils/useIsMobile';
 
 export default function WalletModal({
   isOpen,
@@ -11,6 +12,7 @@ export default function WalletModal({
   network,
   setNetwork
 }) {
+  const isMobile = useIsMobile();
   if (!isOpen) return null;
 
   const handleConnectBrowserWallet = async () => {
@@ -66,12 +68,14 @@ export default function WalletModal({
         style={{
           width: '100%',
           maxWidth: '520px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
           background: '#ffffff',
           border: '3px solid #000000',
-          boxShadow: '10px 10px 0px #000000',
-          borderRadius: '12px',
+          boxShadow: isMobile ? '4px 4px 0px #000000' : '8px 8px 0px #000000',
+          borderRadius: isMobile ? '12px' : '14px',
           position: 'relative',
-          padding: '28px'
+          padding: isMobile ? '20px 16px' : '28px'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -81,8 +85,8 @@ export default function WalletModal({
           className="brutal-btn brutal-btn-white"
           style={{
             position: 'absolute',
-            top: '20px',
-            right: '20px',
+            top: isMobile ? '14px' : '20px',
+            right: isMobile ? '14px' : '20px',
             width: '36px',
             height: '36px',
             padding: 0,

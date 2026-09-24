@@ -835,6 +835,7 @@ export default function App() {
               setWalletDrawerOpen(true);
             }
           }}
+          openAuthModal={handleOpenAuth}
           wallet={wallet}
           user={user}
         />
