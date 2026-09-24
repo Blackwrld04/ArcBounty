@@ -20,8 +20,13 @@ import {
   verifyPassword,
   updateUserPassword,
   getUserDisbursements,
-  getUserProfileStats
+  getUserProfileStats,
+  db
 } from '../db.js';
+import {
+  isExternalDbConfigured,
+  pgGetUserByIdentifier
+} from '../supabase.js';
 
 export const authRouter = Router();
 
@@ -64,7 +69,44 @@ authRouter.post('/login', async (req, res) => {
     }
 
     const identifier = email.trim().toLowerCase();
-    const user = getUserByEmail(identifier) || getUserByUsername(identifier);
+    let user = getUserByEmail(identifier) || getUserByUsername(identifier);
+
+    // If not found in local SQLite cache, attempt lookup in Supabase PostgreSQL
+    if (!user && isExternalDbConfigured()) {
+      try {
+        const pgUser = await pgGetUserByIdentifier(identifier);
+        if (pgUser) {
+          const insertStmt = db.prepare(`
+            INSERT OR REPLACE INTO users (
+              id, email, name, username, avatar, wallet_address, usdc_balance,
+              provider, role, discipline, bio, telegram, discord, x, github, password_hash, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+          insertStmt.run(
+            pgUser.id,
+            (pgUser.email || '').toLowerCase().trim(),
+            pgUser.name || 'User',
+            pgUser.username || (pgUser.email ? pgUser.email.split('@')[0] : pgUser.id),
+            pgUser.avatar || null,
+            pgUser.wallet_address || null,
+            Number(pgUser.usdc_balance || 0),
+            pgUser.provider || 'email',
+            pgUser.role || 'creator',
+            pgUser.discipline || 'Content',
+            pgUser.bio || null,
+            pgUser.telegram || null,
+            pgUser.discord || null,
+            pgUser.x || null,
+            pgUser.github || null,
+            pgUser.password_hash || null,
+            Number(pgUser.created_at || Date.now())
+          );
+          user = getUserByEmail(identifier) || getUserByUsername(identifier);
+        }
+      } catch (err) {
+        console.warn('[Auth] Fallback Supabase lookup error:', err.message);
+      }
+    }
 
     if (!user) {
       return res.status(401).json({

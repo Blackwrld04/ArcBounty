@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   Wallet,
@@ -57,6 +57,10 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBounty, setSelectedBounty] = useState(null);
+  const selectedBountyRef = useRef(selectedBounty);
+  useEffect(() => {
+    selectedBountyRef.current = selectedBounty;
+  }, [selectedBounty]);
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [copiedWallet, setCopiedWallet] = useState(false);
@@ -308,9 +312,11 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
     }
   };
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = async (isBackground = false) => {
     if (!adminToken) return;
-    setLoading(true);
+    if (!isBackground) {
+      setLoading(true);
+    }
     try {
       const headers = { Authorization: `Bearer ${adminToken}` };
       const [statsRes, bountiesRes, usersRes] = await Promise.all([
@@ -331,23 +337,26 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
       }
 
       const bountiesData = await bountiesRes.json();
-      if (bountiesData.success) {
+      if (bountiesData.success && Array.isArray(bountiesData.bounties)) {
         setBounties(bountiesData.bounties);
 
-        // Keep currently selected bounty and its submissions live in sync
-        if (selectedBounty) {
-          const freshSelected = bountiesData.bounties.find((b) => b.id === selectedBounty.id);
+        // Keep currently selected bounty live in sync using latest ref
+        const currentSelected = selectedBountyRef.current;
+        if (currentSelected) {
+          const freshSelected = bountiesData.bounties.find((b) => b.id === currentSelected.id);
           if (freshSelected) {
-            setSelectedBounty(freshSelected);
+            // Only update selectedBounty state if status or metadata actually changed
+            if (
+              freshSelected.status !== currentSelected.status ||
+              freshSelected.paymentStatus !== currentSelected.paymentStatus ||
+              freshSelected.amount !== currentSelected.amount ||
+              freshSelected.settlementTx !== currentSelected.settlementTx ||
+              freshSelected.submissionsCount !== currentSelected.submissionsCount
+            ) {
+              setSelectedBounty(freshSelected);
+              selectedBountyRef.current = freshSelected;
+            }
           }
-          fetch(`${API_BASE}/api/admin/bounties/${selectedBounty.id}/submissions`, { headers })
-            .then((r) => r.json())
-            .then((subData) => {
-              if (subData.success && Array.isArray(subData.submissions)) {
-                setSubmissions(subData.submissions);
-              }
-            })
-            .catch(() => {});
         }
       }
 
@@ -355,28 +364,27 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
       if (usersData && usersData.success && Array.isArray(usersData.users)) {
         setUsersList(usersData.users);
       }
-      if (onDataChanged) {
-        onDataChanged();
-      }
     } catch (err) {
       console.error('[AdminDashboard] Failed to fetch admin data:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     if (adminToken) {
-      fetchAdminData();
+      fetchAdminData(false);
 
       // Universal cross-tab and intra-app sync listener
       const unsubscribe = subscribeToSync(() => {
-        fetchAdminData();
+        fetchAdminData(true);
       });
 
-      // Background live polling ticker every 3 seconds
+      // Background live polling ticker every 3 seconds (smooth background sync)
       const interval = setInterval(() => {
-        fetchAdminData();
+        fetchAdminData(true);
       }, 3000);
 
       return () => {
@@ -384,24 +392,39 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
         clearInterval(interval);
       };
     }
-  }, [adminToken, selectedBounty?.id]);
+  }, [adminToken]);
 
   const handleSelectBounty = async (bounty) => {
+    if (!bounty) return;
     setSelectedBounty(bounty);
+    selectedBountyRef.current = bounty;
     setLoadingSubmissions(true);
     setSettlementResult(null);
+
+    // On mobile screens, smoothly scroll to review pane
+    if (isMobile) {
+      setTimeout(() => {
+        const detailsEl = document.getElementById('admin-bounty-details-panel');
+        if (detailsEl) {
+          detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 60);
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/admin/bounties/${bounty.id}/submissions`, {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
       const data = await res.json();
-      if (data.success) {
+      if (selectedBountyRef.current?.id === bounty.id && data.success) {
         setSubmissions(data.submissions || []);
       }
     } catch (err) {
       console.error('[AdminDashboard] Failed to fetch submissions:', err);
     } finally {
-      setLoadingSubmissions(false);
+      if (selectedBountyRef.current?.id === bounty.id) {
+        setLoadingSubmissions(false);
+      }
     }
   };
 
@@ -1334,15 +1357,18 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
 
         {/* Right Column: Participant Submissions & Distribution Panel */}
         {selectedBounty && (
-          <div style={{
-            background: '#ffffff',
-            border: '2.5px solid #000000',
-            boxShadow: '4px 4px 0px #000000',
-            borderRadius: '12px',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <div
+            id="admin-bounty-details-panel"
+            style={{
+              background: '#ffffff',
+              border: '2.5px solid #000000',
+              boxShadow: '4px 4px 0px #000000',
+              borderRadius: '12px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             {/* Selected Bounty Details Header */}
             <div style={{ borderBottom: '2px solid #000000', paddingBottom: '16px', marginBottom: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -1357,8 +1383,37 @@ export default function AdminDashboard({ user, wallet, onBackToExplore, onDataCh
                   {selectedBounty.category}
                 </span>
 
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>
-                  ${selectedBounty.amount} <span style={{ fontSize: '0.8rem', color: '#64748b' }}>USDC</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>
+                    ${selectedBounty.amount} <span style={{ fontSize: '0.8rem', color: '#64748b' }}>USDC</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedBounty(null);
+                      selectedBountyRef.current = null;
+                      setSubmissions([]);
+                    }}
+                    title="Close challenge review"
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1.5px solid #000000',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      boxShadow: '1px 1px 0px #000000'
+                    }}
+                  >
+                    <X size={14} />
+                    <span>Close</span>
+                  </button>
                 </div>
               </div>
 

@@ -249,9 +249,138 @@ export async function syncSupabaseToLocalSqlite(sqliteDb) {
       }
     }
 
-    console.log(`[Supabase] Synced ${bountyRows.rows.length} bounties and ${subRows.rows.length} submissions to local cache.`);
+    // Sync users down from Supabase into local SQLite cache
+    const userRows = await pool.query('SELECT * FROM users ORDER BY created_at DESC');
+    if (userRows.rows.length > 0) {
+      const insertUser = sqliteDb.prepare(`
+        INSERT OR REPLACE INTO users (
+          id, email, name, username, avatar, wallet_address,
+          usdc_balance, provider, role, discipline, bio,
+          telegram, discord, x, github, password_hash, created_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?
+        )
+      `);
+      for (const u of userRows.rows) {
+        insertUser.run(
+          u.id,
+          (u.email || '').toLowerCase().trim(),
+          u.name || 'User',
+          u.username || (u.email ? u.email.split('@')[0] : u.id),
+          u.avatar || null,
+          u.wallet_address || null,
+          Number(u.usdc_balance || 0),
+          u.provider || 'email',
+          u.role || 'creator',
+          u.discipline || 'Content',
+          u.bio || null,
+          u.telegram || null,
+          u.discord || null,
+          u.x || null,
+          u.github || null,
+          u.password_hash || null,
+          Number(u.created_at || Date.now())
+        );
+      }
+    }
+
+    // Sync disbursements down from Supabase into local SQLite cache
+    const disbRows = await pool.query('SELECT * FROM disbursements ORDER BY distributed_at DESC');
+    if (disbRows.rows.length > 0) {
+      const insertDisb = sqliteDb.prepare(`
+        INSERT OR REPLACE INTO disbursements (
+          id, bounty_id, submission_id,
+          recipient_address, recipient_email, amount,
+          tx_hash, admin_email, distributed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const d of disbRows.rows) {
+        insertDisb.run(
+          d.id || d.disbursement_id,
+          d.bounty_id,
+          d.submission_id,
+          d.recipient_address,
+          d.recipient_email || null,
+          Number(d.amount || d.amount_usdc || 0),
+          d.tx_hash,
+          d.admin_email || 'admin@arcbounty.io',
+          Number(d.distributed_at || Date.now())
+        );
+      }
+    }
+
+    console.log(`[Supabase] Synced ${bountyRows.rows.length} bounties, ${subRows.rows.length} submissions, and ${userRows.rows.length} users to local cache.`);
   } catch (err) {
     console.warn('[Supabase] Warning syncing to local SQLite:', err.message);
+  }
+}
+
+/**
+ * On-demand sync of all Supabase users to local SQLite cache
+ */
+export async function syncSupabaseUsersToLocalSqlite(sqliteDb) {
+  if (!pool || !sqliteDb) return [];
+  try {
+    const userRows = await pool.query('SELECT * FROM users ORDER BY created_at DESC');
+    if (userRows.rows.length > 0) {
+      const insertUser = sqliteDb.prepare(`
+        INSERT OR REPLACE INTO users (
+          id, email, name, username, avatar, wallet_address,
+          usdc_balance, provider, role, discipline, bio,
+          telegram, discord, x, github, password_hash, created_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?
+        )
+      `);
+      for (const u of userRows.rows) {
+        insertUser.run(
+          u.id,
+          (u.email || '').toLowerCase().trim(),
+          u.name || 'User',
+          u.username || (u.email ? u.email.split('@')[0] : u.id),
+          u.avatar || null,
+          u.wallet_address || null,
+          Number(u.usdc_balance || 0),
+          u.provider || 'email',
+          u.role || 'creator',
+          u.discipline || 'Content',
+          u.bio || null,
+          u.telegram || null,
+          u.discord || null,
+          u.x || null,
+          u.github || null,
+          u.password_hash || null,
+          Number(u.created_at || Date.now())
+        );
+      }
+    }
+    return userRows.rows;
+  } catch (err) {
+    console.warn('[Supabase] Warning syncing users to SQLite:', err.message);
+    return [];
+  }
+}
+
+/**
+ * Lookup a user by email, username, or ID directly from Supabase PostgreSQL
+ */
+export async function pgGetUserByIdentifier(identifier) {
+  if (!pool || !identifier) return null;
+  try {
+    const clean = identifier.trim().toLowerCase().replace(/^@/, '');
+    const res = await pool.query(`
+      SELECT * FROM users
+      WHERE LOWER(email) = $1 OR LOWER(username) = $1 OR id = $1
+      LIMIT 1
+    `, [clean]);
+    return res.rows[0] || null;
+  } catch (err) {
+    console.warn('[Supabase] pgGetUserByIdentifier warning:', err.message);
+    return null;
   }
 }
 

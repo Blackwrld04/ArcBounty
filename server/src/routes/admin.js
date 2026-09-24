@@ -22,6 +22,10 @@ import {
   sendBountyApprovedNotification,
   sendNewBountyBroadcastToCreators
 } from '../email.js';
+import {
+  isExternalDbConfigured,
+  syncSupabaseUsersToLocalSqlite
+} from '../supabase.js';
 
 export const adminRouter = express.Router();
 
@@ -179,8 +183,11 @@ adminRouter.get('/stats', (req, res) => {
  * GET /api/admin/users
  * Directory of registered creators & users with profile details
  */
-adminRouter.get('/users', (req, res) => {
+adminRouter.get('/users', async (req, res) => {
   try {
+    if (isExternalDbConfigured()) {
+      await syncSupabaseUsersToLocalSqlite(db);
+    }
     const users = getAllUsers();
     res.json({
       success: true,
