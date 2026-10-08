@@ -313,10 +313,10 @@ The repository includes a ready-to-use [`render.yaml`](render.yaml) blueprint:
 | `NODE_ENV` | Environment mode | `production` |
 | `ARC_RPC_URL` | Circle Arc Mainnet RPC | `https://rpc.mainnet.arc.io` |
 | `ARC_CHAIN_ID` | Circle Arc Chain ID | `5042` |
-| `DATABASE_URL` | Supabase PostgreSQL Connection URI | `postgresql://postgres.[ref]:[pass]@aws-0-eu-west-2.pooler.supabase.com:6543/postgres` |
+| `DATABASE_URL` | Supabase PostgreSQL Connection URI | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `GMAIL_USER` | Gmail address for OTP delivery | `your_email@gmail.com` |
 | `GMAIL_APP_PASSWORD` | 16-character Google App Password | `xxxx xxxx xxxx xxxx` |
-| `ADMIN_EMAILS` | Authorized platform admin | `olajideabdulquadri22@gmail.com` |
+| `ADMIN_EMAILS` | Authorized platform admin | `xxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `ADMIN_PASSWORD` | Master password for admin portal | `[Your_Secure_Password]` |
 | `ESCROW_CONTRACT_ADDRESS` | Deployed ArcBountyEscrow contract | `0x7Cd0F0db26f47dFa757014a8f756506B9F32F823` |
 | `FACILITATOR_PRIVATE_KEY` | Relayer private key on Arc L1 | `0x[64_hex_characters]` |
