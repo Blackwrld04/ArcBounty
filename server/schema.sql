@@ -165,3 +165,66 @@ CREATE TABLE IF NOT EXISTS disbursements (
 CREATE INDEX IF NOT EXISTS idx_disbursements_recipient ON disbursements (recipient_address);
 CREATE INDEX IF NOT EXISTS idx_disbursements_bounty_id ON disbursements (bounty_id);
 
+-- ==========================================================
+-- 9. Row Level Security (RLS) Policies
+-- ==========================================================
+-- The server connects via service_role key which bypasses RLS.
+-- These policies prevent direct public API (anon key) access
+-- to sensitive tables while allowing read-only public data.
+-- ==========================================================
+
+-- ── Users: No public access (contains password_hash, emails, PII) ──
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to users" ON users;
+CREATE POLICY "Deny all public access to users"
+  ON users FOR ALL
+  USING (false);
+
+-- ── Verification Codes: No public access (contains auth codes) ──
+ALTER TABLE verification_codes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to verification_codes" ON verification_codes;
+CREATE POLICY "Deny all public access to verification_codes"
+  ON verification_codes FOR ALL
+  USING (false);
+
+-- ── Sessions: No public access (contains session tokens — critical) ──
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to sessions" ON sessions;
+CREATE POLICY "Deny all public access to sessions"
+  ON sessions FOR ALL
+  USING (false);
+
+-- ── Auth Challenges: No public access (contains nonces for wallet auth) ──
+ALTER TABLE auth_challenges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to auth_challenges" ON auth_challenges;
+CREATE POLICY "Deny all public access to auth_challenges"
+  ON auth_challenges FOR ALL
+  USING (false);
+
+-- ── Bounties: Public read-only (listing page), no write from anon ──
+ALTER TABLE bounties ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access to bounties" ON bounties;
+CREATE POLICY "Allow public read access to bounties"
+  ON bounties FOR SELECT
+  USING (true);
+
+-- ── Bounty Submissions: No public access (contains PII and wallet addresses) ──
+ALTER TABLE bounty_submissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to bounty_submissions" ON bounty_submissions;
+CREATE POLICY "Deny all public access to bounty_submissions"
+  ON bounty_submissions FOR ALL
+  USING (false);
+
+-- ── Bounty Discussions: Public read-only (Q&A are public) ──
+ALTER TABLE bounty_discussions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access to bounty_discussions" ON bounty_discussions;
+CREATE POLICY "Allow public read access to bounty_discussions"
+  ON bounty_discussions FOR SELECT
+  USING (true);
+
+-- ── Disbursements: No public access (immutable financial audit ledger) ──
+ALTER TABLE disbursements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Deny all public access to disbursements" ON disbursements;
+CREATE POLICY "Deny all public access to disbursements"
+  ON disbursements FOR ALL
+  USING (false);

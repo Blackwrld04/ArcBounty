@@ -16,7 +16,7 @@ ArcBounty is a decentralized, non-custodial bounty escrow and proof-of-work prot
 
 **Lock canonical USDC in escrow. Deliver high-impact proof of work. Settle instantly with zero creator gas.**
 
-[🌐 Live Web App](https://arc-bounty-pi.vercel.app/) · [Admin Telemetry GUI](https://arc-bounty-pi.vercel.app/admin) · [Live API Health](https://arcbounty.onrender.com/health) · [Deployment Guide](#deployment-guide-render--vercel) · [Verify it yourself](#verify-it-yourself) · [Arc Explorer](https://explorer.arc.io/address/0x7Cd0F0db26f47dFa757014a8f756506B9F32F823)
+[🌐 Live Web App](https://arc-bounty-pi.vercel.app/) · [📄 Technical Whitepaper](WHITEPAPER.md) · [Admin Telemetry GUI](https://arc-bounty-pi.vercel.app/admin) · [Live API Health](https://arcbounty.onrender.com/health) · [Deployment Guide](#deployment-guide-render--vercel) · [Verify it yourself](#verify-it-yourself) · [Arc Explorer](https://explorer.arc.io/address/0x7Cd0F0db26f47dFa757014a8f756506B9F32F823)
 
 **Decentralized Talent Infrastructure — Dollar-settled creator bounties without intermediary commissions or payment delays.**
 
