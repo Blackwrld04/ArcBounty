@@ -30,22 +30,53 @@ async function getTransporter() {
  */
 async function dispatchEmail({ to, subject, html, text }) {
   const recipients = Array.isArray(to) ? to : [to];
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+  // Resolve SMTP Credentials (supporting MicroGig format + legacy GMAIL_* format)
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+  const smtpSecure = process.env.SMTP_SECURE === 'false' ? false : (smtpPort === 465);
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const rawPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+  const smtpPass = rawPass ? rawPass.replace(/\s+/g, '') : null;
+  const emailFrom = process.env.EMAIL_FROM || (smtpUser ? `"ArcBounty" <${smtpUser}>` : '"ArcBounty" <no-reply@arcbounty.io>');
+
   const relaySecret = process.env.EMAIL_RELAY_SECRET || 'arcbounty-relay-auth-2026';
   const relayUrl = `${CLIENT_URL}/api/send-email`;
   const resendKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.FROM_EMAIL || 'ArcBounty <onboarding@resend.dev>';
 
-  // Check if Resend sandbox restriction applies:
-  // onboarding@resend.dev can ONLY send to the registered Resend account owner (olajideabdulquadri22@gmail.com).
-  // Any other recipient will trigger HTTP 403 validation_error.
-  const isResendSandboxRestricted =
-    fromEmail.includes('onboarding@resend.dev') &&
-    recipients.some(r => r.toLowerCase().trim() !== 'olajideabdulquadri22@gmail.com');
+  // STRATEGY 1: Direct High-Speed Nodemailer SMTP (Port 465 SSL or 587 TLS)
+  if (smtpUser && smtpPass) {
+    try {
+      const directTransporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass
+        },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 12000
+      });
 
-  // STRATEGY 1: Vercel Serverless Relay (Sends to any email inbox on earth)
-  if (gmailUser && gmailPass && (isResendSandboxRestricted || !resendKey)) {
+      const info = await directTransporter.sendMail({
+        from: emailFrom,
+        to: recipients.join(', '),
+        subject,
+        html,
+        text
+      });
+
+      console.log(`[Email Service - Direct SMTP] Dispatched to ${recipients.join(', ')} | ID: ${info.messageId}`);
+      return { messageId: info.messageId, dispatched: true };
+    } catch (smtpErr) {
+      console.warn(`[Email Service - Direct SMTP Warning] Direct send failed (${smtpErr.message}), trying Vercel relay fallback...`);
+    }
+  }
+
+  // STRATEGY 2: Vercel Serverless Relay (Overcomes cloud port restrictions)
+  if (smtpUser && smtpPass) {
     try {
       const relayRes = await fetch(relayUrl, {
         method: 'POST',
@@ -58,9 +89,13 @@ async function dispatchEmail({ to, subject, html, text }) {
           subject,
           html,
           text,
+          from: emailFrom,
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpSecure,
           auth: {
-            user: gmailUser,
-            pass: gmailPass
+            user: smtpUser,
+            pass: smtpPass
           }
         }),
         signal: AbortSignal.timeout(12000)
@@ -68,18 +103,18 @@ async function dispatchEmail({ to, subject, html, text }) {
 
       const relayData = await relayRes.json().catch(() => ({}));
       if (relayRes.ok && relayData.success) {
-        console.log(`[Email Service - Vercel Relay] Successfully dispatched to ${recipients.join(', ')} | ID: ${relayData.messageId}`);
+        console.log(`[Email Service - Vercel Relay] Dispatched to ${recipients.join(', ')} | ID: ${relayData.messageId}`);
         return { messageId: relayData.messageId, dispatched: true };
       } else {
         console.warn(`[Email Service - Vercel Relay Warning] Relay returned ${relayRes.status}:`, relayData);
       }
     } catch (e) {
-      console.warn(`[Email Service - Vercel Relay Network Warning]:`, e.message);
+      console.warn(`[Email Service - Vercel Relay Warning]:`, e.message);
     }
   }
 
-  // STRATEGY 2: Resend HTTPS REST API (Port 443)
-  if (resendKey && !isResendSandboxRestricted) {
+  // STRATEGY 3: Resend HTTPS REST API (Port 443)
+  if (resendKey) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -88,7 +123,7 @@ async function dispatchEmail({ to, subject, html, text }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: fromEmail,
+          from: emailFrom.includes('onboarding@resend.dev') ? emailFrom : 'ArcBounty <onboarding@resend.dev>',
           to: recipients,
           subject,
           html,
@@ -106,38 +141,6 @@ async function dispatchEmail({ to, subject, html, text }) {
       }
     } catch (e) {
       console.warn(`[Email Service - Resend Network Error]:`, e.message);
-    }
-  }
-
-  // STRATEGY 3: Fallback to Vercel Relay if Resend was attempted and failed
-  if (gmailUser && gmailPass && !isResendSandboxRestricted) {
-    try {
-      const relayRes = await fetch(relayUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-relay-secret': relaySecret
-        },
-        body: JSON.stringify({
-          to: recipients,
-          subject,
-          html,
-          text,
-          auth: {
-            user: gmailUser,
-            pass: gmailPass
-          }
-        }),
-        signal: AbortSignal.timeout(12000)
-      });
-
-      const relayData = await relayRes.json().catch(() => ({}));
-      if (relayRes.ok && relayData.success) {
-        console.log(`[Email Service - Vercel Relay Fallback] Successfully dispatched to ${recipients.join(', ')} | ID: ${relayData.messageId}`);
-        return { messageId: relayData.messageId, dispatched: true };
-      }
-    } catch (e) {
-      console.warn(`[Email Service - Vercel Relay Fallback Warning]:`, e.message);
     }
   }
 

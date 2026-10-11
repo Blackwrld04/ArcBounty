@@ -50,16 +50,20 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Unauthorized relay request' });
     }
 
-    const { to, subject, html, text, auth } = body;
+    const { to, subject, html, text, auth, from, host: bodyHost, port: bodyPort, secure: bodySecure } = body;
 
     // 2. Resolve credentials from request auth payload or environment
-    const user = auth?.user || process.env.GMAIL_USER;
-    const rawPass = auth?.pass || process.env.GMAIL_APP_PASSWORD;
+    const user = auth?.user || process.env.SMTP_USER || process.env.GMAIL_USER;
+    const rawPass = auth?.pass || process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
     const pass = rawPass ? rawPass.replace(/\s+/g, '') : null;
+    const host = bodyHost || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(bodyPort || process.env.SMTP_PORT || '465', 10);
+    const secure = bodySecure !== undefined ? Boolean(bodySecure) : (process.env.SMTP_SECURE === 'false' ? false : (port === 465));
+    const senderFrom = from || process.env.EMAIL_FROM || `"ArcBounty" <${user}>`;
 
     if (!user || !pass) {
       return res.status(400).json({
-        error: 'Missing SMTP credentials. Provide auth.user and auth.pass or set GMAIL_USER and GMAIL_APP_PASSWORD.'
+        error: 'Missing SMTP credentials. Provide auth.user and auth.pass or configure SMTP_USER/GMAIL_USER and SMTP_PASS/GMAIL_APP_PASSWORD.'
       });
     }
 
@@ -71,11 +75,11 @@ export default async function handler(req, res) {
 
     const recipients = Array.isArray(to) ? to.join(', ') : to;
 
-    // 3. Dispatch through Gmail SMTP (Port 465 SSL)
+    // 3. Dispatch through Gmail SMTP (Port 465 SSL or Port 587 TLS)
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      host,
+      port,
+      secure,
       auth: { user, pass },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
@@ -83,7 +87,7 @@ export default async function handler(req, res) {
     });
 
     const info = await transporter.sendMail({
-      from: `"ArcBounty" <${user}>`,
+      from: senderFrom,
       to: recipients,
       subject,
       html,
